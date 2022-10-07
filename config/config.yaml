@@ -1,0 +1,7 @@
+chain: 'ethereum'
+node_url: 'http://localhost:8545'
+redis_conn_str: 'localhost:6379'
+loop_interval: 2
+start_block: 6000000000
+lookback_blocks: 10
+lookback_retries: 2
