@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
-	_1inchlimitorder "github.com/artnoi43/superwatcher/hardcode/contracts/1inchlimitorder"
-	"github.com/artnoi43/superwatcher/hardcode/contracts/uniswapv3pool"
+	oneinchlimitorder "github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts/1inchlimitorder"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts/uniswapv3pool"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 
 var contractABIsMap = map[string]string{
 	uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
-	oneInchLimitOrder: _1inchlimitorder.OneInchLimitOrderABI,
+	oneInchLimitOrder: oneinchlimitorder.OneInchLimitOrderABI,
 }
 
 var contractAddressesMap = map[string]string{

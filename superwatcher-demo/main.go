@@ -13,9 +13,9 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/data/watcherstate"
 	"github.com/artnoi43/superwatcher/domain/usecase/watcher"
-	"github.com/artnoi43/superwatcher/hardcode"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
 )
 
 func main() {
