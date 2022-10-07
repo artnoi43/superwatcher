@@ -7,9 +7,29 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
-	_1inchlimitorder "github.com/artnoi43/superwatcher/lib/contracts/1inchlimitorder"
-	"github.com/artnoi43/superwatcher/lib/contracts/uniswapv3pool"
+	_1inchlimitorder "github.com/artnoi43/superwatcher/hardcode/contracts/1inchlimitorder"
+	"github.com/artnoi43/superwatcher/hardcode/contracts/uniswapv3pool"
 )
+
+const (
+	uniswapv3Pool     = "uniswapv3pool"
+	oneInchLimitOrder = "oneInchLimitOrder"
+)
+
+var contractABIsMap = map[string]string{
+	uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
+	oneInchLimitOrder: _1inchlimitorder.OneInchLimitOrderABI,
+}
+
+var contractAddressesMap = map[string]string{
+	uniswapv3Pool:     "0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168",
+	oneInchLimitOrder: "0x119c71d3bbac22029622cbaec24854d3d32d2828",
+}
+
+var contractTopicsMap = map[string][]string{
+	uniswapv3Pool:     {"Swap"},
+	oneInchLimitOrder: {"OrderFilled", "OrderCanceled"},
+}
 
 func interestingTopics(abiStr string, eventKeys ...string) ([][]common.Hash, error) {
 	contractABI, err := abi.JSON(strings.NewReader(abiStr))
@@ -28,13 +48,17 @@ func interestingTopics(abiStr string, eventKeys ...string) ([][]common.Hash, err
 
 // Hard-code known topics and addresses
 func AddressesAndTopics() ([]common.Address, [][]common.Hash) {
-	addresses := []common.Address{
-		common.HexToAddress("0x119c71d3bbac22029622cbaec24854d3d32d2828"), // 1inch Limit Order
-		common.HexToAddress("0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168"), // Uniswap v3 DAI/USDC
+	var addresses []common.Address
+	for _, addr := range contractAddressesMap {
+		addresses = append(addresses, common.HexToAddress(addr))
 	}
-	oneInchTopics, _ := interestingTopics(_1inchlimitorder.OneInchLimitOrderABI, "OrderCanceled", "OrderFilled")
-	uniswapV3Topics, _ := interestingTopics(uniswapv3pool.Uniswapv3PoolABI, "Swap")
-	topics := append(oneInchTopics, uniswapV3Topics...)
+
+	var topics [][]common.Hash
+	for contract, abiStr := range contractABIsMap {
+		topicKeys := contractTopicsMap[contract]
+		contractTopics, _ := interestingTopics(abiStr, topicKeys...)
+		topics = append(topics, contractTopics...)
+	}
 
 	return addresses, topics
 }
