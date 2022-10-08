@@ -32,6 +32,7 @@ type ethClient interface {
 // Code that imports watcher should only use this method.
 type Watcher interface {
 	Loop(context.Context) error
+	shutdown()
 }
 
 // watcher implements Watcher, and other than Config,
@@ -50,7 +51,7 @@ type watcher struct {
 
 	// These fields are comms with for other services
 	logChan   chan<- *types.Log
-	reorgChan chan<- *struct{}
+	reorgChan chan<- *reorg.BlockInfo
 	errChan   chan<- error
 }
 
@@ -74,8 +75,8 @@ func NewWatcher(
 	topics [][]common.Hash,
 	logChan chan<- *types.Log,
 	errChan chan<- error,
-	reorgChan chan<- *struct{},
-) *watcher {
+	reorgChan chan<- *reorg.BlockInfo,
+) Watcher {
 	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
 	return &watcher{
 		config:           conf,
@@ -98,6 +99,7 @@ func (w *watcher) Loop(ctx context.Context) error {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
 		case <-ctx.Done():
+			w.shutdown()
 			return ctx.Err()
 		default:
 			if err := w.loopFilterLogs(ctx); err != nil {
@@ -105,4 +107,10 @@ func (w *watcher) Loop(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (w *watcher) shutdown() {
+	close(w.logChan)
+	close(w.reorgChan)
+	close(w.errChan)
 }

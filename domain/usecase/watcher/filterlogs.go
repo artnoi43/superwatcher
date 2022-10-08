@@ -76,7 +76,7 @@ func (w *watcher) filterLogs(
 			retry.DelayType(retry.FixedDelay),
 		)
 		if err != nil {
-			errChanHeaders <- err
+			w.errChan <- errors.Wrapf(err, "failed to get header for block %d", blockNumber)
 		}
 	}
 	logger.Info("get headers", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
@@ -173,7 +173,10 @@ func (w *watcher) filterLogs(
 			}
 		}
 
+		// Mark this block as reorged and call publishReorg
 		logger.Info("chain reorg: detected", zap.Uint64("blockNumber", blockNumber), zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()), zap.String("trackerHash", trackerBlock.Hash.String()))
+		w.publishReorg(trackerBlock)
+		// Mark every log in this block as removed
 		for _, oldLog := range trackerBlock.Logs {
 			oldLog.Removed = true
 		}
@@ -198,9 +201,7 @@ func (w *watcher) filterLogs(
 		for _, l := range processLogsByBlockNumber[blockNumber] {
 			// watcher.processLog will populate the log with decoded data.
 			// After sucessful return, orderStates values will be the decoded block values
-			if err := w.PublishLog(l); err != nil {
-				return errors.Wrapf(err, "error publishing log (txHash %s on block %d)", l.TxHash, blockNumber)
-			}
+			w.publishLog(l)
 		}
 
 		// Add to tracker here

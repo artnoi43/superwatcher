@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,6 +14,8 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/data/watcherstate"
 	"github.com/artnoi43/superwatcher/domain/usecase/watcher"
+	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/watchergateway"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
@@ -41,6 +44,38 @@ func main() {
 		panic("nil redis")
 	}
 
+	stateDataGateway := watcherstate.NewWatcherStateRedisClient(
+		chain,
+		"testSuperWatcherClient",
+		rdb,
+	)
+
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+	)
+
+	logChan := make(chan *types.Log)
+	errChan := make(chan error)
+	reorgChan := make(chan *reorg.BlockInfo)
+
+	// Hard-coded values for testing
+	addresses, topics := hardcode.AddressesAndTopics()
+	watcher := watcher.NewWatcher(
+		conf,
+		ethClient,
+		nil, // No DataGateway yet
+		stateDataGateway,
+		addresses,
+		topics,
+		logChan,
+		errChan,
+		reorgChan,
+	)
+
 	shutdown := func() {
 		ethClient.Close()
 		if err := rdb.Close(); err != nil {
@@ -51,79 +86,91 @@ func main() {
 		}
 	}
 
-	stateDataGateway := watcherstate.NewWatcherStateRedisClient(
-		chain,
-		"testSuperWatcherClient",
-		rdb,
-	)
-
-	logChan := make(chan *types.Log)
-	errChan := make(chan error)
-	reorgChan := make(chan *struct{})
-
-	go monitorChannels(logChan, errChan, reorgChan)
-
-	ctx, stop := signal.NotifyContext(
-		context.Background(),
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGQUIT,
-		syscall.SIGTERM,
-	)
-
 	defer stop()
 	defer shutdown()
 
-	// Hard-coded values for testing
-	addresses, topics := hardcode.AddressesAndTopics()
-	watcher := watcher.NewWatcher(
-		conf,
-		ethClient,
-		nil,
-		stateDataGateway,
-		addresses,
-		topics,
+	go func() {
+		if err := watcher.Loop(ctx); err != nil {
+			logger.Error("main error", zap.String("error", err.Error()))
+		}
+	}()
+
+	watcherClient := watchergateway.NewWatcherClient[any](
 		logChan,
 		errChan,
 		reorgChan,
+		nil,
 	)
 
-	//	go func() {
-	if err := watcher.Loop(ctx); err != nil {
-		logger.Error("main error", zap.String("error", err.Error()))
-	}
-	//	}()
-
-	//	watcherClient := watchergateway.NewWatcherClient[any](
-	//		logChan,
-	//		errChan,
-	//		reorgChan,
-	//		nil,
-	//	)
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go loopHandleWatcherClientLog(watcherClient, &wg)
+	go loopHandleWatcherClientErr(watcherClient, &wg)
+	go loopHandleWatcherClientReorg(watcherClient, &wg)
+	wg.Wait()
 }
 
-func monitorChannels(
-	logChan <-chan *types.Log,
-	errChan <-chan error,
-	reorgChan <-chan *struct{},
-) {
+func loopHandleWatcherClientLog[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
+	defer wg.Done()
+	logger.Info("DEMO: start loopHandleWatcherLog")
 	for {
-		select {
-		case l := <-logChan:
-			logger.Info(
-				"got log",
-				zap.String("address", l.Address.String()),
-				zap.String("topics", l.Topics[0].String()),
-			)
-		case err := <-errChan:
-			logger.Error(
-				"got error",
-				zap.String("error", err.Error()),
-			)
-		case r := <-reorgChan:
-			if r != nil {
-				logger.Info("got reorg event")
-			}
+		l := wc.WatcherCurrentLog()
+		if l != nil {
+			logger.Info("DEMO: got logs", zap.String("address", l.Address.String()), zap.Any("topics", l.Topics))
+		} else {
+			logger.Fatal("DEMO: got nil value from WatcherCurrentLog")
 		}
 	}
 }
+
+func loopHandleWatcherClientErr[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
+	defer wg.Done()
+	logger.Info("DEMO: start loopHandleWatcherLog")
+	for {
+		err := wc.WatcherError()
+		if err != nil {
+			logger.Info("DEMO: got error", zap.String("error", err.Error()))
+		} else {
+			logger.Fatal("DEMO: got nil value from WatcherError")
+		}
+	}
+}
+
+func loopHandleWatcherClientReorg[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
+	defer wg.Done()
+	logger.Info("DEMO: start loopHandleWatcherReorg")
+	for {
+		reorgedBlock := wc.WatcherReorg()
+		if reorgedBlock != nil {
+			logger.Info("DEMO: got reorged blocks", zap.Any("blockNumber", reorgedBlock), zap.String("blockHash", reorgedBlock.Hash.String()))
+		} else {
+			logger.Fatal("DEMO: got nil value from wc.WatcherReorg")
+		}
+	}
+}
+
+// func monitorChannels(
+// 	logChan <-chan *types.Log,
+// 	errChan <-chan error,
+// 	reorgChan <-chan *struct{},
+// ) {
+// 	for {
+// 		select {
+// 		case l := <-logChan:
+// 			logger.Info(
+// 				"got log",
+// 				zap.String("address", l.Address.String()),
+// 				zap.String("topics", l.Topics[0].String()),
+// 			)
+// 		case err := <-errChan:
+// 			logger.Error(
+// 				"got error",
+// 				zap.String("error", err.Error()),
+// 			)
+// 		case r := <-reorgChan:
+// 			if r != nil {
+// 				logger.Info("got reorg event")
+// 			}
+// 		}
+// 	}
+// }
