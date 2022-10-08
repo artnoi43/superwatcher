@@ -30,7 +30,7 @@ func (w *watcher) filterLogs(
 	var eventLogs []types.Log
 	var err error
 
-	// wait waits for wg and consume errors from errChanHeaders
+	// wait waits for wg and consume errors from errChan
 	wait := func(errChan chan error) error {
 		go func() {
 			wg.Wait()
