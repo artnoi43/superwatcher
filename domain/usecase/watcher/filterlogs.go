@@ -23,26 +23,14 @@ func (w *watcher) filterLogs(
 	fromBlock uint64,
 	toBlock uint64,
 ) error {
-	// Get fresh logs, and block headers (fromBlock-toBlock)
-	// to compare the headers with that of w.tracker's to detect chain reorg
-
-	eventLogs, err := w.client.FilterLogs(ctx, ethereum.FilterQuery{
-		FromBlock: big.NewInt(int64(fromBlock)),
-		ToBlock:   big.NewInt(int64(toBlock)),
-		Addresses: w.addresses,
-		Topics:    w.topics, // TODO: Topics not working yet
-	})
-	if err != nil {
-		return errors.Wrap(err, "error filtering event logs")
-	}
-
-	lenLogs := len(eventLogs)
-	logger.Info("got event logs", zap.Int("number of filtered logs", lenLogs))
-
-	errChanHeaders := make(chan error)
-	var wg sync.WaitGroup
 	headersByBlockNumber := make(map[uint64]*types.Header)
-	var headersMutex sync.Mutex
+	errChan := make(chan error)
+	var wg sync.WaitGroup
+	var mut sync.Mutex
+	var eventLogs []types.Log
+	var err error
+
+	// wait waits for wg and consume errors from errChanHeaders
 	wait := func(errChan chan error) error {
 		go func() {
 			wg.Wait()
@@ -59,16 +47,30 @@ func (w *watcher) filterLogs(
 		}
 		return nil
 	}
+
+	// getLogs calls FilterLogs from fromBlock to toBlock
+	getLogs := func() {
+		eventLogs, err = w.client.FilterLogs(ctx, ethereum.FilterQuery{
+			FromBlock: big.NewInt(int64(fromBlock)),
+			ToBlock:   big.NewInt(int64(toBlock)),
+			Addresses: w.addresses,
+			Topics:    w.topics, // TODO: Topics not working yet
+		})
+		if err != nil {
+			errChan <- errors.Wrap(err, "error filtering event logs")
+		}
+	}
+
+	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
-		defer wg.Done()
 		err := retry.Do(func() error {
 			header, err := w.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
 			if err != nil {
 				return err
 			}
-			headersMutex.Lock()
+			mut.Lock()
 			headersByBlockNumber[blockNumber] = header
-			headersMutex.Unlock()
+			mut.Unlock()
 			return nil
 		},
 			retry.Attempts(10),
@@ -79,17 +81,33 @@ func (w *watcher) filterLogs(
 			w.errChan <- errors.Wrapf(err, "failed to get header for block %d", blockNumber)
 		}
 	}
-	logger.Info("get headers", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
+
+	// Get fresh logs, and block headers (fromBlock-toBlock)
+	// to compare the headers with that of w.tracker's to detect chain reorg
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		getLogs()
+	}()
+
 	for i := fromBlock; i <= toBlock; i++ {
 		wg.Add(1)
-		go getHeader(i)
+		go func(blockNumber uint64) {
+			defer wg.Done()
+			getHeader(blockNumber)
+		}(i)
 	}
 
 	// Wait here for logs and headers
-	if err := wait(errChanHeaders); err != nil {
+	if err := wait(errChan); err != nil {
 		logger.Error("get headers failed", zap.String("error", err.Error()))
 		return errors.Wrap(err, "get headers")
 	}
+
+	lenLogs := len(eventLogs)
+	logger.Info("got event logs", zap.Int("number of filtered logs", lenLogs))
+	logger.Info("got headers and logs", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
 
 	// Clear all tracker's blocks before fromBlock - lookBackBlocks
 	logger.Info("clearing tracker", zap.Uint64("clearUntil", fromBlock-w.config.LookBackBlocks))
