@@ -6,49 +6,27 @@ superwatcher-watcher working and filtering logs.
 
 To consume or use the logs retrieved by `Watcher`, use `WatcherClient`.
 
+Superwatcher users will create a new `Watcher`, and call `Watcher.Loop`.
+
+## Implementation
+Interface `Watcher` is implemented by `*watcher`. So when users call `*watcher.Loop`, 
+the exposed function internally calls `*watcher.loopFilterLogs`, which then calls `FilterLogs`.
+
 ## `*watcher.FilterLogs(ctx, fromBlock, toBlock)`
 
-When superwatcher-watcher starts, it calls `loopFilterLogs`, which reads itslast
-last recorded *block number* from Redis, and then,
+When superwatcher-watcher starts, it calls [`loopFilterLogs`](./loop_filterlogs.go), 
+which reads its last last recorded *block number* from Redis, and then, 
 based on `config.Config.LookBackBlocks`, determine `fromBlock` and `toBlock`
-for `filterLogs`.
+for [`filterLogs`](./filterlogs.go).
 
 It then use its Ethereum client to filter all logs and block headers
 from `fromBlock` to `toBlock`.
 
-It then looks for chain reorganization, and if it detected one, it sends the *old*
-reorged block to its client `watchergateway.WatcherClient`.
+It then looks for chain reorganization, and if it detected one, sends the *old* 
+reorged block to its client [`watchergateway.WatcherClient`](../watchergateway/).
 
-Lastly, it sends all the logs to `watchergateway.WatcherClient`, saves last recorded
-block number to Redis, and starts over.
+Lastly, it sends all the canon logs to `watchergateway.WatcherClient`, saves last recorded 
+block number to Redis, and returns to `loopFilterLogs`.
 
 ### Chain reorganization handling
-
-After getting fresh logs and headers from Ethereum client, superwatcher-watcher uses
-block hashes and "look-back blocks" to deal with chain reorganization.
-
-Behind the scene, superwatcher-watcher keeps track of most recent blocks' information
-in `*watcher.watcher.tracker`, and it uses those tracker block information (`reorg.BlockInfo`)
-to determine if a particular block was reorged.
-
-Let's say we have these logs in the tracker:
-
-    {block:68, hash:"0x68"}, {block: 69, hash:"0x69"}, {block:70, hash:"0x70"}
-
-And then we have these fresh logs:
-
-    {block:68, hash:"0x68"}, {block: 69, hash:"0x112"}, {block:70, hash:"0x70"}
-
-The result processLogs will look like this map:
-
-    {
-        68: [{block:68, hash:"0x68"}]
-        69: [{block: 69, hash:"0x69", removed: true}, {block: 69, hash:"0x112"}]
-        70: [{block:70, hash:"0x70"}]
-    }
-
-And this is how we mark a block as removed. `filterLogs` will send old reorged blocks
-to external services before new canon block.
-
-This allows for consumer to process the logs and determine state of an entity using
-simple techniques like a finite state machine
+See [package `reorg`](./reorg/)
