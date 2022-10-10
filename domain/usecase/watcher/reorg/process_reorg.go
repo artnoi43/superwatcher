@@ -1,6 +1,8 @@
 package reorg
 
 import (
+	"bytes"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -10,7 +12,8 @@ import (
 
 // PopulateInitialMaps collects **fresh** hashes and logs into 3 maps
 func PopulateInitialMaps(
-	eventLogs []types.Log,
+	freshLogs []types.Log,
+	freshHeaders map[uint64]*types.Header,
 ) (
 	freshHashesByBlockNumber map[uint64]common.Hash,
 	freshLogsByBlockNumber map[uint64][]*types.Log,
@@ -25,31 +28,42 @@ func PopulateInitialMaps(
 	// it should be later passed to
 	processLogsByBlockNumber = make(map[uint64][]*types.Log)
 
-	for i := range eventLogs {
-		freshBlockNumber := eventLogs[i].BlockNumber
-		freshBlockHash := eventLogs[i].BlockHash
+	for i := range freshLogs {
+		freshLog := freshLogs[i]
+		freshLogBlockNumber := freshLog.BlockNumber
+		freshLogBlockHash := freshLog.BlockHash
+		freshBlockHash := freshHeaders[freshLogBlockNumber].Hash()
+
+		if !bytes.Equal(freshBlockHash[:], freshLogBlockHash[:]) {
+			// @TODO: How to handle this?
+			logger.Panic(
+				"freshBlockHash and freshBlockHashFromLog differ",
+				zap.String("freshBlockHash", freshBlockHash.String()),
+				zap.String("freshBlockHashFromLog", freshLogBlockHash.String()),
+			)
+		}
 
 		// Check if we saw the block hash
-		if _, ok := freshHashesByBlockNumber[freshBlockNumber]; !ok {
+		if _, ok := freshHashesByBlockNumber[freshLogBlockNumber]; !ok {
 			// We've never seen this block hash before
-			freshHashesByBlockNumber[freshBlockNumber] = freshBlockHash
+			freshHashesByBlockNumber[freshLogBlockNumber] = freshBlockHash
 		} else {
-			if freshHashesByBlockNumber[freshBlockNumber] != freshBlockHash {
+			if freshHashesByBlockNumber[freshLogBlockNumber] != freshBlockHash {
 				// If we saw this log's block hash before from the fresh eventLogs
 				// from this loop's previous loop iteration(s), but the hashes are different:
 				// Fatal, should not happen
 				logger.Panic("fresh blockHash differs from tracker blockHash",
 					zap.String("tag", "filterLogs bug"),
-					zap.Uint64("freshBlockNumber", freshBlockNumber),
-					zap.Any("known tracker blockHash", freshHashesByBlockNumber[freshBlockNumber]),
+					zap.Uint64("freshBlockNumber", freshLogBlockNumber),
+					zap.Any("known tracker blockHash", freshHashesByBlockNumber[freshLogBlockNumber]),
 					zap.Any("fresh blockHash", freshBlockHash))
 			}
 		}
 
 		// Collect this log fresh into freshLogs and processLogs
-		thisLog := &eventLogs[i]
-		freshLogsByBlockNumber[freshBlockNumber] = append(freshLogsByBlockNumber[freshBlockNumber], thisLog)
-		processLogsByBlockNumber[freshBlockNumber] = append(processLogsByBlockNumber[freshBlockNumber], thisLog)
+		thisLog := &freshLogs[i]
+		freshLogsByBlockNumber[freshLogBlockNumber] = append(freshLogsByBlockNumber[freshLogBlockNumber], thisLog)
+		processLogsByBlockNumber[freshLogBlockNumber] = append(processLogsByBlockNumber[freshLogBlockNumber], thisLog)
 	}
 
 	return freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber
