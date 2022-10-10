@@ -1,9 +1,11 @@
 package watchergateway
 
 import (
-	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
+	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
 type WatcherClient[T any] interface {
@@ -20,6 +22,8 @@ type watcherClient[T any] struct {
 	reorgChan <-chan *reorg.BlockInfo
 
 	adapter Adapter[T]
+
+	debug bool
 }
 
 func NewWatcherClient[T any](
@@ -36,26 +40,50 @@ func NewWatcherClient[T any](
 	}
 }
 
+func NewWatcherClientDebug[T any](
+	logChan <-chan *types.Log,
+	errChan <-chan error,
+	reorgChan <-chan *reorg.BlockInfo,
+	adapter Adapter[T],
+) WatcherClient[T] {
+	client := NewWatcherClient(logChan, errChan, reorgChan, adapter)
+	client.(*watcherClient[T]).debug = true
+
+	return client
+}
+
 func (c *watcherClient[T]) WatcherCurrentLog() *types.Log {
-	l, closed := <-c.logChan
-	if !closed {
+	l, ok := <-c.logChan
+	if ok {
 		return l
+	}
+
+	if c.debug {
+		logger.Debug("WatcherCurrentLog - logChan is closed")
 	}
 	return nil
 }
 
 func (c *watcherClient[T]) WatcherError() error {
-	err, closed := <-c.errChan
-	if !closed {
+	err, ok := <-c.errChan
+	if ok {
 		return err
+	}
+
+	if c.debug {
+		logger.Debug("WatcherError - errChan is closed")
 	}
 	return nil
 }
 
 func (c *watcherClient[T]) WatcherReorg() *reorg.BlockInfo {
-	blockInfo, closed := <-c.reorgChan
-	if !closed {
+	blockInfo, ok := <-c.reorgChan
+	if ok {
 		return blockInfo
+	}
+
+	if c.debug {
+		logger.Debug("WatcherReorg - reorgChan is closed")
 	}
 	return nil
 }

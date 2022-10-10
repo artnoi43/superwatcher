@@ -3,10 +3,10 @@ package watcher
 import (
 	"context"
 	"math/big"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/artnoi43/gsl/concurrent"
 	"github.com/avast/retry-go"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,6 +18,12 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
+var errFromBlockReorged = errors.New("filterLogs: fromBlock reorged")
+
+// filterLogs filters Ethereum event logs from fromBlock to toBlock,
+// and sends *types.Log and *reorg.BlockInfo through w.logChan and w.reorgChan respectively.
+// If an error is encountered, filterLogs returns with error.
+// filterLogs should not be the one sending the error through w.errChan.
 func (w *watcher) filterLogs(
 	ctx context.Context,
 	fromBlock uint64,
@@ -30,31 +36,13 @@ func (w *watcher) filterLogs(
 	var eventLogs []types.Log
 	var err error
 
-	// wait waits for wg and consume errors from errChan
-	wait := func(errChan chan error) error {
-		go func() {
-			wg.Wait()
-			close(errChan)
-		}()
-		if errChan != nil {
-			var errs []string
-			for err := range errChan {
-				errs = append(errs, err.Error())
-			}
-			if len(errs) > 0 {
-				return errors.New(strings.Join(errs, ","))
-			}
-		}
-		return nil
-	}
-
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
 		eventLogs, err = w.client.FilterLogs(ctx, ethereum.FilterQuery{
 			FromBlock: big.NewInt(int64(fromBlock)),
 			ToBlock:   big.NewInt(int64(toBlock)),
 			Addresses: w.addresses,
-			Topics:    w.topics, // TODO: Topics not working yet
+			Topics:    nil, // TODO: Topics not working yet
 		})
 		if err != nil {
 			errChan <- errors.Wrap(err, "error filtering event logs")
@@ -100,9 +88,9 @@ func (w *watcher) filterLogs(
 	}
 
 	// Wait here for logs and headers
-	if err := wait(errChan); err != nil {
-		logger.Error("get headers failed", zap.String("error", err.Error()))
-		return errors.Wrap(err, "get headers")
+	if err := concurrent.WaitAndCollectErrors(&wg, errChan); err != nil {
+		logger.Error("get fresh data from blockchain failed", zap.String("error", err.Error()))
+		return errors.Wrap(err, "get blockchain data")
 	}
 
 	lenLogs := len(eventLogs)
@@ -112,31 +100,6 @@ func (w *watcher) filterLogs(
 	// Clear all tracker's blocks before fromBlock - lookBackBlocks
 	logger.Info("clearing tracker", zap.Uint64("clearUntil", fromBlock-w.config.LookBackBlocks))
 	w.tracker.ClearUntil(fromBlock - w.config.LookBackBlocks)
-
-	/*
-		Detect chain reorg:
-		[1st for-loop]: Populate processLogs from fresh event logs,
-		and populate freshHashesByBlockNumber with fresh block hashes.
-
-		[2nd for-loop]: Check if block hash saved in tracker matches the fresh block hash.
-		If they are different, old logs from w.tracker will be tagged as Removed and
-		PREPENDED in processLogs[blockNumber]
-
-		Let's say we have these logs in the tracker:
-
-		{block:68, hash:"0x68"}, {block: 69, hash:"0x69"}, {block:70, hash:"0x70"}
-
-		And then we have these fresh logs:
-
-		{block:68, hash:"0x68"}, {block: 69, hash:"0x112"}, {block:70, hash:"0x70"}
-
-		The result processLogs will look like this map:
-		{
-			68: [{block:68, hash:"0x68"}]
-			69: [{block: 69, hash:"0x69", removed: true}, {block: 69, hash:"0x112"}]
-			70: [{block:70, hash:"0x70"}]
-		}
-	*/
 
 	// Collect fresh per-block blockHashes into freshHashesByBlockNumber
 	freshHashesByBlockNumber := make(map[uint64]common.Hash)
@@ -157,21 +120,25 @@ func (w *watcher) filterLogs(
 				// If we saw this log's block hash before from the fresh eventLogs
 				// from this loop's previous loop iteration(s), but the hashes are different:
 				// Fatal, should not happen
-				logger.Fatal("fresh blockHash differs from tracker blockHash",
+				logger.Panic("fresh blockHash differs from tracker blockHash",
 					zap.String("tag", "filterLogs bug"),
 					zap.Uint64("freshBlockNumber", freshBlockNumber),
 					zap.Any("known tracker blockHash", freshHashesByBlockNumber[freshBlockNumber]),
 					zap.Any("fresh blockHash", freshBlockHash))
 			}
 		}
-		// Collect this log into freshLogs and processLogs
+
+		// Collect this log fresh into freshLogs and processLogs
 		thisLog := &eventLogs[i]
 		freshLogsByBlockNumber[freshBlockNumber] = append(freshLogsByBlockNumber[freshBlockNumber], thisLog)
 		processLogsByBlockNumber[freshBlockNumber] = append(processLogsByBlockNumber[freshBlockNumber], thisLog)
 	}
 
-	// noReorgs tracks block numbers whose fresh hash and tracker hash is identical
-	noReorgs := make(map[uint64]bool)
+	// This 2nd loop seeks for reorged blocks inside tracker,
+	// and appends the reorged tracker block to processLogsByBlockNumber, behind the fresh log.
+
+	// wasReorged tracks block numbers whose fresh hash and tracker hash differ
+	wasReorged := make(map[uint64]bool)
 	// Detect and stamp removed/reverted event logs using tracker
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
@@ -186,14 +153,12 @@ func (w *watcher) filterLogs(
 		if h := freshHashesByBlockNumber[blockNumber]; h == trackerBlock.Hash {
 			// Mark blockNumber with identical hash (no reorg)
 			if len(freshLogsByBlockNumber[blockNumber]) == len(trackerBlock.Logs) {
-				noReorgs[blockNumber] = true
 				continue
 			}
 		}
 
-		// Mark this block as reorged and call publishReorg
-		logger.Info("chain reorg: detected", zap.Uint64("blockNumber", blockNumber), zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()), zap.String("trackerHash", trackerBlock.Hash.String()))
-		w.publishReorg(trackerBlock)
+		// REORG HAPPENED!
+		wasReorged[blockNumber] = true
 		// Mark every log in this block as removed
 		for _, oldLog := range trackerBlock.Logs {
 			oldLog.Removed = true
@@ -202,27 +167,55 @@ func (w *watcher) filterLogs(
 		processLogsByBlockNumber[blockNumber] = append(trackerBlock.Logs, processLogsByBlockNumber[blockNumber]...)
 	}
 
-	isFirstIdentical := false
+	if w.debug {
+		logger.Debug("wasReorged", zap.Any("wasReorged", wasReorged))
+	}
 
+	// If fromBlock was reorged, then return to loopFilterLogs
+	if wasReorged[fromBlock] {
+		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
+	}
+
+	// This 3rd loop loops, and publishes to watcher.logChan and watcher.reorgChan
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
-		// Skip blockNumber marked in identicals (no reorg)
-		if noReorgs[blockNumber] && !isFirstIdentical {
+		if wasReorged[blockNumber] {
+			logger.Info(
+				"chain reorg detected",
+				zap.Uint64("blockNumber", blockNumber),
+				zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()),
+			)
+
+			// For debugging
+			reorgBlock, foundInTracker := w.tracker.GetTrackerBlockInfo(blockNumber)
+			if !foundInTracker {
+				logger.Panic(
+					"blockInfo marked as reorged but was not found in tracker",
+					zap.Uint64("blockNumber", blockNumber),
+					zap.String("freshHash", reorgBlock.String()),
+				)
+			}
+
+			w.publishReorg(reorgBlock)
 			continue
 		}
-		isFirstIdentical = true
 
+		// This block was not reorged - publish the logs and adds b to tracker
 		// Populate blockInfo with fresh info
 		b := reorg.NewBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
 		b.Logs = freshLogsByBlockNumber[blockNumber]
 
 		// Process every log for this block
 		for _, l := range processLogsByBlockNumber[blockNumber] {
-			// watcher.processLog will populate the log with decoded data.
-			// After sucessful return, orderStates values will be the decoded block values
+			// @TODO: What to do if fresh logs with unchanged hash has Removed set to true?
+			if l.Removed {
+				w.publishReorg(b)
+				continue
+			}
+
 			w.publishLog(l)
 		}
 
-		// Add to tracker here
+		// Add ONLY CANONICAL block into tracker
 		w.tracker.AddTrackerBlock(b)
 	}
 

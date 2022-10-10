@@ -89,8 +89,10 @@ filterLoop:
 				fromBlock,
 				toBlock,
 			); err != nil {
-				if errors.Is(err, errNoLogs) {
-					logger.Info("filterLogs error", zap.String("error", err.Error()))
+				if errors.Is(err, errFromBlockReorged) {
+					// Continue to filter from fromBlock
+					logger.Info("fromBlock reorged", zap.String("error", err.Error()))
+					continue
 				}
 				return errors.Wrap(err, "filterLogs error")
 			}

@@ -1,28 +1,4 @@
-# Package `watcher`
-
-This package exports interface `Watcher` and function `NewWatcher`.
-User should just call `NewWatcher` and run `Watcher.Loop` to get
-superwatcher-watcher working and filtering logs.
-
-To consume or use the logs retrieved by `Watcher`, use `WatcherClient`.
-
-## `*watcher.FilterLogs(ctx, fromBlock, toBlock)`
-
-When superwatcher-watcher starts, it calls `loopFilterLogs`, which reads itslast
-last recorded *block number* from Redis, and then,
-based on `config.Config.LookBackBlocks`, determine `fromBlock` and `toBlock`
-for `filterLogs`.
-
-It then use its Ethereum client to filter all logs and block headers
-from `fromBlock` to `toBlock`.
-
-It then looks for chain reorganization, and if it detected one, it sends the *old*
-reorged block to its client `watchergateway.WatcherClient`.
-
-Lastly, it sends all the logs to `watchergateway.WatcherClient`, saves last recorded
-block number to Redis, and starts over.
-
-### Chain reorganization handling
+# Chain reorganization handling
 
 After getting fresh logs and headers from Ethereum client, superwatcher-watcher uses
 block hashes and "look-back blocks" to deal with chain reorganization.

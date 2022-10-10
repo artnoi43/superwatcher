@@ -53,6 +53,9 @@ type watcher struct {
 	logChan   chan<- *types.Log
 	reorgChan chan<- *reorg.BlockInfo
 	errChan   chan<- error
+
+	// For debugging
+	debug bool
 }
 
 // Config represents the configuration structure for watcher
@@ -91,6 +94,35 @@ func NewWatcher(
 		errChan:          errChan,
 		reorgChan:        reorgChan,
 	}
+}
+
+// NewWatcher initializes contract info from config
+func NewWatcherDebug(
+	conf *config.Config,
+	client ethClient,
+	dataGateway datagateway.DataGateway,
+	stateDataGateway datagateway.StateDataGateway,
+	addresses []common.Address,
+	topics [][]common.Hash,
+	logChan chan<- *types.Log,
+	errChan chan<- error,
+	reorgChan chan<- *reorg.BlockInfo,
+) Watcher {
+	w := NewWatcher(
+		conf,
+		client,
+		dataGateway,
+		stateDataGateway,
+		addresses,
+		topics,
+		logChan,
+		errChan,
+		reorgChan,
+	)
+
+	w.(*watcher).debug = true
+
+	return w
 }
 
 // Loop wraps loopFilterLogs with graceful shutdown code.

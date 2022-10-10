@@ -64,7 +64,7 @@ func main() {
 
 	// Hard-coded values for testing
 	addresses, topics := hardcode.AddressesAndTopics()
-	watcher := watcher.NewWatcher(
+	watcher := watcher.NewWatcherDebug(
 		conf,
 		ethClient,
 		nil, // No DataGateway yet
@@ -95,7 +95,7 @@ func main() {
 		}
 	}()
 
-	watcherClient := watchergateway.NewWatcherClient[any](
+	watcherClient := watchergateway.NewWatcherClientDebug[any](
 		logChan,
 		errChan,
 		reorgChan,
@@ -113,26 +113,28 @@ func main() {
 func loopHandleWatcherClientLog[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
 	defer wg.Done()
 	logger.Info("DEMO: start loopHandleWatcherLog")
+
 	for {
 		l := wc.WatcherCurrentLog()
-		if l != nil {
-			logger.Info("DEMO: got logs", zap.String("address", l.Address.String()), zap.Any("topics", l.Topics))
-		} else {
-			logger.Fatal("DEMO: got nil value from WatcherCurrentLog")
+		if l == nil {
+			logger.Panic("DEMO: got nil log")
 		}
+
+		logger.Info("DEMO: got logs", zap.String("address", l.Address.String()), zap.Any("topics", l.Topics))
 	}
 }
 
 func loopHandleWatcherClientErr[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
 	defer wg.Done()
 	logger.Info("DEMO: start loopHandleWatcherLog")
+
 	for {
 		err := wc.WatcherError()
-		if err != nil {
-			logger.Info("DEMO: got error", zap.String("error", err.Error()))
-		} else {
-			logger.Fatal("DEMO: got nil value from WatcherError")
+		if err == nil {
+			logger.Panic("DEMO: got nil error")
 		}
+
+		logger.Info("DEMO: got error", zap.String("error", err.Error()))
 	}
 }
 
@@ -141,11 +143,11 @@ func loopHandleWatcherClientReorg[T any](wc watchergateway.WatcherClient[T], wg 
 	logger.Info("DEMO: start loopHandleWatcherReorg")
 	for {
 		reorgedBlock := wc.WatcherReorg()
-		if reorgedBlock != nil {
-			logger.Info("DEMO: got reorged blocks", zap.Any("blockNumber", reorgedBlock), zap.String("blockHash", reorgedBlock.Hash.String()))
-		} else {
-			logger.Fatal("DEMO: got nil value from wc.WatcherReorg")
+		if reorgedBlock == nil {
+			logger.Panic("DEMO: got nil reorged block")
 		}
+
+		logger.Info("DEMO: got reorged blocks", zap.Any("blockNumber", reorgedBlock), zap.String("blockHash", reorgedBlock.Hash.String()))
 	}
 }
 

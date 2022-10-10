@@ -1,8 +1,6 @@
 package reorg
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -26,5 +24,5 @@ func NewBlockInfo(
 }
 
 func (b *BlockInfo) String() string {
-	return fmt.Sprintf("%d", b.Number)
+	return b.Hash.String()
 }
