@@ -1,10 +1,62 @@
 package reorg
 
-/*
-	[compareWithTracker]: Populate processLogs from fresh event logs,
-	and populate freshHashesByBlockNumber with fresh block hashes.
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 
-	[ProcessReorgs]: Check if block hash saved in tracker matches the fresh block hash.
+	"github.com/artnoi43/superwatcher/lib/logger"
+)
+
+// PopulateInitialMaps collects **fresh** hashes and logs into 3 maps
+func PopulateInitialMaps(
+	eventLogs []types.Log,
+) (
+	freshHashesByBlockNumber map[uint64]common.Hash,
+	freshLogsByBlockNumber map[uint64][]*types.Log,
+	processLogsByBlockNumber map[uint64][]*types.Log,
+) {
+	// freshHashesByBlockNumber maps blockNumber to fresh hash
+	freshHashesByBlockNumber = make(map[uint64]common.Hash)
+	// freshLogsByBlockNumber maps blockNumber to fresh logs
+	freshLogsByBlockNumber = make(map[uint64][]*types.Log)
+	// processLogsByBlockNumber maps blockNumber to all logs to be processed.
+	// Since this function does not use data from tracker, processLogsByBlockNumber is not fully populated here.
+	// it should be later passed to
+	processLogsByBlockNumber = make(map[uint64][]*types.Log)
+
+	for i := range eventLogs {
+		freshBlockNumber := eventLogs[i].BlockNumber
+		freshBlockHash := eventLogs[i].BlockHash
+
+		// Check if we saw the block hash
+		if _, ok := freshHashesByBlockNumber[freshBlockNumber]; !ok {
+			// We've never seen this block hash before
+			freshHashesByBlockNumber[freshBlockNumber] = freshBlockHash
+		} else {
+			if freshHashesByBlockNumber[freshBlockNumber] != freshBlockHash {
+				// If we saw this log's block hash before from the fresh eventLogs
+				// from this loop's previous loop iteration(s), but the hashes are different:
+				// Fatal, should not happen
+				logger.Panic("fresh blockHash differs from tracker blockHash",
+					zap.String("tag", "filterLogs bug"),
+					zap.Uint64("freshBlockNumber", freshBlockNumber),
+					zap.Any("known tracker blockHash", freshHashesByBlockNumber[freshBlockNumber]),
+					zap.Any("fresh blockHash", freshBlockHash))
+			}
+		}
+
+		// Collect this log fresh into freshLogs and processLogs
+		thisLog := &eventLogs[i]
+		freshLogsByBlockNumber[freshBlockNumber] = append(freshLogsByBlockNumber[freshBlockNumber], thisLog)
+		processLogsByBlockNumber[freshBlockNumber] = append(processLogsByBlockNumber[freshBlockNumber], thisLog)
+	}
+
+	return freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber
+}
+
+/*
+	[PopulateProcessLogs]: Check if block hash saved in tracker matches the fresh block hash.
 	If they are different, old logs from w.tracker will be tagged as Removed and
 	PREPENDED in processLogs[blockNumber]
 
@@ -24,6 +76,43 @@ package reorg
 	}
 */
 
-func compareWithTracker() { panic("not implemented") }
+// ProcessReorged checks hash fresh-tracker equality, and appends reorged blocks to processLogsByBlockNumber.
+// Note: Go maps are passed by reference, so there's no need to return the map.
+func ProcessReorged(
+	tracker *Tracker,
+	fromBlock, toBlock uint64,
+	freshHashesByBlockNumber map[uint64]common.Hash,
+	freshLogsByBlockNumber map[uint64][]*types.Log,
+	processLogsByBlockNumber map[uint64][]*types.Log,
+) map[uint64]bool {
+	wasReorged := make(map[uint64]bool)
+	// Detect and stamp removed/reverted event logs using tracker
+	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
+		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
+		// which are not yet 'reorged' at the execution time.
+		trackerBlock, foundInTracker := tracker.GetTrackerBlockInfo(blockNumber)
+		if !foundInTracker {
+			continue
+		}
 
-func ProcessReorgs() { panic("not implemented") }
+		// If tracker's is the same from recently filtered hash, i.e. no reorg
+		// logger.Info("found block in tracker, comparing hashes in tracker", zap.Uint64("blockNumber", blockNumber))
+		if h := freshHashesByBlockNumber[blockNumber]; h == trackerBlock.Hash {
+			// Mark blockNumber with identical hash (no reorg)
+			if len(freshLogsByBlockNumber[blockNumber]) == len(trackerBlock.Logs) {
+				continue
+			}
+		}
+
+		// REORG HAPPENED!
+		wasReorged[blockNumber] = true
+		// Mark every log in this block as removed
+		for _, oldLog := range trackerBlock.Logs {
+			oldLog.Removed = true
+		}
+		// Concat logs from the same block, old logs first, into freshLogs
+		processLogsByBlockNumber[blockNumber] = append(trackerBlock.Logs, processLogsByBlockNumber[blockNumber]...)
+	}
+
+	return wasReorged
+}
