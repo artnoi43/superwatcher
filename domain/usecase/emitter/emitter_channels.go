@@ -8,24 +8,24 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
-func (w *watcher) publishLog(l *types.Log) {
+func (e *emitter) publishLog(l *types.Log) {
 	if l != nil {
-		if w.debug {
+		if e.debug {
 			logger.Debug("publishLog", zap.Any("l", l))
 		}
-		w.logChan <- l
+		e.logChan <- l
 		return
 	}
 
 	logger.Panic("nil log sent to publishLog")
 }
 
-func (w *watcher) publishReorg(b *reorg.BlockInfo) {
+func (e *emitter) publishReorg(b *reorg.BlockInfo) {
 	if b != nil {
-		if w.debug {
+		if e.debug {
 			logger.Debug("publishReorg", zap.Any("b", b))
 		}
-		w.reorgChan <- b
+		e.reorgChan <- b
 		return
 	}
 

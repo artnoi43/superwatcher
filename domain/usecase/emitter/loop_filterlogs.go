@@ -11,13 +11,14 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
-func (w *watcher) loopFilterLogs(ctx context.Context) error {
+func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	sleep := func() {
-		time.Sleep(time.Second * time.Duration(w.config.LoopInterval))
+		time.Sleep(time.Second * time.Duration(e.config.LoopInterval))
 	}
 	loopCtx := context.Background()
 	// Assume that this is a normal first start (watcher restarted).
 	lookBackFirstStart := true
+
 filterLoop:
 	for {
 		logger.Info("starting filterLoop")
@@ -29,11 +30,11 @@ filterLoop:
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			currentBlockNumber, err := w.client.BlockNumber(loopCtx)
+			currentBlockNumber, err := e.client.BlockNumber(loopCtx)
 			if err != nil {
 				return errors.Wrap(err, "failed to get current block number from node")
 			}
-			lastRecordedBlock, err := w.stateDataGateway.GetLastRecordedBlock(ctx)
+			lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 			if err != nil {
 				// Return error if not datagateway.ErrRecordNotFound
 				if !errors.Is(err, datagateway.ErrRecordNotFound) {
@@ -42,7 +43,7 @@ filterLoop:
 				// If no lastRecordedBlock => watcher has never been run on the host: there's no need to look back.
 				lookBackFirstStart = false
 				// If no lastRecordedBlock, use startBlock (contract genesis block)
-				lastRecordedBlock = w.startBlock
+				lastRecordedBlock = e.startBlock
 			}
 
 			logger.Info(
@@ -66,9 +67,9 @@ filterLoop:
 				// Toggle
 				lookBackFirstStart = false
 				// Start with going back lookBack * maxLookBack times if watcher was restarted
-				goBack := w.config.LookBackBlocks * w.config.LookBackRetries
+				goBack := e.config.LookBackBlocks * e.config.LookBackRetries
 				fromBlock = lastRecordedBlock + 1 - goBack
-				toBlock = fromBlock + w.config.LookBackBlocks
+				toBlock = fromBlock + e.config.LookBackBlocks
 				logger.Info(
 					"first watcher run, going back",
 					zap.Uint64("lastRecordedBlock", lastRecordedBlock),
@@ -76,7 +77,7 @@ filterLoop:
 					zap.Uint64("fromBlock", fromBlock),
 				)
 			} else {
-				fromBlock, toBlock = fromBlockToBlock(currentBlockNumber, lastRecordedBlock, w.config.LookBackBlocks)
+				fromBlock, toBlock = fromBlockToBlock(currentBlockNumber, lastRecordedBlock, e.config.LookBackBlocks)
 			}
 
 			logger.Info(
@@ -84,7 +85,7 @@ filterLoop:
 				zap.Uint64("fromBlock", fromBlock),
 				zap.Uint64("toBlock", toBlock),
 			)
-			if err := w.filterLogs(
+			if err := e.filterLogs(
 				loopCtx,
 				fromBlock,
 				toBlock,

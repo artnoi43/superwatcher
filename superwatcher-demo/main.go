@@ -18,7 +18,7 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts"
 )
 
 func main() {
@@ -63,7 +63,7 @@ func main() {
 	reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
-	addresses, topics := hardcode.AddressesAndTopics()
+	addresses, topics := contracts.AddressesAndTopics()
 	watcherEmitter := emitter.NewWatcherDebug(
 		conf,
 		ethClient,
@@ -150,29 +150,3 @@ func loopHandleWatcherClientReorg[T any](wc engine.WatcherClient[T], wg *sync.Wa
 		logger.Info("DEMO: got reorged blocks", zap.Any("blockNumber", reorgedBlock), zap.String("blockHash", reorgedBlock.Hash.String()))
 	}
 }
-
-// func monitorChannels(
-// 	logChan <-chan *types.Log,
-// 	errChan <-chan error,
-// 	reorgChan <-chan *struct{},
-// ) {
-// 	for {
-// 		select {
-// 		case l := <-logChan:
-// 			logger.Info(
-// 				"got log",
-// 				zap.String("address", l.Address.String()),
-// 				zap.String("topics", l.Topics[0].String()),
-// 			)
-// 		case err := <-errChan:
-// 			logger.Error(
-// 				"got error",
-// 				zap.String("error", err.Error()),
-// 			)
-// 		case r := <-reorgChan:
-// 			if r != nil {
-// 				logger.Info("got reorg event")
-// 			}
-// 		}
-// 	}
-// }

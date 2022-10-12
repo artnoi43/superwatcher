@@ -30,15 +30,15 @@ type ethClient interface {
 }
 
 // Code that imports watcher should only use this method.
-type Watcher interface {
+type Emitter interface {
 	Loop(context.Context) error
 	shutdown()
 }
 
-// watcher implements Watcher, and other than Config,
+// emitter implements Watcher, and other than Config,
 // other fields of this structure are defined as ifaces,
 // to facil mock testing.
-type watcher struct {
+type emitter struct {
 	// These fields are used for filtering event logs
 	config           *config.Config
 	client           ethClient
@@ -68,8 +68,8 @@ type Config struct {
 	IntervalSecond  int             `mapstructure:"interval_second" json:"intervalSecond"`
 }
 
-// NewWatcher initializes contract info from config
-func NewWatcher(
+// NewEmitter initializes contract info from config
+func NewEmitter(
 	conf *config.Config,
 	client ethClient,
 	dataGateway datagateway.DataGateway,
@@ -79,9 +79,9 @@ func NewWatcher(
 	logChan chan<- *types.Log,
 	errChan chan<- error,
 	reorgChan chan<- *reorg.BlockInfo,
-) Watcher {
+) Emitter {
 	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
-	return &watcher{
+	return &emitter{
 		config:           conf,
 		client:           client,
 		dataGateway:      dataGateway,
@@ -107,8 +107,8 @@ func NewWatcherDebug(
 	logChan chan<- *types.Log,
 	errChan chan<- error,
 	reorgChan chan<- *reorg.BlockInfo,
-) Watcher {
-	w := NewWatcher(
+) Emitter {
+	e := NewEmitter(
 		conf,
 		client,
 		dataGateway,
@@ -120,28 +120,28 @@ func NewWatcherDebug(
 		reorgChan,
 	)
 
-	w.(*watcher).debug = true
+	e.(*emitter).debug = true
 
-	return w
+	return e
 }
 
 // Loop wraps loopFilterLogs with graceful shutdown code.
-func (w *watcher) Loop(ctx context.Context) error {
+func (e *emitter) Loop(ctx context.Context) error {
 	for {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
 		case <-ctx.Done():
-			w.shutdown()
+			e.shutdown()
 			return ctx.Err()
 		default:
-			if err := w.loopFilterLogs(ctx); err != nil {
-				w.errChan <- errors.Wrap(err, "error in loopFilterLogs")
+			if err := e.loopFilterLogs(ctx); err != nil {
+				e.errChan <- errors.Wrap(err, "error in loopFilterLogs")
 			}
 		}
 	}
 }
 
-func (w *watcher) shutdown() {
+func (w *emitter) shutdown() {
 	close(w.logChan)
 	close(w.reorgChan)
 	close(w.errChan)

@@ -21,7 +21,7 @@ import (
 // and sends *types.Log and *reorg.BlockInfo through w.logChan and w.reorgChan respectively.
 // If an error is encountered, filterLogs returns with error.
 // filterLogs should not be the one sending the error through w.errChan.
-func (w *watcher) filterLogs(
+func (e *emitter) filterLogs(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
@@ -36,10 +36,10 @@ func (w *watcher) filterLogs(
 
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
-		eventLogs, err = w.client.FilterLogs(ctx, ethereum.FilterQuery{
+		eventLogs, err = e.client.FilterLogs(ctx, ethereum.FilterQuery{
 			FromBlock: big.NewInt(int64(fromBlock)),
 			ToBlock:   big.NewInt(int64(toBlock)),
-			Addresses: w.addresses,
+			Addresses: e.addresses,
 			Topics:    nil, // TODO: Topics not working yet
 		})
 		if err != nil {
@@ -50,7 +50,7 @@ func (w *watcher) filterLogs(
 	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
 		err := retry.Do(func() error {
-			header, err := w.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
+			header, err := e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
 			if err != nil {
 				return err
 			}
@@ -96,15 +96,15 @@ func (w *watcher) filterLogs(
 	logger.Info("got headers and logs", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
 
 	// Clear all tracker's blocks before fromBlock - lookBackBlocks
-	logger.Info("clearing tracker", zap.Uint64("clearUntil", fromBlock-w.config.LookBackBlocks))
-	w.tracker.ClearUntil(fromBlock - w.config.LookBackBlocks)
+	logger.Info("clearing tracker", zap.Uint64("clearUntil", fromBlock-e.config.LookBackBlocks))
+	e.tracker.ClearUntil(fromBlock - e.config.LookBackBlocks)
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
 	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := reorg.PopulateInitialMaps(eventLogs, headersByBlockNumber)
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ
 	wasReorged := reorg.ProcessReorged(
-		w.tracker,
+		e.tracker,
 		fromBlock,
 		toBlock,
 		freshHashesByBlockNumber,
@@ -112,7 +112,7 @@ func (w *watcher) filterLogs(
 		processLogsByBlockNumber,
 	)
 
-	if w.debug {
+	if e.debug {
 		logger.Debug("wasReorged", zap.Any("wasReorged", wasReorged))
 	}
 
@@ -131,7 +131,7 @@ func (w *watcher) filterLogs(
 			)
 
 			// For debugging
-			reorgBlock, foundInTracker := w.tracker.GetTrackerBlockInfo(blockNumber)
+			reorgBlock, foundInTracker := e.tracker.GetTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
 				logger.Panic(
 					"blockInfo marked as reorged but was not found in tracker",
@@ -140,7 +140,7 @@ func (w *watcher) filterLogs(
 				)
 			}
 
-			w.publishReorg(reorgBlock)
+			e.publishReorg(reorgBlock)
 			continue
 		}
 
@@ -152,15 +152,15 @@ func (w *watcher) filterLogs(
 		for _, l := range processLogsByBlockNumber[blockNumber] {
 			// @TODO: What to do if fresh logs with unchanged hash has Removed set to true?
 			if l.Removed {
-				w.publishReorg(b)
+				e.publishReorg(b)
 				continue
 			}
 
-			w.publishLog(l)
+			e.publishLog(l)
 		}
 
 		// Add ONLY CANONICAL block into tracker
-		w.tracker.AddTrackerBlock(b)
+		e.tracker.AddTrackerBlock(b)
 	}
 
 	// End loop
@@ -169,7 +169,7 @@ func (w *watcher) filterLogs(
 		zap.Int("eventLogs (filtered)", lenLogs),
 		zap.Int("processLogs (all logs processed)", len(processLogsByBlockNumber)),
 	)
-	if err := w.stateDataGateway.SetLastRecordedBlock(ctx, toBlock); err != nil {
+	if err := e.stateDataGateway.SetLastRecordedBlock(ctx, toBlock); err != nil {
 		return errors.Wrap(err, "failed to save lastRecordedBlock to redis")
 	}
 	logger.Info("set lastRecordedBlock", zap.Uint64("blockNumber", toBlock))
