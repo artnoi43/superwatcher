@@ -1,4 +1,4 @@
-package watchergateway
+package engine
 
 // Adapter[T] represents a type whose Serialize method can convert
 // Ethereum event log data from bytes to T

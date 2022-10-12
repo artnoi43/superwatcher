@@ -1,10 +1,10 @@
-package watcher
+package emitter
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 

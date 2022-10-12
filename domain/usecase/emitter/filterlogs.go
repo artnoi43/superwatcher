@@ -1,4 +1,4 @@
-package watcher
+package emitter
 
 import (
 	"context"
@@ -13,11 +13,9 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
-
-var errFromBlockReorged = errors.New("filterLogs: fromBlock reorged")
 
 // filterLogs filters Ethereum event logs from fromBlock to toBlock,
 // and sends *types.Log and *reorg.BlockInfo through w.logChan and w.reorgChan respectively.

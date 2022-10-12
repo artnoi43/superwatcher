@@ -1,4 +1,4 @@
-package watcher
+package emitter
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/domain/datagateway"
-	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
 )

@@ -1,4 +1,4 @@
-package watchergateway
+package engine
 
 import "github.com/pkg/errors"
 

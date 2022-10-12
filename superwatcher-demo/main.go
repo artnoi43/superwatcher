@@ -13,9 +13,9 @@ import (
 
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/data/watcherstate"
-	"github.com/artnoi43/superwatcher/domain/usecase/watcher"
-	"github.com/artnoi43/superwatcher/domain/usecase/watcher/reorg"
-	"github.com/artnoi43/superwatcher/domain/usecase/watchergateway"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
@@ -64,7 +64,7 @@ func main() {
 
 	// Hard-coded values for testing
 	addresses, topics := hardcode.AddressesAndTopics()
-	watcher := watcher.NewWatcherDebug(
+	watcherEmitter := emitter.NewWatcherDebug(
 		conf,
 		ethClient,
 		nil, // No DataGateway yet
@@ -90,12 +90,12 @@ func main() {
 	defer shutdown()
 
 	go func() {
-		if err := watcher.Loop(ctx); err != nil {
+		if err := watcherEmitter.Loop(ctx); err != nil {
 			logger.Error("main error", zap.String("error", err.Error()))
 		}
 	}()
 
-	watcherClient := watchergateway.NewWatcherClientDebug[any](
+	watcherClient := engine.NewWatcherClientDebug[any](
 		logChan,
 		errChan,
 		reorgChan,
@@ -110,7 +110,7 @@ func main() {
 	wg.Wait()
 }
 
-func loopHandleWatcherClientLog[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
+func loopHandleWatcherClientLog[T any](wc engine.WatcherClient[T], wg *sync.WaitGroup) {
 	defer wg.Done()
 	logger.Info("DEMO: start loopHandleWatcherLog")
 
@@ -124,7 +124,7 @@ func loopHandleWatcherClientLog[T any](wc watchergateway.WatcherClient[T], wg *s
 	}
 }
 
-func loopHandleWatcherClientErr[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
+func loopHandleWatcherClientErr[T any](wc engine.WatcherClient[T], wg *sync.WaitGroup) {
 	defer wg.Done()
 	logger.Info("DEMO: start loopHandleWatcherLog")
 
@@ -138,7 +138,7 @@ func loopHandleWatcherClientErr[T any](wc watchergateway.WatcherClient[T], wg *s
 	}
 }
 
-func loopHandleWatcherClientReorg[T any](wc watchergateway.WatcherClient[T], wg *sync.WaitGroup) {
+func loopHandleWatcherClientReorg[T any](wc engine.WatcherClient[T], wg *sync.WaitGroup) {
 	defer wg.Done()
 	logger.Info("DEMO: start loopHandleWatcherReorg")
 	for {

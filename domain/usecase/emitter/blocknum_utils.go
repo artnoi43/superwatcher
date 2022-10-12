@@ -1,4 +1,4 @@
-package watcher
+package emitter
 
 import "github.com/artnoi43/gsl/gslutils"
 
