@@ -3,7 +3,10 @@ package engine
 import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"golang.org/x/exp/constraints"
+
+	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
 type itemKey constraints.Ordered
@@ -38,7 +41,7 @@ type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
 	ItemAction(T, EngineLogState, ServiceItemState, ...interface{}) (State, error)
 
 	// ReorgOption can be implemented to define arbitary options to be passed to HandleReorg.
-	ReorgOptions(T) []interface{}
+	ReorgOptions(T, EngineLogState, ServiceItemState) []interface{}
 
 	// HandleReorg is called in *engine.handleReorg.
 	HandleReorg(T, EngineLogState, ServiceItemState, ...interface{}) (State, error)
@@ -85,54 +88,21 @@ func (e *engine[K, T]) handleBlock() error {
 	}
 }
 
-func (e *engine[K, T]) handleReorg() error {
-	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
-	if err != nil {
-		return err
-	}
-
-	for {
-		reorgedBlock := e.client.WatcherReorg()
-		for _, reorgedLog := range reorgedBlock.Logs {
-			var err error
-			reorgedItem, err := serviceEngine.MapLogToItem(reorgedLog)
-			if err != nil {
-				return errors.Wrapf(err, "failed to map reorged log (txHash %s) to item", reorgedLog.TxHash.String())
-			}
-
-			key := reorgedItem.ItemKey()
-			currentEngineState := engineFSM.GetEngineState(key)
-
-			// TODO: How to handle this?
-			switch currentEngineState {
-			case
-				EngineStateSeen,
-				EngineStateProcessed:
-				currentEngineState.Fire(EngineEventGotReorg)
-				if !currentEngineState.IsValid() {
-					return errors.Wrap(err, "failed to update engine state to EngineEventGotReorg")
-				}
-			}
-
-			handleReorgOptions := serviceEngine.ReorgOptions(reorgedItem)
-			handledState, err := serviceEngine.HandleReorg(
-				reorgedItem,
-				currentEngineState,
-				serviceFSM.GetServiceState(key),
-				handleReorgOptions,
-			)
-			if err != nil {
-				return errors.Wrapf(err, "failed to handle reorg for item %s", reorgedItem.DebugString())
-			}
-
-			serviceFSM.SetServiceState(key, handledState)
-			engineFSM.SetEngineState(key, EngineStateProcessedReorged)
-		}
-	}
-}
-
 func (e *engine[K, T]) handleError() error {
-	return errors.New("not implemented")
+	for {
+		err := e.client.WatcherError()
+		if err != nil {
+			err = e.serviceEngine.HandleEmitterError(err)
+			if err != nil {
+				return errors.Wrap(err, "serviceEngine failed to handle error")
+			}
+
+			// Emitter error handled in service without error
+			continue
+		}
+
+		e.debugMsg("got nil error from emitter - should not happen")
+	}
 }
 
 func (e *engine[K, T]) initStuff(method string) (ServiceEngine[K, T], ServiceFSM[K], EngineFSM[K], error) {
@@ -142,4 +112,8 @@ func (e *engine[K, T]) initStuff(method string) (ServiceEngine[K, T], ServiceFSM
 	}
 
 	return e.serviceEngine, serviceFSM, e.engineFSM, nil
+}
+
+func (e *engine[K, T]) debugMsg(msg string, fields ...zap.Field) {
+	debug.DebugMsg(e.debug, msg, fields...)
 }
