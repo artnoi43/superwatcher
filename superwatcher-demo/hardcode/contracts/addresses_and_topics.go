@@ -1,13 +1,14 @@
 package contracts
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/lib/logger"
 	oneinchlimitorder "github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts/1inchlimitorder"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts/uniswapv3pool"
 )
@@ -32,37 +33,50 @@ var contractTopicsMap = map[string][]string{
 	oneInchLimitOrder: {"OrderFilled", "OrderCanceled"},
 }
 
-func interestingTopics(abiStr string, eventKeys ...string) ([]common.Hash, error) {
+func interestingTopics(abiStr string, eventKeys ...string) (abi.ABI, []common.Hash, error) {
 	contractABI, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
-		return nil, errors.Wrap(err, "read ABI failed")
+		return abi.ABI{}, nil, errors.Wrap(err, "read ABI failed")
 	}
 
 	var topics []common.Hash
 	for _, eventKey := range eventKeys {
 		event, found := contractABI.Events[eventKey]
 		if !found {
-			return nil, fmt.Errorf("eventKey %s not found", eventKey)
+			return abi.ABI{}, nil, errors.Wrapf(ErrNoSuchABIEvent, "eventKey %s not found", eventKey)
 		}
 		topics = append(topics, event.ID)
 	}
 
-	return topics, nil
+	return contractABI, topics, nil
 }
 
 // Hard-code known topics and addresses
-func AddressesAndTopics() ([]common.Address, [][]common.Hash) {
+func GetABIAddressesAndTopics() (map[common.Hash]abi.ABI, []common.Address, [][]common.Hash) {
+	badTopic := common.Hash{}
+
 	var addresses []common.Address
 	for _, addr := range contractAddressesMap {
 		addresses = append(addresses, common.HexToAddress(addr))
 	}
 
 	var topics []common.Hash
-	for contract, abiStr := range contractABIsMap {
-		topicKeys := contractTopicsMap[contract]
-		contractTopics, _ := interestingTopics(abiStr, topicKeys...)
+	mapTopicsABI := make(map[common.Hash]abi.ABI)
+	for contractName, abiStr := range contractABIsMap {
+		topicKeys := contractTopicsMap[contractName]
+		contractABI, contractTopics, err := interestingTopics(abiStr, topicKeys...)
+		if err != nil {
+			logger.Panic("failed to init ABI, topics, and address", zap.String("error", err.Error()))
+		}
+
 		topics = append(topics, contractTopics...)
+		for _, topic := range contractTopics {
+			if topic.Hex() == badTopic.Hex() {
+				continue
+			}
+			mapTopicsABI[topic] = contractABI
+		}
 	}
 
-	return addresses, [][]common.Hash{topics}
+	return mapTopicsABI, addresses, [][]common.Hash{topics}
 }
