@@ -129,7 +129,7 @@ func loopHandleWatcherClientLog[T any](wc engine.WatcherClient[T]) {
 			return
 		}
 
-		logger.Info("DEMO: got logs", zap.String("address", l.Address.String()), zap.Any("topics", l.Topics))
+		logger.Info("DEMO: got log", zap.String("address", l.Address.String()), zap.Any("topics", l.Topics))
 	}
 }
 

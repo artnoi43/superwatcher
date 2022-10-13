@@ -1,6 +1,7 @@
 package contracts
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -31,16 +32,19 @@ var contractTopicsMap = map[string][]string{
 	oneInchLimitOrder: {"OrderFilled", "OrderCanceled"},
 }
 
-func interestingTopics(abiStr string, eventKeys ...string) ([][]common.Hash, error) {
+func interestingTopics(abiStr string, eventKeys ...string) ([]common.Hash, error) {
 	contractABI, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return nil, errors.Wrap(err, "read ABI failed")
 	}
 
-	var topics [][]common.Hash
+	var topics []common.Hash
 	for _, eventKey := range eventKeys {
-		topic := contractABI.Events[eventKey].ID
-		topics = append(topics, []common.Hash{topic})
+		event, found := contractABI.Events[eventKey]
+		if !found {
+			return nil, fmt.Errorf("eventKey %s not found", eventKey)
+		}
+		topics = append(topics, event.ID)
 	}
 
 	return topics, nil
@@ -53,12 +57,12 @@ func AddressesAndTopics() ([]common.Address, [][]common.Hash) {
 		addresses = append(addresses, common.HexToAddress(addr))
 	}
 
-	var topics [][]common.Hash
+	var topics []common.Hash
 	for contract, abiStr := range contractABIsMap {
 		topicKeys := contractTopicsMap[contract]
 		contractTopics, _ := interestingTopics(abiStr, topicKeys...)
 		topics = append(topics, contractTopics...)
 	}
 
-	return addresses, topics
+	return addresses, [][]common.Hash{topics}
 }

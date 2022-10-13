@@ -40,7 +40,7 @@ func (e *emitter) filterLogs(
 			FromBlock: big.NewInt(int64(fromBlock)),
 			ToBlock:   big.NewInt(int64(toBlock)),
 			Addresses: e.addresses,
-			Topics:    nil, // TODO: Topics not working yet
+			Topics:    e.topics,
 		})
 		if err != nil {
 			getErrChan <- errors.Wrap(err, "error filtering event logs")
