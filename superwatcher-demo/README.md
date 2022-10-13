@@ -1,9 +1,16 @@
 # superwatcher-demo
 
-This is demo code for superwatcher.
+This is demo code for using superwatcher.
 
-In this example, `superexample/main.go` is like your own service code,
-   who initializes all the database, and then has access to the event logs
-   via an intance of `watcher.Watcher` and `watcher.WatcherClient`.
+The demo service will
 
-> As of Oct 8, `watcher.WatcherClient` is not ready yet.
+1. Uses an `watcher.WatcherClient` to demonstrate how to
+use superwatcher without having to implement `engine.ServiceEngine[K, T]`.
+
+2. Implements `engine.ServiceEngine[K, T]`, and injects that implementaiton
+into superwatcher `*engine.engine[K, T]`.
+
+This demo code is used to process and track UniswapV3 `Swap`
+and 1inch LimitOrder topics `OrderFilled` and `OrderCanceled` using superwatcher.
+
+As of this update, both superwatcher and this demo are not yet done.
