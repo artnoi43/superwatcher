@@ -59,6 +59,7 @@ func main() {
 	)
 
 	logChan := make(chan *types.Log)
+	blockChan := make(chan *reorg.BlockInfo)
 	errChan := make(chan error)
 	reorgChan := make(chan *reorg.BlockInfo)
 
@@ -72,8 +73,9 @@ func main() {
 		addresses,
 		topics,
 		logChan,
-		errChan,
+		blockChan,
 		reorgChan,
+		errChan,
 	)
 
 	shutdown := func() {
@@ -84,6 +86,7 @@ func main() {
 				zap.String("error", err.Error()),
 			)
 		}
+		logger.Info("shutdown called")
 	}
 
 	defer stop()
@@ -97,56 +100,77 @@ func main() {
 
 	watcherClient := engine.NewWatcherClientDebug[any](
 		logChan,
-		errChan,
+		blockChan,
 		reorgChan,
+		errChan,
 		nil,
 	)
 
 	var wg sync.WaitGroup
-	wg.Add(3)
-	go loopHandleWatcherClientLog(watcherClient, &wg)
-	go loopHandleWatcherClientErr(watcherClient, &wg)
-	go loopHandleWatcherClientReorg(watcherClient, &wg)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		go loopHandleWatcherClientLog(watcherClient)
+		go loopHandleWatcherClientBlock(watcherClient)
+		go loopHandleWatcherClientReorg(watcherClient)
+		loopHandleWatcherClientErr(watcherClient)
+	}()
 	wg.Wait()
 }
 
-func loopHandleWatcherClientLog[T any](wc engine.WatcherClient[T], wg *sync.WaitGroup) {
-	defer wg.Done()
+func loopHandleWatcherClientLog[T any](wc engine.WatcherClient[T]) {
 	logger.Info("DEMO: start loopHandleWatcherLog")
 
 	for {
 		l := wc.WatcherCurrentLog()
 		if l == nil {
-			logger.Panic("DEMO: got nil log")
+			logger.Error("DEMO: got nil log")
+			return
 		}
 
 		logger.Info("DEMO: got logs", zap.String("address", l.Address.String()), zap.Any("topics", l.Topics))
 	}
 }
 
-func loopHandleWatcherClientErr[T any](wc engine.WatcherClient[T], wg *sync.WaitGroup) {
-	defer wg.Done()
+func loopHandleWatcherClientBlock[T any](wc engine.WatcherClient[T]) {
+	logger.Info("DEMO: start loopHandleWatcherBlock")
+
+	for {
+		b := wc.WatcherCurrentBlock()
+		if b == nil {
+			logger.Error("DEMO: got nil blockInfo")
+			return
+		}
+
+		logger.Info("DEMO: got block", zap.Uint64("blockNumber", b.Number), zap.Int("logs len", len(b.Logs)))
+	}
+}
+
+func loopHandleWatcherClientReorg[T any](wc engine.WatcherClient[T]) {
+	logger.Info("DEMO: start loopHandleWatcherReorg")
+
+	for {
+		reorgedBlock := wc.WatcherReorg()
+		if reorgedBlock == nil {
+			logger.Error("DEMO: got nil reorged block")
+			return
+		}
+
+		logger.Info("DEMO: got reorged blocks", zap.Any("blockNumber", reorgedBlock), zap.String("blockHash", reorgedBlock.Hash.String()))
+	}
+}
+
+func loopHandleWatcherClientErr[T any](wc engine.WatcherClient[T]) {
 	logger.Info("DEMO: start loopHandleWatcherLog")
 
 	for {
 		err := wc.WatcherError()
 		if err == nil {
-			logger.Panic("DEMO: got nil error")
+			logger.Error("DEMO: got nil error")
+			return
 		}
 
 		logger.Info("DEMO: got error", zap.String("error", err.Error()))
-	}
-}
-
-func loopHandleWatcherClientReorg[T any](wc engine.WatcherClient[T], wg *sync.WaitGroup) {
-	defer wg.Done()
-	logger.Info("DEMO: start loopHandleWatcherReorg")
-	for {
-		reorgedBlock := wc.WatcherReorg()
-		if reorgedBlock == nil {
-			logger.Panic("DEMO: got nil reorged block")
-		}
-
-		logger.Info("DEMO: got reorged blocks", zap.Any("blockNumber", reorgedBlock), zap.String("blockHash", reorgedBlock.Hash.String()))
 	}
 }

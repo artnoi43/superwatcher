@@ -15,6 +15,7 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
 // ethClient is an interface representing *ethclient.Client methods
@@ -51,6 +52,7 @@ type emitter struct {
 
 	// These fields are comms with for other services
 	logChan   chan<- *types.Log
+	blockChan chan<- *reorg.BlockInfo
 	reorgChan chan<- *reorg.BlockInfo
 	errChan   chan<- error
 
@@ -77,8 +79,9 @@ func NewEmitter(
 	addresses []common.Address,
 	topics [][]common.Hash,
 	logChan chan<- *types.Log,
-	errChan chan<- error,
+	blockChan chan<- *reorg.BlockInfo,
 	reorgChan chan<- *reorg.BlockInfo,
+	errChan chan<- error,
 ) Emitter {
 	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
 	return &emitter{
@@ -91,6 +94,7 @@ func NewEmitter(
 		addresses:        addresses,
 		topics:           topics,
 		logChan:          logChan,
+		blockChan:        blockChan,
 		errChan:          errChan,
 		reorgChan:        reorgChan,
 	}
@@ -105,8 +109,9 @@ func NewWatcherDebug(
 	addresses []common.Address,
 	topics [][]common.Hash,
 	logChan chan<- *types.Log,
-	errChan chan<- error,
+	blockChan chan<- *reorg.BlockInfo,
 	reorgChan chan<- *reorg.BlockInfo,
+	errChan chan<- error,
 ) Emitter {
 	e := NewEmitter(
 		conf,
@@ -116,8 +121,9 @@ func NewWatcherDebug(
 		addresses,
 		topics,
 		logChan,
-		errChan,
+		blockChan,
 		reorgChan,
+		errChan,
 	)
 
 	e.(*emitter).debug = true
@@ -141,8 +147,13 @@ func (e *emitter) Loop(ctx context.Context) error {
 	}
 }
 
-func (w *emitter) shutdown() {
-	close(w.logChan)
-	close(w.reorgChan)
-	close(w.errChan)
+func (e *emitter) shutdown() {
+	close(e.logChan)
+	close(e.blockChan)
+	close(e.reorgChan)
+	close(e.errChan)
+}
+
+func (e *emitter) debugMsg(msg string, fields ...zap.Field) {
+	debug.DebugMsg(e.debug, msg, fields...)
 }

@@ -112,9 +112,7 @@ func (e *emitter) filterLogs(
 		processLogsByBlockNumber,
 	)
 
-	if e.debug {
-		logger.Debug("wasReorged", zap.Any("wasReorged", wasReorged))
-	}
+	e.debugMsg("wasReorged", zap.Any("wasReorged", wasReorged))
 
 	// If fromBlock was reorged, then return to loopFilterLogs
 	if wasReorged[fromBlock] {
@@ -149,14 +147,14 @@ func (e *emitter) filterLogs(
 		b.Logs = freshLogsByBlockNumber[blockNumber]
 
 		// Process every log for this block
+		// TODO: Use Goroutine to publish?
 		for _, l := range processLogsByBlockNumber[blockNumber] {
-			// @TODO: What to do if fresh logs with unchanged hash has Removed set to true?
-			if l.Removed {
-				e.publishReorg(b)
-				continue
-			}
-
+			// TODO: What to do if fresh logs with unchanged hash has Removed set to true?
 			e.publishLog(l)
+		}
+		// Only publish block with logs
+		if len(b.Logs) > 0 {
+			e.publishBlock(b)
 		}
 
 		// Add ONLY CANONICAL block into tracker

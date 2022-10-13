@@ -30,8 +30,8 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20221010152910-d6f0a8c073c2 // indirect
-	golang.org/x/exp v0.0.0-20221006183845-316c7553db56 // indirect
-	golang.org/x/sys v0.0.0-20221006211917-84dc82d7e875 // indirect
+	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
+	golang.org/x/exp v0.0.0-20221012211006-4de253d81b95 // indirect
+	golang.org/x/sys v0.0.0-20221010170243-090e33056c14 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )

@@ -35,7 +35,7 @@ func PopulateInitialMaps(
 		freshBlockHash := freshHeaders[freshLogBlockNumber].Hash()
 
 		if !bytes.Equal(freshBlockHash[:], freshLogBlockHash[:]) {
-			// @TODO: How to handle this?
+			// TODO: How to handle this?
 			logger.Panic(
 				"freshBlockHash and freshBlockHashFromLog differ",
 				zap.String("freshBlockHash", freshBlockHash.String()),
