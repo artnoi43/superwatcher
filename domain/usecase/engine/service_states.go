@@ -9,5 +9,7 @@ type Event interface {
 	String() string
 }
 
-type ServiceItemState State
-type ServiceItemEvent Event
+type (
+	ServiceItemState State
+	ServiceItemEvent Event
+)

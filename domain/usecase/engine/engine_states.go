@@ -2,13 +2,15 @@ package engine
 
 import "fmt"
 
-type EngineLogState uint8
-type EngineLogEvent uint8
+type (
+	EngineLogState uint8
+	EngineLogEvent uint8
+)
 
-type EngineFSM[T ServiceItem] interface {
-	SetEngineState(T, EngineLogState)
-	GetEngineState(T) EngineLogState
-	FireEngineEvent(T, EngineLogEvent) (EngineLogState, error)
+type EngineFSM[K itemKey] interface {
+	SetEngineState(K, EngineLogState)
+	GetEngineState(K) EngineLogState
+	FireEngineEvent(K, EngineLogEvent) (EngineLogState, error)
 }
 
 const (
