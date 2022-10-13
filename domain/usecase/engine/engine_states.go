@@ -1,6 +1,12 @@
 package engine
 
-import "fmt"
+import (
+	"fmt"
+
+	"go.uber.org/zap"
+
+	"github.com/artnoi43/superwatcher/lib/logger"
+)
 
 type (
 	EngineLogState uint8
@@ -10,7 +16,6 @@ type (
 type EngineFSM[K itemKey] interface {
 	SetEngineState(K, EngineLogState)
 	GetEngineState(K) EngineLogState
-	FireEngineEvent(K, EngineLogEvent) (EngineLogState, error)
 }
 
 const (
@@ -19,7 +24,7 @@ const (
 	EngineStateProcessed
 	EngineStateReorged
 	EngineStateProcessedReorged
-	EngineStateError
+	EngineStateInvalid
 
 	EngineEventNull EngineLogEvent = iota
 	EngineEventGotLog
@@ -27,6 +32,37 @@ const (
 	EngineEventGotReorg
 	EngineEventHandleReorg
 )
+
+type stateEvent = struct {
+	state EngineLogState
+	event EngineLogEvent
+}
+
+var engineStateTransitionTable = map[stateEvent]EngineLogState{
+	{state: EngineStateNull, event: EngineEventGotLog}:      EngineStateSeen,
+	{state: EngineStateNull, event: EngineEventProcess}:     EngineStateInvalid,
+	{state: EngineStateNull, event: EngineEventGotReorg}:    EngineStateReorged,
+	{state: EngineStateNull, event: EngineEventHandleReorg}: EngineStateInvalid,
+
+	{state: EngineStateSeen, event: EngineEventGotLog}:      EngineStateSeen,
+	{state: EngineStateSeen, event: EngineEventProcess}:     EngineStateProcessed,
+	{state: EngineStateSeen, event: EngineEventGotReorg}:    EngineStateReorged,
+	{state: EngineStateSeen, event: EngineEventHandleReorg}: EngineStateProcessedReorged,
+
+	{state: EngineStateProcessed, event: EngineEventGotLog}:      EngineStateProcessed,
+	{state: EngineStateProcessed, event: EngineEventProcess}:     EngineStateProcessed,
+	{state: EngineStateProcessed, event: EngineEventGotReorg}:    EngineStateReorged,
+	{state: EngineStateProcessed, event: EngineEventHandleReorg}: EngineStateProcessedReorged,
+}
+
+func (state *EngineLogState) Fire(event EngineLogEvent) {
+	if !event.IsValid() {
+		logger.Panic("invalid event", zap.String("event", event.String()))
+	}
+	self := stateEvent{state: *state, event: event}
+	newState := engineStateTransitionTable[self]
+	*state = newState
+}
 
 func (state EngineLogState) String() string {
 	switch state {
@@ -40,8 +76,8 @@ func (state EngineLogState) String() string {
 		return "REORGED"
 	case EngineStateProcessedReorged:
 		return "PROCESSED_REORGED"
-	case EngineStateError:
-		return "ERROR"
+	case EngineStateInvalid:
+		return "INVALID_ENGINE_STATE"
 	}
 
 	panic(fmt.Sprintf("invalid state: %d", state))

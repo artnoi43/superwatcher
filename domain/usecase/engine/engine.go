@@ -31,17 +31,17 @@ type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
 	MapLogToItem(l *types.Log) (T, error)
 
 	// ActionOptions can be implemented to define arbitary options to be passed to ItemAction.
-	ActionOptions(T) []interface{}
+	ActionOptions(T, EngineLogState, ServiceItemState) []interface{}
 
 	// ItemAction is called every time a new, fresh log is converted into ServiceItem,
 	// The state returned represents the service state that will be assigned to the ServiceItem.
-	ItemAction(T, ...interface{}) (State, error)
+	ItemAction(T, EngineLogState, ServiceItemState, ...interface{}) (State, error)
 
 	// ReorgOption can be implemented to define arbitary options to be passed to HandleReorg.
 	ReorgOptions(T) []interface{}
 
 	// HandleReorg is called in *engine.handleReorg.
-	HandleReorg(T, ...interface{}) (State, error)
+	HandleReorg(T, EngineLogState, ServiceItemState, ...interface{}) (State, error)
 
 	// TODO: work this out
 	HandleEmitterError(error) error
@@ -51,6 +51,7 @@ type engine[K itemKey, T ServiceItem[K]] struct {
 	client        watcherClient[T]
 	serviceEngine ServiceEngine[K, T]
 	engineFSM     EngineFSM[K]
+	debug         bool
 }
 
 func (e *engine[K, T]) handleLog() error {
@@ -61,7 +62,7 @@ func (e *engine[K, T]) handleLog() error {
 
 	for {
 		newLog := e.client.WatcherCurrentLog()
-		if err := handleLog(newLog, serviceEngine, serviceFSM, engineFSM); err != nil {
+		if err := handleLog(newLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
 			return errors.Wrap(err, "handleLog failed in engine.HandleLog")
 		}
 	}
@@ -77,7 +78,7 @@ func (e *engine[K, T]) handleBlock() error {
 		newBlock := e.client.WatcherCurrentBlock()
 
 		for _, log := range newBlock.Logs {
-			if err := handleLog(log, serviceEngine, serviceFSM, engineFSM); err != nil {
+			if err := handleLog(log, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
 				return errors.Wrap(err, "handleLog failed in handleBlock")
 			}
 		}
@@ -85,7 +86,49 @@ func (e *engine[K, T]) handleBlock() error {
 }
 
 func (e *engine[K, T]) handleReorg() error {
-	return errors.New("not implemented")
+	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
+	if err != nil {
+		return err
+	}
+
+	for {
+		reorgedBlock := e.client.WatcherReorg()
+		for _, reorgedLog := range reorgedBlock.Logs {
+			var err error
+			reorgedItem, err := serviceEngine.MapLogToItem(reorgedLog)
+			if err != nil {
+				return errors.Wrapf(err, "failed to map reorged log (txHash %s) to item", reorgedLog.TxHash.String())
+			}
+
+			key := reorgedItem.ItemKey()
+			currentEngineState := engineFSM.GetEngineState(key)
+
+			// TODO: How to handle this?
+			switch currentEngineState {
+			case
+				EngineStateSeen,
+				EngineStateProcessed:
+				currentEngineState.Fire(EngineEventGotReorg)
+				if !currentEngineState.IsValid() {
+					return errors.Wrap(err, "failed to update engine state to EngineEventGotReorg")
+				}
+			}
+
+			handleReorgOptions := serviceEngine.ReorgOptions(reorgedItem)
+			handledState, err := serviceEngine.HandleReorg(
+				reorgedItem,
+				currentEngineState,
+				serviceFSM.GetServiceState(key),
+				handleReorgOptions,
+			)
+			if err != nil {
+				return errors.Wrapf(err, "failed to handle reorg for item %s", reorgedItem.DebugString())
+			}
+
+			serviceFSM.SetServiceState(key, handledState)
+			engineFSM.SetEngineState(key, EngineStateProcessedReorged)
+		}
+	}
 }
 
 func (e *engine[K, T]) handleError() error {
