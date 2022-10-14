@@ -18,7 +18,7 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
 )
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 	reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
-	_, _, addresses, topics := contracts.GetABIAddressesAndTopics()
+	_, addresses, topics := hardcode.GetABIAddressesAndTopics()
 	watcherEmitter := emitter.NewWatcherDebug(
 		conf,
 		ethClient,

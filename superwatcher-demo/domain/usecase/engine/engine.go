@@ -12,43 +12,49 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/logutils"
 )
 
-type uniswapv3Engine struct {
+type uniswapv3FactoryEngine struct {
 	mapAddrToABI    map[common.Address]abi.ABI
-	mapAddrToTopics map[common.Address][]string
+	mapAddrToEvents map[common.Address][]abi.Event
 }
 
-func NewUniswapV3Engine(mapTopicABI map[common.Address]abi.ABI) *uniswapv3Engine {
-	return &uniswapv3Engine{
+func NewUniswapV3Engine(mapTopicABI map[common.Address]abi.ABI) *uniswapv3FactoryEngine {
+	return &uniswapv3FactoryEngine{
 		mapAddrToABI: mapTopicABI,
 	}
 }
 
-func (e *uniswapv3Engine) MapLogToItem(log *types.Log) (*entity.UniswapSwap, error) {
+func (e *uniswapv3FactoryEngine) MapLogToItem(log *types.Log) (*entity.Uniswapv3PoolCreated, error) {
 	contractAddr := log.Address
+
 	contractABI, ok := e.mapAddrToABI[contractAddr]
 	if !ok {
 		return nil, fmt.Errorf("abi not found for address %s", contractAddr.String())
 	}
-
-	topicStrings := e.mapAddrToTopics[contractAddr]
-	realUnpacked := make(map[string]interface{})
-	for _, topicString := range topicStrings {
-		unpacked, err := logutils.UnpackIntoMap(contractABI, topicString, log)
-		if err != nil {
-			continue
-		}
-		realUnpacked = unpacked
-		break
+	contractABIEvents, ok := e.mapAddrToEvents[contractAddr]
+	if !ok {
+		return nil, fmt.Errorf("abi.Events not found for address %s", contractAddr.String())
 	}
 
-	swapEvent, err := parseLogToUniswapSwap(realUnpacked)
+	logEventKey := log.Topics[0]
+	unpacked := make(map[string]interface{})
+	var err error
+	for _, event := range contractABIEvents {
+		if logEventKey == event.ID {
+			unpacked, err = logutils.UnpackIntoMap(contractABI, event.Name, log)
+			if err != nil {
+				return nil, errors.New("failed to unpack uniswapv3factory logs")
+			}
+		}
+	}
+
+	poolCreated, err := parseLogToUniswapSwap(unpacked)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert unpacked log data to *entity.UniswapSwap")
 	}
 
-	return swapEvent, nil
+	return poolCreated, nil
 }
 
-func parseLogToUniswapSwap(unpacked map[string]interface{}) (*entity.UniswapSwap, error) {
+func parseLogToUniswapSwap(unpacked map[string]interface{}) (*entity.Uniswapv3PoolCreated, error) {
 	return nil, errors.New("not implemented")
 }

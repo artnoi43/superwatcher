@@ -1,4 +1,4 @@
-package contracts
+package hardcode
 
 import (
 	"strings"
@@ -9,77 +9,79 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/lib/logger"
-	oneinchlimitorder "github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts/1inchlimitorder"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode/contracts/uniswapv3pool"
+	oneinchlimitorder "github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/1inchlimitorder"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3factory"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3pool"
 )
 
 const (
 	uniswapv3Pool         = "uniswapv3pool"
 	uniswapv3PoolAddr     = "0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168"
+	uniswapv3Factory      = "uniswapv3factory"
+	uniswapv3FactoryAddr  = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
 	oneInchLimitOrder     = "oneInchLimitOrder"
 	oneInchLimitOrderAddr = "0x119c71d3bbac22029622cbaec24854d3d32d2828"
 )
 
 var contractABIsMap = map[string]string{
 	uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
+	uniswapv3Factory:  uniswapv3factory.Uniswapv3FactoryABI,
 	oneInchLimitOrder: oneinchlimitorder.OneInchLimitOrderABI,
 }
 
 var contractAddressesMap = map[string]common.Address{
 	uniswapv3Pool:     common.HexToAddress(uniswapv3PoolAddr),
+	uniswapv3Factory:  common.HexToAddress(uniswapv3FactoryAddr),
 	oneInchLimitOrder: common.HexToAddress(oneInchLimitOrderAddr),
 }
 
 var contractTopicsMap = map[common.Address][]string{
-	contractAddressesMap[uniswapv3PoolAddr]: {"Swap"},
+	contractAddressesMap[uniswapv3Pool]:     {"Swap"},
+	contractAddressesMap[uniswapv3Factory]:  {"PoolCreated"},
 	contractAddressesMap[oneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
 }
 
-func interestingTopics(abiStr string, eventKeys ...string) (abi.ABI, []common.Hash, error) {
+func contractInfo(abiStr string, eventKeys ...string) (abi.ABI, []abi.Event, error) {
 	contractABI, err := abi.JSON(strings.NewReader(abiStr))
 	if err != nil {
 		return abi.ABI{}, nil, errors.Wrap(err, "read ABI failed")
 	}
 
-	var topics []common.Hash
+	var events []abi.Event
 	for _, eventKey := range eventKeys {
 		event, found := contractABI.Events[eventKey]
 		if !found {
 			return abi.ABI{}, nil, errors.Wrapf(ErrNoSuchABIEvent, "eventKey %s not found", eventKey)
 		}
-		topics = append(topics, event.ID)
+		events = append(events, event)
 	}
 
-	return contractABI, topics, nil
+	return contractABI, events, nil
 }
 
-// Hard-code known topics and addresses
-func GetABIAddressesAndTopics() (map[common.Address][]string, map[common.Hash]abi.ABI, []common.Address, [][]common.Hash) {
-	badTopic := common.Hash{}
-
+func GetABIAddressesAndTopics() (map[common.Address][]abi.Event, []common.Address, [][]common.Hash) {
 	var addresses []common.Address
 	for _, addr := range contractAddressesMap {
 		addresses = append(addresses, addr)
 	}
 
+	interestingEventsMap := make(map[common.Address][]abi.Event)
 	var topics []common.Hash
-	mapTopicsABI := make(map[common.Hash]abi.ABI)
 	for contractName, abiStr := range contractABIsMap {
 		contractAddr := contractAddressesMap[contractName]
 		topicKeys := contractTopicsMap[contractAddr]
-		contractABI, contractTopics, err := interestingTopics(abiStr, topicKeys...)
+
+		_, interestingEvents, err := contractInfo(abiStr, topicKeys...)
 		if err != nil {
 			logger.Panic("failed to init ABI, topics, and address", zap.String("error", err.Error()))
 		}
+		interestingEventsMap[contractAddr] = interestingEvents
 
-		topics = append(topics, contractTopics...)
-		for _, topic := range contractTopics {
-			if topic.Hex() == badTopic.Hex() {
-				continue
-			}
-			mapTopicsABI[topic] = contractABI
+		// Collect all topics from all contracts
+		for _, event := range interestingEvents {
+			topics = append(topics, event.ID)
 		}
 	}
 
-	return contractTopicsMap, mapTopicsABI, addresses, [][]common.Hash{topics}
+	return interestingEventsMap, addresses, [][]common.Hash{topics}
 }

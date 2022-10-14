@@ -1,4 +1,4 @@
-package contracts
+package hardcode
 
 import "github.com/pkg/errors"
 

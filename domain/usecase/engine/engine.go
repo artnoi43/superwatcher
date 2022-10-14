@@ -51,9 +51,9 @@ type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
 }
 
 type engine[K itemKey, T ServiceItem[K]] struct {
-	client        watcherClient[T]
-	serviceEngine ServiceEngine[K, T]
-	engineFSM     EngineFSM[K]
+	client        watcherClient[T]    // Interfaces with emitter
+	serviceEngine ServiceEngine[K, T] // Injected service code
+	engineFSM     EngineFSM[K]        // Engine internal state machine
 	debug         bool
 }
 
