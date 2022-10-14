@@ -17,9 +17,13 @@ type uniswapv3FactoryEngine struct {
 	mapAddrToEvents map[common.Address][]abi.Event
 }
 
-func NewUniswapV3Engine(mapTopicABI map[common.Address]abi.ABI) *uniswapv3FactoryEngine {
+func NewUniswapV3Engine(
+	mapAddrABI map[common.Address]abi.ABI,
+	mapAddrEvents map[common.Address][]abi.Event,
+) *uniswapv3FactoryEngine {
 	return &uniswapv3FactoryEngine{
-		mapAddrToABI: mapTopicABI,
+		mapAddrToABI:    mapAddrABI,
+		mapAddrToEvents: mapAddrEvents,
 	}
 }
 
@@ -30,15 +34,16 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(log *types.Log) (*entity.Uniswapv3
 	if !ok {
 		return nil, fmt.Errorf("abi not found for address %s", contractAddr.String())
 	}
-	contractABIEvents, ok := e.mapAddrToEvents[contractAddr]
+
+	contractInterestingEvents, ok := e.mapAddrToEvents[contractAddr]
 	if !ok {
-		return nil, fmt.Errorf("abi.Events not found for address %s", contractAddr.String())
+		return nil, fmt.Errorf("events not found for address %s", contractAddr.String())
 	}
 
 	logEventKey := log.Topics[0]
 	unpacked := make(map[string]interface{})
 	var err error
-	for _, event := range contractABIEvents {
+	for _, event := range contractInterestingEvents {
 		if logEventKey == event.ID {
 			unpacked, err = logutils.UnpackIntoMap(contractABI, event.Name, log)
 			if err != nil {
@@ -47,7 +52,7 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(log *types.Log) (*entity.Uniswapv3
 		}
 	}
 
-	poolCreated, err := parseLogToUniswapSwap(unpacked)
+	poolCreated, err := parseLogToUniswapv3Factory(unpacked)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert unpacked log data to *entity.UniswapSwap")
 	}
@@ -55,6 +60,6 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(log *types.Log) (*entity.Uniswapv3
 	return poolCreated, nil
 }
 
-func parseLogToUniswapSwap(unpacked map[string]interface{}) (*entity.Uniswapv3PoolCreated, error) {
+func parseLogToUniswapv3Factory(unpacked map[string]interface{}) (*entity.Uniswapv3PoolCreated, error) {
 	return nil, errors.New("not implemented")
 }
