@@ -1,14 +1,12 @@
 package hardcode
 
 import (
-	"strings"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts"
 	oneinchlimitorder "github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/1inchlimitorder"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3factory"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3pool"
@@ -41,24 +39,6 @@ var contractTopicsMap = map[common.Address][]string{
 	contractAddressesMap[oneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
 }
 
-func contractInfo(abiStr string, eventKeys ...string) (abi.ABI, []abi.Event, error) {
-	contractABI, err := abi.JSON(strings.NewReader(abiStr))
-	if err != nil {
-		return abi.ABI{}, nil, errors.Wrap(err, "read ABI failed")
-	}
-
-	var events []abi.Event
-	for _, eventKey := range eventKeys {
-		event, found := contractABI.Events[eventKey]
-		if !found {
-			return abi.ABI{}, nil, errors.Wrapf(ErrNoSuchABIEvent, "eventKey %s not found", eventKey)
-		}
-		events = append(events, event)
-	}
-
-	return contractABI, events, nil
-}
-
 func GetABIAddressesAndTopics() (map[common.Address][]abi.Event, []common.Address, [][]common.Hash) {
 	var addresses []common.Address
 	for _, addr := range contractAddressesMap {
@@ -71,7 +51,7 @@ func GetABIAddressesAndTopics() (map[common.Address][]abi.Event, []common.Addres
 		contractAddr := contractAddressesMap[contractName]
 		topicKeys := contractTopicsMap[contractAddr]
 
-		_, interestingEvents, err := contractInfo(abiStr, topicKeys...)
+		_, interestingEvents, err := contracts.ContractInfo(abiStr, topicKeys...)
 		if err != nil {
 			logger.Panic("failed to init ABI, topics, and address", zap.String("error", err.Error()))
 		}

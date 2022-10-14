@@ -12,12 +12,10 @@ import (
 
 func (e *uniswapv3FactoryEngine) MapLogToItem(log *types.Log) (watcherengine.ServiceItem[string], error) {
 	contractAddr := log.Address
-
 	contractABI, ok := e.mapAddrToABI[contractAddr]
 	if !ok {
 		return nil, fmt.Errorf("abi not found for address %s", contractAddr.String())
 	}
-
 	contractInterestingEvents, ok := e.mapAddrToEvents[contractAddr]
 	if !ok {
 		return nil, fmt.Errorf("events not found for address %s", contractAddr.String())
