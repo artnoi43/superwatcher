@@ -8,6 +8,7 @@ type State interface {
 
 type Event interface {
 	String() string
+	IsValid() bool
 }
 
 type (
