@@ -64,7 +64,7 @@ func main() {
 	reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
-	_, addresses, topics := contracts.GetABIAddressesAndTopics()
+	_, _, addresses, topics := contracts.GetABIAddressesAndTopics()
 	watcherEmitter := emitter.NewWatcherDebug(
 		conf,
 		ethClient,

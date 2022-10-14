@@ -3,7 +3,7 @@ package entity
 import "github.com/ethereum/go-ethereum/common"
 
 type UniswapSwap struct {
-	FromToken common.Address
-	ToToken   common.Address
-	AmountIn  uint64
+	Sender  common.Address
+	Amount0 uint64
+	Amount1 uint64
 }
