@@ -13,7 +13,7 @@ type itemKey constraints.Ordered
 
 // ServiceItem is The service "domain"-type representation of the log
 type ServiceItem[K itemKey] interface {
-	ItemKey() K
+	ItemKey(...interface{}) K
 	DebugString() string
 }
 
