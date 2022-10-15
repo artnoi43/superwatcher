@@ -23,13 +23,13 @@ const (
 	EngineStateSeen
 	EngineStateProcessed
 	EngineStateReorged
-	EngineStateProcessedReorged
+	EngineStateReorgHandled
 	EngineStateInvalid
 
-	EngineEventNull EngineLogEvent = iota
+	EngineEventInvalid EngineLogEvent = iota
 	EngineEventGotLog
 	EngineEventProcess
-	EngineEventGotReorg
+	EngineEventReorg
 	EngineEventHandleReorg
 )
 
@@ -41,18 +41,28 @@ type stateEvent = struct {
 var engineStateTransitionTable = map[stateEvent]EngineLogState{
 	{state: EngineStateNull, event: EngineEventGotLog}:      EngineStateSeen,
 	{state: EngineStateNull, event: EngineEventProcess}:     EngineStateInvalid,
-	{state: EngineStateNull, event: EngineEventGotReorg}:    EngineStateReorged,
+	{state: EngineStateNull, event: EngineEventReorg}:       EngineStateReorged,
 	{state: EngineStateNull, event: EngineEventHandleReorg}: EngineStateInvalid,
 
 	{state: EngineStateSeen, event: EngineEventGotLog}:      EngineStateSeen,
 	{state: EngineStateSeen, event: EngineEventProcess}:     EngineStateProcessed,
-	{state: EngineStateSeen, event: EngineEventGotReorg}:    EngineStateReorged,
-	{state: EngineStateSeen, event: EngineEventHandleReorg}: EngineStateProcessedReorged,
+	{state: EngineStateSeen, event: EngineEventReorg}:       EngineStateReorged,
+	{state: EngineStateSeen, event: EngineEventHandleReorg}: EngineStateReorgHandled,
 
 	{state: EngineStateProcessed, event: EngineEventGotLog}:      EngineStateProcessed,
 	{state: EngineStateProcessed, event: EngineEventProcess}:     EngineStateProcessed,
-	{state: EngineStateProcessed, event: EngineEventGotReorg}:    EngineStateReorged,
-	{state: EngineStateProcessed, event: EngineEventHandleReorg}: EngineStateProcessedReorged,
+	{state: EngineStateProcessed, event: EngineEventReorg}:       EngineStateReorged,
+	{state: EngineStateProcessed, event: EngineEventHandleReorg}: EngineStateReorgHandled,
+
+	{state: EngineStateReorged, event: EngineEventGotLog}:      EngineStateReorged,
+	{state: EngineStateReorged, event: EngineEventProcess}:     EngineStateInvalid,
+	{state: EngineStateReorged, event: EngineEventReorg}:       EngineStateReorged,
+	{state: EngineStateReorged, event: EngineEventHandleReorg}: EngineStateReorgHandled,
+
+	{state: EngineStateReorgHandled, event: EngineEventGotLog}:      EngineStateInvalid,
+	{state: EngineStateReorgHandled, event: EngineEventProcess}:     EngineStateInvalid,
+	{state: EngineStateReorgHandled, event: EngineEventReorg}:       EngineStateReorged,
+	{state: EngineStateReorgHandled, event: EngineEventHandleReorg}: EngineStateInvalid,
 }
 
 func (state *EngineLogState) Fire(event EngineLogEvent) {
@@ -74,27 +84,29 @@ func (state EngineLogState) String() string {
 		return "PROCESSED"
 	case EngineStateReorged:
 		return "REORGED"
-	case EngineStateProcessedReorged:
+	case EngineStateReorgHandled:
 		return "PROCESSED_REORGED"
 	case EngineStateInvalid:
 		return "INVALID_ENGINE_STATE"
 	}
 
-	panic(fmt.Sprintf("invalid state: %d", state))
+	panic(fmt.Sprintf("unexpected invalid state: %d", state))
 }
 
 func (state EngineLogState) IsValid() bool {
 	switch state {
+	case EngineStateInvalid:
+		return false
 	case
 		EngineStateNull,
 		EngineStateSeen,
 		EngineStateProcessed,
 		EngineStateReorged,
-		EngineStateProcessedReorged:
+		EngineStateReorgHandled:
 		return true
 	}
 
-	return false
+	panic(fmt.Sprintf("unexpected invalid state: %d", state))
 }
 
 func (event EngineLogEvent) String() string {
@@ -103,24 +115,26 @@ func (event EngineLogEvent) String() string {
 		return "Got Log"
 	case EngineEventProcess:
 		return "Process"
-	case EngineEventGotReorg:
+	case EngineEventReorg:
 		return "Got Reorg"
 	case EngineEventHandleReorg:
 		return "Handle Reorg"
 	}
 
-	panic(fmt.Sprintf("invalid event: %d", event))
+	panic(fmt.Sprintf("unexpected invalid event: %d", event))
 }
 
 func (event EngineLogEvent) IsValid() bool {
 	switch event {
+	case EngineEventInvalid:
+		return false
 	case
 		EngineEventGotLog,
 		EngineEventProcess,
-		EngineEventGotReorg,
+		EngineEventReorg,
 		EngineEventHandleReorg:
 		return true
 	}
 
-	return false
+	panic(fmt.Sprintf("unexpected invalid event: %d", event))
 }

@@ -7,10 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
-// handleLog handles a single Ethereum event log
+// handleLog is a pure function for handling a single Ethereum event log
 func handleLog[K itemKey, T ServiceItem[K]](
 	log *types.Log,
 	serviceEngine ServiceEngine[K, T],
@@ -18,6 +19,14 @@ func handleLog[K itemKey, T ServiceItem[K]](
 	engineFSM EngineFSM[K],
 	debugMode bool,
 ) error {
+	if log.Removed {
+		// TODO: Now what??
+		logger.Info(
+			"got removed log",
+			zap.String("address", log.Address.String()),
+			zap.String("txHash", log.TxHash.String()),
+		)
+	}
 	item, err := serviceEngine.MapLogToItem(log)
 	if err != nil {
 		return errors.Wrapf(
@@ -38,7 +47,7 @@ func handleLog[K itemKey, T ServiceItem[K]](
 		EngineStateSeen,
 		EngineStateReorged,
 		EngineStateProcessed,
-		EngineStateProcessedReorged:
+		EngineStateReorgHandled:
 
 		// If we saw/processed this log/item, skip it
 		debug.DebugMsg(debugMode, "handleLog skip due to engineState", zap.String("state", engineState.String()))

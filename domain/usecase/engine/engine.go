@@ -17,14 +17,6 @@ type ServiceItem[K itemKey] interface {
 	DebugString() string
 }
 
-// ServiceFSM[T] is the service's implementation of chain reorganization state machine
-// that operates on T ServiceItem
-type ServiceFSM[K itemKey] interface {
-	SetServiceState(K, ServiceItemState)                            // Overwrites state blindly
-	GetServiceState(K) ServiceItemState                             // Gets current item state
-	FireServiceEvent(K, ServiceItemEvent) (ServiceItemState, error) // Traverses FSM
-}
-
 // ServiceEngine[T] defines what service should implement and inject into engine.
 type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
 	// ServiceStateTracker returns service-specific finite state machine.
@@ -79,10 +71,36 @@ func (e *engine[K, T]) handleBlock() error {
 
 	for {
 		newBlock := e.client.WatcherCurrentBlock()
-
 		for _, log := range newBlock.Logs {
-			if err := handleLog(log, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
+			if err := handleLog(
+				log,
+				serviceEngine,
+				serviceFSM,
+				engineFSM,
+				e.debug,
+			); err != nil {
 				return errors.Wrap(err, "handleLog failed in handleBlock")
+			}
+		}
+	}
+}
+
+func (e *engine[K, T]) handleReorg() error {
+	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
+	if err != nil {
+		return err
+	}
+
+	for {
+		reorgedBlock := e.client.WatcherReorg()
+		for _, reorgedLog := range reorgedBlock.Logs {
+			if err := handleReorgedLog(
+				reorgedLog,
+				serviceEngine,
+				serviceFSM,
+				engineFSM,
+			); err != nil {
+				return errors.Wrap(err, "handleReorg failed in handleReorgedLog")
 			}
 		}
 	}
