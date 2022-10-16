@@ -7,10 +7,16 @@ import (
 	"github.com/pkg/errors"
 
 	watcherengine "github.com/artnoi43/superwatcher/domain/usecase/engine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/logutils"
 )
 
-func (e *uniswapv3FactoryEngine) MapLogToItem(log *types.Log) (watcherengine.ServiceItem[string], error) {
+func (e *uniswapv3FactoryEngine) MapLogToItem(
+	log *types.Log,
+) (
+	watcherengine.ServiceItem[entity.Uniswapv3FactoryWatcherKey],
+	error,
+) {
 	contractAddr := log.Address
 	contractABI, ok := e.mapAddrToABI[contractAddr]
 	if !ok {

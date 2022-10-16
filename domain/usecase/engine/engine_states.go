@@ -85,7 +85,7 @@ func (state EngineLogState) String() string {
 	case EngineStateReorged:
 		return "REORGED"
 	case EngineStateReorgHandled:
-		return "PROCESSED_REORGED"
+		return "REORG_HANDLED"
 	case EngineStateInvalid:
 		return "INVALID_ENGINE_STATE"
 	}

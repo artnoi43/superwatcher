@@ -4,18 +4,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"golang.org/x/exp/constraints"
 
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
-
-type itemKey constraints.Ordered
-
-// ServiceItem is The service "domain"-type representation of the log
-type ServiceItem[K itemKey] interface {
-	ItemKey(...interface{}) K
-	DebugString() string
-}
 
 // ServiceEngine[T] defines what service should implement and inject into engine.
 type ServiceEngine[K itemKey, T ServiceItem[K]] interface {

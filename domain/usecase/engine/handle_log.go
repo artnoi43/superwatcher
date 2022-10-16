@@ -54,6 +54,7 @@ func handleLog[K itemKey, T ServiceItem[K]](
 		return nil
 	}
 
+	// TODO: Or this should be event?
 	itemServiceState := serviceFSM.GetServiceState(key)
 	processedState, err := serviceEngine.ItemAction(
 		item,
