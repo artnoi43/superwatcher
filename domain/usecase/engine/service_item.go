@@ -1,9 +1,7 @@
 package engine
 
-// itemKey (K) is what used by EngineFSM[K] as key for accessing ServiceItemState[K]
+// itemKey (K) is what used by ServiceFSM[K] to access ServiceItemState
 type itemKey interface {
-	// BlockNumber returns the block number the item was first seen.
-	// This helps when clearing old states from the state machine.
 	BlockNumber() uint64
 }
 

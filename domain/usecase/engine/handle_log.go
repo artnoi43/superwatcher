@@ -16,7 +16,7 @@ func handleLog[K itemKey, T ServiceItem[K]](
 	log *types.Log,
 	serviceEngine ServiceEngine[K, T],
 	serviceFSM ServiceFSM[K],
-	engineFSM EngineFSM[K],
+	engineFSM EngineFSM,
 	debugMode bool,
 ) error {
 	if log.Removed {
@@ -27,22 +27,13 @@ func handleLog[K itemKey, T ServiceItem[K]](
 			zap.String("txHash", log.TxHash.String()),
 		)
 	}
-	item, err := serviceEngine.MapLogToItem(log)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"failed to map log (txHash %s) to service item",
-			log.TxHash.String(),
-		)
-	}
 
-	key := item.ItemKey()
-	engineState := engineFSM.GetEngineState(key)
-
+	engineKey := engineLogStateKeyFromLog(log)
+	engineState := engineFSM.GetEngineState(engineKey)
 	switch engineState {
 	case EngineStateNull:
 		engineState.Fire(EngineEventGotLog)
-		engineFSM.SetEngineState(key, engineState)
+		engineFSM.SetEngineState(engineKey, engineState)
 	case
 		EngineStateSeen,
 		EngineStateReorged,
@@ -54,8 +45,18 @@ func handleLog[K itemKey, T ServiceItem[K]](
 		return nil
 	}
 
-	// TODO: Or this should be event?
+	item, err := serviceEngine.MapLogToItem(log)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"failed to map log (txHash %s) to service item",
+			log.TxHash.String(),
+		)
+	}
+
+	key := item.ItemKey()
 	itemServiceState := serviceFSM.GetServiceState(key)
+	// TODO: Or the returned type from ItemAction should be event?
 	processedState, err := serviceEngine.ItemAction(
 		item,
 		engineState,
@@ -77,7 +78,7 @@ func handleLog[K itemKey, T ServiceItem[K]](
 	}
 
 	// Update states
-	engineFSM.SetEngineState(key, engineState)
+	engineFSM.SetEngineState(engineKey, engineState)
 	serviceFSM.SetServiceState(key, processedState)
 
 	return nil

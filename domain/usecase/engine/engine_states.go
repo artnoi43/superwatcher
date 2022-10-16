@@ -13,9 +13,9 @@ type (
 	EngineLogEvent uint8
 )
 
-type EngineFSM[K itemKey] interface {
-	SetEngineState(K, EngineLogState)
-	GetEngineState(K) EngineLogState
+type EngineFSM interface {
+	SetEngineState(serviceLogStateKey, EngineLogState)
+	GetEngineState(serviceLogStateKey) EngineLogState
 }
 
 const (

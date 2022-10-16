@@ -36,7 +36,7 @@ type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
 type engine[K itemKey, T ServiceItem[K]] struct {
 	client        watcherClient[T]    // Interfaces with emitter
 	serviceEngine ServiceEngine[K, T] // Injected service code
-	engineFSM     EngineFSM[K]        // Engine internal state machine
+	engineFSM     EngineFSM           // Engine internal state machine
 	debug         bool
 }
 
@@ -114,7 +114,7 @@ func (e *engine[K, T]) handleError() error {
 	}
 }
 
-func (e *engine[K, T]) initStuff(method string) (ServiceEngine[K, T], ServiceFSM[K], EngineFSM[K], error) {
+func (e *engine[K, T]) initStuff(method string) (ServiceEngine[K, T], ServiceFSM[K], EngineFSM, error) {
 	serviceFSM, err := e.serviceEngine.ServiceStateTracker()
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to init serviceFSM for %s", method)
