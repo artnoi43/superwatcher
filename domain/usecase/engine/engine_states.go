@@ -14,8 +14,8 @@ type (
 )
 
 type EngineFSM interface {
-	SetEngineState(serviceLogStateKey, EngineLogState)
-	GetEngineState(serviceLogStateKey) EngineLogState
+	SetEngineState(engineLogStateKey, EngineLogState)
+	GetEngineState(engineLogStateKey) EngineLogState
 }
 
 const (
