@@ -10,6 +10,7 @@ type Uniswapv3PoolCreated struct {
 	Address      common.Address
 	Token0       common.Address
 	Token1       common.Address
+	Fee          uint64
 	BlockCreated uint64
 }
 

@@ -3,6 +3,8 @@ package engine
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -28,21 +30,38 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(
 	}
 
 	logEventKey := log.Topics[0]
-	unpacked := make(map[string]interface{})
-	var err error
 	for _, event := range contractInterestingEvents {
 		if logEventKey == event.ID {
-			unpacked, err = logutils.UnpackIntoMap(contractABI, event.Name, log)
-			if err != nil {
-				return nil, errors.New("failed to unpack uniswapv3factory logs")
-			}
+			return mapLogToItem(contractABI, event.Name, log)
 		}
 	}
 
-	poolCreated, err := parseLogToUniswapv3Factory(unpacked)
+	return nil, fmt.Errorf("event topic %s not found", logEventKey)
+}
+
+// mapLogToItem maps *types.Log to entity.Uniswapv3PoolCreated.
+// It can be updated to handle more events from this contract.
+func mapLogToItem(
+	contractABI abi.ABI,
+	eventName string,
+	l *types.Log,
+) (
+	watcherengine.ServiceItem[entity.Uniswapv3FactoryWatcherKey],
+	error,
+) {
+	unpacked, err := logutils.UnpackLogDataIntoMap(contractABI, eventName, l.Data)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to convert unpacked log data to *entity.UniswapSwap")
+		return nil, errors.Wrapf(err, "failed to unpack uniswapv3factory logs (event %s)", eventName)
 	}
+	poolCreated, err := parseLogDataToUniswapv3Factory(unpacked)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert unpacked log data to *entity.Uniswapv3PoolCreated")
+	}
+
+	poolCreated.Token0 = common.HexToAddress(l.Topics[1].String())
+	poolCreated.Token1 = common.HexToAddress(l.Topics[2].String())
+	poolCreated.Fee = l.Topics[3].Big().Uint64()
+	poolCreated.BlockCreated = l.BlockNumber
 
 	return poolCreated, nil
 }

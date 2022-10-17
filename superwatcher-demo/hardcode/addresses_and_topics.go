@@ -39,7 +39,11 @@ var contractTopicsMap = map[common.Address][]string{
 	contractAddressesMap[oneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
 }
 
-func GetABIAddressesAndTopics() (map[common.Address][]abi.Event, []common.Address, [][]common.Hash) {
+func GetABIAddressesAndTopics() (
+	map[common.Address][]abi.Event, // Map contract (addr) to interesting events
+	[]common.Address, // All interesting contract addresses
+	[][]common.Hash, // All interesting event log topics
+) {
 	var addresses []common.Address
 	for _, addr := range contractAddressesMap {
 		addresses = append(addresses, addr)
