@@ -12,7 +12,8 @@ import (
 
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/domain/datagateway"
-	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/emitter/reorg"
+
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
@@ -80,7 +81,7 @@ func NewEmitter(
 	topics [][]common.Hash,
 	logChan chan<- *types.Log,
 	// blockChan chan<- *reorg.BlockInfo,
-	// reorgChan chan<- *reorg.BlockInfo,
+	reorgChan chan<- *reorg.BlockInfo,
 	// errChan chan<- error,
 ) Emitter {
 	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
@@ -96,7 +97,7 @@ func NewEmitter(
 		logChan:   logChan,
 		// blockChan:        blockChan,
 		// errChan:          errChan,
-		// reorgChan:        reorgChan,
+		reorgChan: reorgChan,
 	}
 }
 
@@ -110,7 +111,7 @@ func NewWatcherDebug(
 	topics [][]common.Hash,
 	logChan chan<- *types.Log,
 	// blockChan chan<- *reorg.BlockInfo,
-	// reorgChan chan<- *reorg.BlockInfo,
+	reorgChan chan<- *reorg.BlockInfo,
 	// errChan chan<- error,
 ) Emitter {
 	e := NewEmitter(
@@ -122,7 +123,7 @@ func NewWatcherDebug(
 		topics,
 		logChan,
 		// blockChan,
-		// reorgChan,
+		reorgChan,
 		// errChan,
 	)
 

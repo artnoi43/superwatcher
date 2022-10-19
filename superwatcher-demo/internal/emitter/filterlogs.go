@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/emitter/reorg"
 )
 
 // filterLogs filters Ethereum event logs from fromBlock to toBlock,
