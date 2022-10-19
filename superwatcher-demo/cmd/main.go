@@ -6,19 +6,23 @@ import (
 	"sync"
 	"syscall"
 
+	// "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/data/watcherstate"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
+
+	// "github.com/artnoi43/superwatcher/data/watcherstate"
+	// "github.com/artnoi43/superwatcher/domain/usecase/emitter"
+	// "github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
-	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
+	// "github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
 )
 
 func main() {
@@ -44,11 +48,11 @@ func main() {
 		panic("nil redis")
 	}
 
-	stateDataGateway := watcherstate.NewWatcherStateRedisClient(
-		chain,
-		"testSuperWatcherClient",
-		rdb,
-	)
+	// stateDataGateway := watcherstate.NewWatcherStateRedisClient(
+	// 	chain,
+	// 	"testSuperWatcherClient",
+	// 	rdb,
+	// )
 
 	ctx, stop := signal.NotifyContext(
 		context.Background(),
@@ -59,9 +63,9 @@ func main() {
 	)
 
 	logChan := make(chan *types.Log)
-	blockChan := make(chan *reorg.BlockInfo)
-	errChan := make(chan error)
-	reorgChan := make(chan *reorg.BlockInfo)
+	// blockChan := make(chan *reorg.BlockInfo)
+	// errChan := make(chan error)
+	// reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
 	_, addresses, topics := hardcode.GetABIAddressesAndTopics()
@@ -69,13 +73,13 @@ func main() {
 		conf,
 		ethClient,
 		nil, // No DataGateway yet
-		stateDataGateway,
+		// stateDataGateway,
 		addresses,
 		topics,
 		logChan,
-		blockChan,
-		reorgChan,
-		errChan,
+		// blockChan,
+		// reorgChan,
+		// errChan,
 	)
 
 	shutdown := func() {
@@ -98,24 +102,24 @@ func main() {
 		}
 	}()
 
-	watcherClient := engine.NewWatcherClientDebug[any](
-		logChan,
-		blockChan,
-		reorgChan,
-		errChan,
-		nil,
-	)
+	// watcherClient := engine.NewWatcherClientDebug[any](
+	// 	logChan,
+	// 	blockChan,
+	// 	reorgChan,
+	// 	errChan,
+	// 	nil,
+	// )
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	// go func() {
+	// 	defer wg.Done()
 
-		go loopHandleWatcherClientLog(watcherClient)
-		go loopHandleWatcherClientBlock(watcherClient)
-		go loopHandleWatcherClientReorg(watcherClient)
-		loopHandleWatcherClientErr(watcherClient)
-	}()
+	// 	go loopHandleWatcherClientLog(watcherClient)
+	// 	go loopHandleWatcherClientBlock(watcherClient)
+	// 	go loopHandleWatcherClientReorg(watcherClient)
+	// 	loopHandleWatcherClientErr(watcherClient)
+	// }()
 	wg.Wait()
 }
 
