@@ -3,7 +3,7 @@ module github.com/artnoi43/superwatcher
 go 1.19
 
 require (
-	github.com/artnoi43/gsl v0.0.0-20220907221312-557cf6f3848b
+	github.com/artnoi43/gsl v0.0.0-20221021201437-d001c45ff49c
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-redis/redis/v8 v8.11.5
@@ -30,9 +30,9 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
-	golang.org/x/exp v0.0.0-20221012211006-4de253d81b95 // indirect
-	golang.org/x/sys v0.0.0-20221013171732-95e765b1cc43 // indirect
-	golang.org/x/text v0.3.8 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
+	golang.org/x/exp v0.0.0-20221019170559-20944726eadf // indirect
+	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/text v0.4.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )
