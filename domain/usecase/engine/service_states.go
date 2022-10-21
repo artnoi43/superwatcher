@@ -22,7 +22,7 @@ type (
 
 // ServiceFSM[T] is the service's implementation of chain reorganization state machine
 // that operates on T ServiceItem
-type ServiceFSM[K itemKey] interface {
+type ServiceFSM[K ItemKey] interface {
 	SetServiceState(K, ServiceItemState) // Overwrites state blindly
 	GetServiceState(K) ServiceItemState  // Gets current item state
 }

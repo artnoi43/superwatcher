@@ -1,4 +1,4 @@
-package engine
+package uniswapv3factoryengine
 
 import (
 	"sync"
@@ -10,12 +10,6 @@ import (
 type poolFactoryFSM struct {
 	sync.RWMutex
 	states map[entity.Uniswapv3FactoryWatcherKey]watcherengine.ServiceItemState
-}
-
-func NewPoolFactoryFSM() watcherengine.ServiceFSM[entity.Uniswapv3FactoryWatcherKey] {
-	return &poolFactoryFSM{
-		states: make(map[entity.Uniswapv3FactoryWatcherKey]watcherengine.ServiceItemState),
-	}
 }
 
 func (fsm *poolFactoryFSM) SetServiceState(key entity.Uniswapv3FactoryWatcherKey, state watcherengine.ServiceItemState) {

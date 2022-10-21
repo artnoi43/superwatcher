@@ -12,7 +12,7 @@ import (
 )
 
 // handleLog is a pure function for handling a single Ethereum event log
-func handleLog[K itemKey, T ServiceItem[K]](
+func handleLog[K ItemKey, T ServiceItem[K]](
 	log *types.Log,
 	serviceEngine ServiceEngine[K, T],
 	serviceFSM ServiceFSM[K],

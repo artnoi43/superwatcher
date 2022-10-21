@@ -1,6 +1,8 @@
 package hardcode
 
 import (
+	"strings"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
@@ -39,7 +41,9 @@ var contractTopicsMap = map[common.Address][]string{
 	contractAddressesMap[oneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
 }
 
-func GetABIAddressesAndTopics() (
+// DemoAddressesAndTopics returns contract information for all demo contracts.
+func DemoAddressesAndTopics() (
+	map[common.Address]abi.ABI, // Map contract (addr) to ABI
 	map[common.Address][]abi.Event, // Map contract (addr) to interesting events
 	[]common.Address, // All interesting contract addresses
 	[][]common.Hash, // All interesting event log topics
@@ -49,13 +53,22 @@ func GetABIAddressesAndTopics() (
 		addresses = append(addresses, addr)
 	}
 
+	abiMap := make(map[common.Address]abi.ABI)
 	interestingEventsMap := make(map[common.Address][]abi.Event)
 	var topics []common.Hash
 	for contractName, abiStr := range contractABIsMap {
+
+		contractABI, err := abi.JSON(strings.NewReader(abiStr))
+		if err != nil {
+			logger.Panic("failed to init contractABI", zap.Error(err))
+		}
+
 		contractAddr := contractAddressesMap[contractName]
+		abiMap[contractAddr] = contractABI
+
 		topicKeys := contractTopicsMap[contractAddr]
 
-		_, interestingEvents, err := contracts.ContractInfo(abiStr, topicKeys...)
+		_, interestingEvents, err := contracts.ContractInfo(contractABI, topicKeys...)
 		if err != nil {
 			logger.Panic("failed to init ABI, topics, and address", zap.String("error", err.Error()))
 		}
@@ -67,5 +80,5 @@ func GetABIAddressesAndTopics() (
 		}
 	}
 
-	return interestingEventsMap, addresses, [][]common.Hash{topics}
+	return abiMap, interestingEventsMap, addresses, [][]common.Hash{topics}
 }

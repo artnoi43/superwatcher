@@ -1,4 +1,4 @@
-package engine
+package uniswapv3factoryengine
 
 import "github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 

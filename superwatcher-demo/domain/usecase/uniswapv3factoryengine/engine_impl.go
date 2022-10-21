@@ -1,4 +1,4 @@
-package engine
+package uniswapv3factoryengine
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	watcherengine "github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
@@ -52,16 +53,33 @@ func (e *uniswapv3FactoryEngine) ActionOptions(
 	return nil, nil
 }
 
+// ItemAction just logs incoming pool
 func (e *uniswapv3FactoryEngine) ItemAction(
-	*entity.Uniswapv3PoolCreated,
-	watcherengine.EngineLogState,
-	watcherengine.ServiceItemState,
-	...interface{},
+	pool *entity.Uniswapv3PoolCreated,
+	engineState watcherengine.EngineLogState,
+	serviceState watcherengine.ServiceItemState,
+	options ...interface{},
 ) (
 	watcherengine.ServiceItemState,
 	error,
 ) {
-	return nil, errors.New("not implemented")
+	// TODO: remove the nil check if-blocks
+	if serviceState == nil {
+		logger.Panic("nil serviceState")
+	}
+
+	poolState := serviceState.(uniswapv3PoolFactoryState)
+	switch engineState {
+	case engine.EngineStateNull:
+		switch poolState {
+		case PoolFactoryStateNull:
+			// Pretend this is DB operations
+			logger.Info("DEMO: got new poolCreated, writing to db..")
+			return PoolFactoryStateCreated, nil
+		}
+	}
+
+	return serviceState, nil
 }
 
 // Unused by this service
@@ -83,11 +101,12 @@ func (e *uniswapv3FactoryEngine) HandleReorg(
 	pool *entity.Uniswapv3PoolCreated,
 	engineState watcherengine.EngineLogState,
 	serviceState watcherengine.ServiceItemState,
+	options ...interface{},
 ) (
 	watcherengine.ServiceItemState,
 	error,
 ) {
-	// TODO: remove the nil check if-block
+	// TODO: remove the nil check if-blocks
 	if serviceState == nil {
 		logger.Panic("nil serviceState")
 	}

@@ -13,11 +13,6 @@ type (
 	EngineLogEvent uint8
 )
 
-type EngineFSM interface {
-	SetEngineState(engineLogStateKey, EngineLogState)
-	GetEngineState(engineLogStateKey) EngineLogState
-}
-
 const (
 	EngineStateNull EngineLogState = iota
 	EngineStateSeen

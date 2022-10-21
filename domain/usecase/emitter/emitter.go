@@ -14,7 +14,6 @@ import (
 	"github.com/artnoi43/superwatcher/domain/datagateway"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/enums"
-	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
@@ -31,7 +30,7 @@ type ethClient interface {
 }
 
 // Code that imports watcher should only use this method.
-type Emitter interface {
+type WatcherEmitter interface {
 	Loop(context.Context) error
 	shutdown()
 }
@@ -43,7 +42,7 @@ type emitter struct {
 	// These fields are used for filtering event logs
 	config           *config.Config
 	client           ethClient
-	dataGateway      datagateway.DataGateway
+	dataGateway      datagateway.DataGateway // TODO: remove?
 	stateDataGateway datagateway.StateDataGateway
 	tracker          *reorg.Tracker
 	startBlock       uint64
@@ -70,36 +69,6 @@ type Config struct {
 	IntervalSecond  int             `mapstructure:"interval_second" json:"intervalSecond"`
 }
 
-// NewEmitter initializes contract info from config
-func NewEmitter(
-	conf *config.Config,
-	client ethClient,
-	dataGateway datagateway.DataGateway,
-	stateDataGateway datagateway.StateDataGateway,
-	addresses []common.Address,
-	topics [][]common.Hash,
-	logChan chan<- *types.Log,
-	blockChan chan<- *reorg.BlockInfo,
-	reorgChan chan<- *reorg.BlockInfo,
-	errChan chan<- error,
-) Emitter {
-	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
-	return &emitter{
-		config:           conf,
-		client:           client,
-		dataGateway:      dataGateway,
-		stateDataGateway: stateDataGateway,
-		tracker:          reorg.NewTracker(),
-		startBlock:       conf.StartBlock,
-		addresses:        addresses,
-		topics:           topics,
-		logChan:          logChan,
-		blockChan:        blockChan,
-		errChan:          errChan,
-		reorgChan:        reorgChan,
-	}
-}
-
 // NewWatcher initializes contract info from config
 func NewWatcherDebug(
 	conf *config.Config,
@@ -112,8 +81,8 @@ func NewWatcherDebug(
 	blockChan chan<- *reorg.BlockInfo,
 	reorgChan chan<- *reorg.BlockInfo,
 	errChan chan<- error,
-) Emitter {
-	e := NewEmitter(
+) WatcherEmitter {
+	e := New(
 		conf,
 		client,
 		dataGateway,

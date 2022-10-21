@@ -8,7 +8,7 @@ import (
 )
 
 // handleReorgedLog is a pure function for handling a reorganized event log.
-func handleReorgedLog[K itemKey, T ServiceItem[K]](
+func handleReorgedLog[K ItemKey, T ServiceItem[K]](
 	reorgedLog *types.Log,
 	serviceEngine ServiceEngine[K, T],
 	serviceFSM ServiceFSM[K],

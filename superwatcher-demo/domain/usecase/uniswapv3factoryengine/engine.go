@@ -1,4 +1,4 @@
-package engine
+package uniswapv3factoryengine
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	watcherengine "github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 )
@@ -19,10 +20,11 @@ type uniswapv3FactoryEngine struct {
 func NewUniswapV3Engine(
 	mapAddrABI map[common.Address]abi.ABI,
 	mapAddrEvents map[common.Address][]abi.Event,
-) *uniswapv3FactoryEngine {
+) engine.ServiceEngine[entity.Uniswapv3FactoryWatcherKey, *entity.Uniswapv3PoolCreated] {
 	return &uniswapv3FactoryEngine{
 		mapAddrToABI:    mapAddrABI,
 		mapAddrToEvents: mapAddrEvents,
+		// TODO: Should we add func `NewPoolFactoryFSM`?
 		serviceFSM: &poolFactoryFSM{
 			states: make(map[entity.Uniswapv3FactoryWatcherKey]watcherengine.ServiceItemState),
 		},

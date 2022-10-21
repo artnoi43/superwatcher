@@ -1,43 +1,57 @@
 package engine
 
 import (
-	"github.com/ethereum/go-ethereum/core/types"
+	"context"
+
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
-// ServiceEngine[T] defines what service should implement and inject into engine.
-type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
-	// ServiceStateTracker returns service-specific finite state machine.
-	ServiceStateTracker() (ServiceFSM[K], error)
+var ErrChanClosed = errors.New("emitterClient channel closed")
 
-	// MapLogToItem maps Ethereum event log into service-specific type T.
-	MapLogToItem(l *types.Log) (T, error)
-
-	// ActionOptions can be implemented to define arbitary options to be passed to ItemAction.
-	ActionOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)
-
-	// ItemAction is called every time a new, fresh log is converted into ServiceItem,
-	// The state returned represents the service state that will be assigned to the ServiceItem.
-	ItemAction(T, EngineLogState, ServiceItemState, ...interface{}) (ServiceItemState, error)
-
-	// ReorgOption can be implemented to define arbitary options to be passed to HandleReorg.
-	ReorgOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)
-
-	// HandleReorg is called in *engine.handleReorg.
-	HandleReorg(T, EngineLogState, ServiceItemState, ...interface{}) (ServiceItemState, error)
-
-	// TODO: work this out
-	HandleEmitterError(error) error
+type WatcherEngine interface {
+	Loop(context.Context) error
 }
 
-type engine[K itemKey, T ServiceItem[K]] struct {
-	client        watcherClient[T]    // Interfaces with emitter
+type engine[K ItemKey, T ServiceItem[K]] struct {
+	client        EmitterClient[T]    // Interfaces with emitter
 	serviceEngine ServiceEngine[K, T] // Injected service code
 	engineFSM     EngineFSM           // Engine internal state machine
 	debug         bool
+}
+
+func newWatcherEngine[K ItemKey, T ServiceItem[K]](
+	client EmitterClient[T],
+	serviceEngine ServiceEngine[K, T],
+	debug bool,
+) WatcherEngine {
+	return &engine[K, T]{
+		client:        client,
+		serviceEngine: serviceEngine,
+		engineFSM:     NewEngineFSM(),
+		debug:         debug,
+	}
+}
+
+// Loop is subject to great changes.
+// As of this writing, it's not even 50% close to the final version I have in mind.
+func (e *engine[K, T]) Loop(ctx context.Context) error {
+	go func() {
+		if err := e.handleBlock(); err != nil {
+			logger.Panic("handleBlock error", zap.Error(err))
+		}
+	}()
+
+	go func() {
+		if err := e.handleReorg(); err != nil {
+			logger.Panic("handleReorg error", zap.Error(err))
+		}
+	}()
+
+	return e.handleError()
 }
 
 func (e *engine[K, T]) handleLog() error {

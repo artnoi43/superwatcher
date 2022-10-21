@@ -10,7 +10,7 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
-type WatcherClient[T any] interface {
+type EmitterClient[T any] interface {
 	WatcherCurrentLog() *types.Log
 	WatcherCurrentBlock() *reorg.BlockInfo
 	WatcherReorg() *reorg.BlockInfo
@@ -19,7 +19,7 @@ type WatcherClient[T any] interface {
 	ToDomainData(*types.Log) (*T, error)
 }
 
-type watcherClient[T any] struct {
+type emitterClient[T any] struct {
 	logChan   <-chan *types.Log
 	blockChan <-chan *reorg.BlockInfo
 	reorgChan <-chan *reorg.BlockInfo
@@ -36,8 +36,8 @@ func NewWatcherClient[T any](
 	reorgChan <-chan *reorg.BlockInfo,
 	errChan <-chan error,
 	adapter Adapter[T],
-) WatcherClient[T] {
-	return &watcherClient[T]{
+) EmitterClient[T] {
+	return &emitterClient[T]{
 		logChan:   logChan,
 		blockChan: blockChan,
 		errChan:   errChan,
@@ -46,20 +46,20 @@ func NewWatcherClient[T any](
 	}
 }
 
-func NewWatcherClientDebug[T any](
+func NewEmitterClientDebug[T any](
 	logChan <-chan *types.Log,
 	blockChan <-chan *reorg.BlockInfo,
 	reorgChan <-chan *reorg.BlockInfo,
 	errChan <-chan error,
 	adapter Adapter[T],
-) WatcherClient[T] {
+) EmitterClient[T] {
 	client := NewWatcherClient(logChan, blockChan, reorgChan, errChan, adapter)
-	client.(*watcherClient[T]).debug = true
+	client.(*emitterClient[T]).debug = true
 
 	return client
 }
 
-func (c *watcherClient[T]) WatcherCurrentLog() *types.Log {
+func (c *emitterClient[T]) WatcherCurrentLog() *types.Log {
 	l, ok := <-c.logChan
 	if ok {
 		return l
@@ -71,7 +71,7 @@ func (c *watcherClient[T]) WatcherCurrentLog() *types.Log {
 	return nil
 }
 
-func (c *watcherClient[T]) WatcherCurrentBlock() *reorg.BlockInfo {
+func (c *emitterClient[T]) WatcherCurrentBlock() *reorg.BlockInfo {
 	b, ok := <-c.blockChan
 	if ok {
 		return b
@@ -83,7 +83,7 @@ func (c *watcherClient[T]) WatcherCurrentBlock() *reorg.BlockInfo {
 	return nil
 }
 
-func (c *watcherClient[T]) WatcherReorg() *reorg.BlockInfo {
+func (c *emitterClient[T]) WatcherReorg() *reorg.BlockInfo {
 	blockInfo, ok := <-c.reorgChan
 	if ok {
 		return blockInfo
@@ -95,7 +95,7 @@ func (c *watcherClient[T]) WatcherReorg() *reorg.BlockInfo {
 	return nil
 }
 
-func (c *watcherClient[T]) WatcherError() error {
+func (c *emitterClient[T]) WatcherError() error {
 	err, ok := <-c.errChan
 	if ok {
 		return err
@@ -107,10 +107,10 @@ func (c *watcherClient[T]) WatcherError() error {
 	return nil
 }
 
-func (c *watcherClient[T]) ToDomainData(l *types.Log) (*T, error) {
+func (c *emitterClient[T]) ToDomainData(l *types.Log) (*T, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (c *watcherClient[T]) debugMsg(msg string, fields ...zap.Field) {
+func (c *emitterClient[T]) debugMsg(msg string, fields ...zap.Field) {
 	debug.DebugMsg(c.debug, msg, fields...)
 }
