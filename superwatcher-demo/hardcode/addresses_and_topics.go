@@ -9,7 +9,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts"
-	oneinchlimitorder "github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/1inchlimitorder"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/oneinchlimitorder"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3factory"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3pool"
 )
