@@ -56,13 +56,17 @@ func handleLog[K itemKey, T ServiceItem[K]](
 
 	key := item.ItemKey()
 	itemServiceState := serviceFSM.GetServiceState(key)
+	actionOptions, err := serviceEngine.ActionOptions(item, engineState, itemServiceState)
+	if err != nil {
+		return errors.Wrap(err, "failed to get itemAction options from service")
+	}
 	// TODO: Or the returned type from ItemAction should be event?
 	processedState, err := serviceEngine.ItemAction(
 		item,
 		engineState,
 		itemServiceState,
-		// Get options for ItemAction from serviceEngine code
-		serviceEngine.ActionOptions(item, engineState, itemServiceState),
+		actionOptions...,
+	// Get options for ItemAction from serviceEngine code
 	)
 	if err != nil {
 		return errors.Wrapf(

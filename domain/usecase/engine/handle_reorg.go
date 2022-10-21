@@ -38,11 +38,15 @@ func handleReorgedLog[K itemKey, T ServiceItem[K]](
 	}
 
 	key := reorgedItem.ItemKey()
-	handleReorgOptions := serviceEngine.ReorgOptions(
+	handleReorgOptions, err := serviceEngine.ReorgOptions(
 		reorgedItem,
 		engineState,
 		serviceFSM.GetServiceState(key),
 	)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get reorgOptions from service")
+	}
+
 	stateAfterHandledReorged, err := serviceEngine.HandleReorg(
 		reorgedItem,
 		engineState,

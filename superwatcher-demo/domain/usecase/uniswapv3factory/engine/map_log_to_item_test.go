@@ -33,7 +33,7 @@ func TestMapLogToItem(t *testing.T) {
 		t.Errorf("failed to parse contract ABI: %s", err.Error())
 	}
 
-	poolCreatedForEngine, err := mapLogToItem(uniswapv3factoryABI, "PoolCreated", &eventLog)
+	poolCreated, err := mapLogToItem(uniswapv3factoryABI, "PoolCreated", &eventLog)
 	if err != nil {
 		t.Fatalf("mapLogToItem failed: %s", err.Error())
 	}
@@ -46,10 +46,6 @@ func TestMapLogToItem(t *testing.T) {
 		BlockCreated: 15766355,
 	}
 
-	poolCreated, ok := poolCreatedForEngine.(*entity.Uniswapv3PoolCreated)
-	if !ok {
-		t.Fatalf("type assertion to *entity.Uniswapv3PoolCreated failed")
-	}
 	if !reflect.DeepEqual(*poolCreated, expected) {
 		t.Logf("expected: %+v\n", expected)
 		t.Logf("actual: %+v\n", poolCreated)

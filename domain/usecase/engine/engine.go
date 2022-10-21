@@ -17,17 +17,17 @@ type ServiceEngine[K itemKey, T ServiceItem[K]] interface {
 	MapLogToItem(l *types.Log) (T, error)
 
 	// ActionOptions can be implemented to define arbitary options to be passed to ItemAction.
-	ActionOptions(T, EngineLogState, ServiceItemState) []interface{}
+	ActionOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)
 
 	// ItemAction is called every time a new, fresh log is converted into ServiceItem,
 	// The state returned represents the service state that will be assigned to the ServiceItem.
-	ItemAction(T, EngineLogState, ServiceItemState, ...interface{}) (State, error)
+	ItemAction(T, EngineLogState, ServiceItemState, ...interface{}) (ServiceItemState, error)
 
 	// ReorgOption can be implemented to define arbitary options to be passed to HandleReorg.
-	ReorgOptions(T, EngineLogState, ServiceItemState) []interface{}
+	ReorgOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)
 
 	// HandleReorg is called in *engine.handleReorg.
-	HandleReorg(T, EngineLogState, ServiceItemState, ...interface{}) (State, error)
+	HandleReorg(T, EngineLogState, ServiceItemState, ...interface{}) (ServiceItemState, error)
 
 	// TODO: work this out
 	HandleEmitterError(error) error

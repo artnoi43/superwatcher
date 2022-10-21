@@ -27,8 +27,8 @@ var uniswapv3PoolFactoryStateTransitionTable = map[uniswapv3StateTableKey]uniswa
 	{state: PoolFactoryStateNull, event: PoolFactoryEventPoolCreated}: PoolFactoryStateCreated,
 }
 
-func (state *uniswapv3PoolFactoryState) String() string {
-	switch *state {
+func (state uniswapv3PoolFactoryState) String() string {
+	switch state {
 	case PoolFactoryStateNull:
 		return "NULL"
 	case PoolFactoryStateCreated:
@@ -38,8 +38,8 @@ func (state *uniswapv3PoolFactoryState) String() string {
 	panic(fmt.Sprintf("invalid state: %d", state))
 }
 
-func (state *uniswapv3PoolFactoryState) IsValid() bool {
-	switch *state {
+func (state uniswapv3PoolFactoryState) IsValid() bool {
+	switch state {
 	case
 		PoolFactoryStateNull,
 		PoolFactoryStateCreated:
@@ -49,16 +49,16 @@ func (state *uniswapv3PoolFactoryState) IsValid() bool {
 	return false
 }
 
-func (state *uniswapv3PoolFactoryState) Fire(event engine.Event) engine.State {
+func (state uniswapv3PoolFactoryState) Fire(event engine.Event) engine.State {
 	newState, found := uniswapv3PoolFactoryStateTransitionTable[uniswapv3StateTableKey{
-		state: *state,
+		state: state,
 		event: event.(uniswapv3PoolFactoryEvent),
 	}]
 	if !found {
 		return nil
 	}
 
-	*state = newState
+	state = newState
 	return state
 }
 
