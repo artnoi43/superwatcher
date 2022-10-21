@@ -26,14 +26,15 @@ type WatcherEmitter interface {
 // to facil mock testing.
 type emitter struct {
 	// These fields are used for filtering event logs
-	config           *config.Config
-	client           ethClient
-	dataGateway      datagateway.DataGateway // TODO: remove?
+	config     *config.Config
+	client     ethClient
+	tracker    *reorg.Tracker
+	startBlock uint64
+	addresses  []common.Address
+	topics     [][]common.Hash
+
+	// Redis-store for tracking last recorded block
 	stateDataGateway datagateway.StateDataGateway
-	tracker          *reorg.Tracker
-	startBlock       uint64
-	addresses        []common.Address
-	topics           [][]common.Hash
 
 	// These fields are comms with for other services
 	logChan   chan<- *types.Log
@@ -41,7 +42,6 @@ type emitter struct {
 	reorgChan chan<- *reorg.BlockInfo
 	errChan   chan<- error
 
-	// For debugging
 	debug bool
 }
 

@@ -146,17 +146,10 @@ func (e *emitter) filterLogs(
 		b := reorg.NewBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
 		b.Logs = freshLogsByBlockNumber[blockNumber]
 
-		// Process every log for this block
-		// TODO: Use Goroutine to publish?
-		for _, l := range processLogsByBlockNumber[blockNumber] {
-			// TODO: What to do if fresh logs with unchanged hash has Removed set to true?
-			e.publishLog(l)
-		}
-		// Only publish block with logs
+		// Publish block with > 0 block
 		if len(b.Logs) > 0 {
 			e.publishBlock(b)
 		}
-
 		// Add ONLY CANONICAL block into tracker
 		e.tracker.AddTrackerBlock(b)
 	}

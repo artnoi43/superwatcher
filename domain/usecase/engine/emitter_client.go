@@ -25,8 +25,6 @@ type emitterClient[T any] struct {
 	reorgChan <-chan *reorg.BlockInfo
 	errChan   <-chan error
 
-	adapter Adapter[T]
-
 	debug bool
 }
 
@@ -35,14 +33,12 @@ func NewWatcherClient[T any](
 	blockChan <-chan *reorg.BlockInfo,
 	reorgChan <-chan *reorg.BlockInfo,
 	errChan <-chan error,
-	adapter Adapter[T],
 ) EmitterClient[T] {
 	return &emitterClient[T]{
 		logChan:   logChan,
 		blockChan: blockChan,
 		errChan:   errChan,
 		reorgChan: reorgChan,
-		adapter:   adapter,
 	}
 }
 
@@ -51,9 +47,8 @@ func NewEmitterClientDebug[T any](
 	blockChan <-chan *reorg.BlockInfo,
 	reorgChan <-chan *reorg.BlockInfo,
 	errChan <-chan error,
-	adapter Adapter[T],
 ) EmitterClient[T] {
-	client := NewWatcherClient(logChan, blockChan, reorgChan, errChan, adapter)
+	client := NewWatcherClient[T](logChan, blockChan, reorgChan, errChan)
 	client.(*emitterClient[T]).debug = true
 
 	return client

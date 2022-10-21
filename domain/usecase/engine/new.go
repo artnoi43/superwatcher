@@ -7,12 +7,6 @@ import (
 )
 
 func New[K ItemKey, T ServiceItem[K]](
-	// conf *config.Config,
-	// ethClient *ethclient.Client,
-	// dataGateway datagateway.DataGateway,
-	// stateDataGateway datagateway.StateDataGateway,
-	// addresses []common.Address,
-	// topics [][]common.Hash,
 	serviceEngine ServiceEngine[K, T],
 	// TODO: For prod, should we create chans inside this func instead?
 	logChan chan *types.Log,
@@ -26,7 +20,6 @@ func New[K ItemKey, T ServiceItem[K]](
 		blockChan,
 		reorgChan,
 		errChan,
-		nil,
 	)
 
 	return newWatcherEngine(

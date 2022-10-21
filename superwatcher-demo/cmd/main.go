@@ -71,7 +71,6 @@ func main() {
 	watcherEmitter, watcherEngine := superwatcher.New(
 		conf,
 		ethClient,
-		nil, // No DataGateway yet
 		stateDataGateway,
 		addresses,
 		topics,

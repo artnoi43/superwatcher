@@ -15,7 +15,6 @@ import (
 func New[K engine.ItemKey, T engine.ServiceItem[K]](
 	conf *config.Config,
 	ethClient *ethclient.Client,
-	dataGateway datagateway.DataGateway,
 	stateDataGateway datagateway.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
@@ -33,7 +32,6 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 	emitter := emitter.New(
 		conf,
 		ethClient,
-		dataGateway,
 		stateDataGateway,
 		addresses,
 		topics,

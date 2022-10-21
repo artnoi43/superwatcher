@@ -15,7 +15,6 @@ import (
 func New(
 	conf *config.Config,
 	client ethClient,
-	dataGateway datagateway.DataGateway,
 	stateDataGateway datagateway.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
@@ -29,7 +28,6 @@ func New(
 	return &emitter{
 		config:           conf,
 		client:           client,
-		dataGateway:      dataGateway,
 		stateDataGateway: stateDataGateway,
 		tracker:          reorg.NewTracker(),
 		startBlock:       conf.StartBlock,
