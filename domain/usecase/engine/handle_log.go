@@ -57,6 +57,9 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 
 	key := item.ItemKey()
 	itemServiceState := serviceFSM.GetServiceState(key)
+	if itemServiceState == nil {
+
+	}
 	actionOptions, err := serviceEngine.ActionOptions(item, engineState, itemServiceState)
 	if err != nil {
 		return errors.Wrap(err, "failed to get itemAction options from service")
@@ -77,7 +80,7 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 		)
 	}
 
-	engineState.Fire(EngineLogEvent(EngineStateProcessed))
+	engineState.Fire(EngineEventProcess)
 	if !engineState.IsValid() {
 		return fmt.Errorf("invalid state %s", engineState.String())
 	}

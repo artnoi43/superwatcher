@@ -23,5 +23,10 @@ func (fsm *poolFactoryFSM) GetServiceState(key entity.Uniswapv3FactoryWatcherKey
 	fsm.RLock()
 	defer fsm.RUnlock()
 
-	return fsm.states[key]
+	state := fsm.states[key]
+	if state == nil {
+		return PoolFactoryStateNull
+	} else {
+		return state
+	}
 }
