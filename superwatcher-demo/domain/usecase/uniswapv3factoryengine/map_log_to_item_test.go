@@ -33,7 +33,7 @@ func TestMapLogToItem(t *testing.T) {
 		t.Errorf("failed to parse contract ABI: %s", err.Error())
 	}
 
-	poolCreated, err := mapLogToItem(uniswapv3factoryABI, "PoolCreated", &eventLog)
+	poolCreated, err := mapLogToPoolCreated(uniswapv3factoryABI, "PoolCreated", &eventLog)
 	if err != nil {
 		t.Fatalf("mapLogToItem failed: %s", err.Error())
 	}
