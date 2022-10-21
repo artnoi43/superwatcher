@@ -55,6 +55,7 @@ func (e *engine[K, T]) Loop(ctx context.Context) error {
 }
 
 func (e *engine[K, T]) handleLog() error {
+	e.debugMsg("*engine.handleLog started")
 	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleLog")
 	if err != nil {
 		return err
@@ -69,6 +70,7 @@ func (e *engine[K, T]) handleLog() error {
 }
 
 func (e *engine[K, T]) handleBlock() error {
+	e.debugMsg("*engine.handleBlock started")
 	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
 	if err != nil {
 		return err
@@ -91,6 +93,7 @@ func (e *engine[K, T]) handleBlock() error {
 }
 
 func (e *engine[K, T]) handleReorg() error {
+	e.debugMsg("*engine.handleReorg started")
 	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
 	if err != nil {
 		return err
@@ -112,6 +115,7 @@ func (e *engine[K, T]) handleReorg() error {
 }
 
 func (e *engine[K, T]) handleError() error {
+	e.debugMsg("*engine.handleError started")
 	for {
 		err := e.client.WatcherError()
 		if err != nil {

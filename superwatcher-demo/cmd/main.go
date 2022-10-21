@@ -6,7 +6,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -58,13 +57,12 @@ func main() {
 		syscall.SIGTERM,
 	)
 
-	logChan := make(chan *types.Log)
 	blockChan := make(chan *reorg.BlockInfo)
 	errChan := make(chan error)
 	reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
-	contractABIs, contractsEvents, addresses, topics := hardcode.DemoAddressesAndTopics()
+	contractABIs, contractsEvents, addresses, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
 	poolFactoryEngine := uniswapv3factoryengine.NewUniswapV3Engine(
 		contractABIs,
@@ -77,7 +75,7 @@ func main() {
 		stateDataGateway,
 		addresses,
 		topics,
-		logChan,
+		nil, // Only use blockChan, fuck logChan
 		blockChan,
 		reorgChan,
 		errChan,

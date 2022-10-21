@@ -2,9 +2,7 @@ package emitter
 
 import (
 	"context"
-	"math/big"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -16,18 +14,6 @@ import (
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
-
-// ethClient is an interface representing *ethclient.Client methods
-// called in watcher methods. Defined as an iface to facil mock testing.
-type ethClient interface {
-	BlockNumber(context.Context) (uint64, error)
-	BlockByNumber(context.Context, *big.Int) (*types.Block, error)
-	FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error)
-
-	// Not sure if needed
-	// BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
-	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
-}
 
 // Code that imports watcher should only use this method.
 type WatcherEmitter interface {
@@ -67,37 +53,6 @@ type Config struct {
 	LookBackBlocks  uint64          `mapstructure:"lookback_blocks" json:"lookBackBlock"`
 	LookBackRetries uint64          `mapstructure:"lookback_retries" json:"lookBackRetries"`
 	IntervalSecond  int             `mapstructure:"interval_second" json:"intervalSecond"`
-}
-
-// NewWatcher initializes contract info from config
-func NewWatcherDebug(
-	conf *config.Config,
-	client ethClient,
-	dataGateway datagateway.DataGateway,
-	stateDataGateway datagateway.StateDataGateway,
-	addresses []common.Address,
-	topics [][]common.Hash,
-	logChan chan<- *types.Log,
-	blockChan chan<- *reorg.BlockInfo,
-	reorgChan chan<- *reorg.BlockInfo,
-	errChan chan<- error,
-) WatcherEmitter {
-	e := New(
-		conf,
-		client,
-		dataGateway,
-		stateDataGateway,
-		addresses,
-		topics,
-		logChan,
-		blockChan,
-		reorgChan,
-		errChan,
-	)
-
-	e.(*emitter).debug = true
-
-	return e
 }
 
 // Loop wraps loopFilterLogs with graceful shutdown code.

@@ -32,8 +32,10 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(
 
 	logEventKey := log.Topics[0]
 	for _, event := range contractInterestingEvents {
-		if logEventKey == event.ID {
-			return mapLogToItem(contractABI, event.Name, log)
+		// This engine is supposed to handle more than 1 event,
+		// but it's not yet finished now.
+		if logEventKey == event.ID || event.Name == "PoolCreated" {
+			return mapLogToPoolCreated(contractABI, event.Name, log)
 		}
 	}
 

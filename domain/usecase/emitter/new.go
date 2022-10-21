@@ -23,6 +23,7 @@ func New(
 	blockChan chan<- *reorg.BlockInfo,
 	reorgChan chan<- *reorg.BlockInfo,
 	errChan chan<- error,
+	debug bool,
 ) WatcherEmitter {
 	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
 	return &emitter{
@@ -38,5 +39,6 @@ func New(
 		blockChan:        blockChan,
 		errChan:          errChan,
 		reorgChan:        reorgChan,
+		debug:            debug,
 	}
 }

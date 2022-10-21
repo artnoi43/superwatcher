@@ -10,9 +10,9 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/logutils"
 )
 
-// mapLogToItem maps *types.Log to entity.Uniswapv3PoolCreated.
+// mapLogToPoolCreated maps *types.Log to entity.Uniswapv3PoolCreated.
 // It can be updated to handle more events from this contract.
-func mapLogToItem(
+func mapLogToPoolCreated(
 	contractABI abi.ABI,
 	eventName string,
 	l *types.Log,

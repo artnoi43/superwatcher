@@ -19,6 +19,7 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 	engineFSM EngineFSM,
 	debugMode bool,
 ) error {
+	debug.DebugMsg(debugMode, "*engine.handleLog: gotLog", zap.Any("log", log))
 	if log.Removed {
 		// TODO: Now what??
 		logger.Info(

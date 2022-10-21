@@ -41,6 +41,7 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 		blockChan,
 		reorgChan,
 		errChan,
+		debug,
 	)
 
 	engine := engine.New(

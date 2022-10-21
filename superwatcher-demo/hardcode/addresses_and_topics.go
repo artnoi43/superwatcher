@@ -14,49 +14,55 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3pool"
 )
 
+// These are the hard-coded keys
 const (
-	uniswapv3Pool         = "uniswapv3pool"
+	Uniswapv3Pool         = "uniswapv3pool"
 	uniswapv3PoolAddr     = "0x5777d92f208679DB4b9778590Fa3CAB3aC9e2168"
-	uniswapv3Factory      = "uniswapv3factory"
+	Uniswapv3Factory      = "uniswapv3factory"
 	uniswapv3FactoryAddr  = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
-	oneInchLimitOrder     = "oneInchLimitOrder"
+	OneInchLimitOrder     = "oneInchLimitOrder"
 	oneInchLimitOrderAddr = "0x119c71d3bbac22029622cbaec24854d3d32d2828"
 )
 
 var contractABIsMap = map[string]string{
-	uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
-	uniswapv3Factory:  uniswapv3factory.Uniswapv3FactoryABI,
-	oneInchLimitOrder: oneinchlimitorder.OneInchLimitOrderABI,
+	Uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
+	Uniswapv3Factory:  uniswapv3factory.Uniswapv3FactoryABI,
+	OneInchLimitOrder: oneinchlimitorder.OneInchLimitOrderABI,
 }
 
 var contractAddressesMap = map[string]common.Address{
-	uniswapv3Pool:     common.HexToAddress(uniswapv3PoolAddr),
-	uniswapv3Factory:  common.HexToAddress(uniswapv3FactoryAddr),
-	oneInchLimitOrder: common.HexToAddress(oneInchLimitOrderAddr),
+	Uniswapv3Pool:     common.HexToAddress(uniswapv3PoolAddr),
+	Uniswapv3Factory:  common.HexToAddress(uniswapv3FactoryAddr),
+	OneInchLimitOrder: common.HexToAddress(oneInchLimitOrderAddr),
 }
 
 var contractTopicsMap = map[common.Address][]string{
-	contractAddressesMap[uniswapv3Pool]:     {"Swap"},
-	contractAddressesMap[uniswapv3Factory]:  {"PoolCreated"},
-	contractAddressesMap[oneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
+	contractAddressesMap[Uniswapv3Pool]:     {"Swap"},
+	contractAddressesMap[Uniswapv3Factory]:  {"PoolCreated"},
+	contractAddressesMap[OneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
 }
 
 // DemoAddressesAndTopics returns contract information for all demo contracts.
-func DemoAddressesAndTopics() (
+func DemoAddressesAndTopics(contractKeys ...string) (
 	map[common.Address]abi.ABI, // Map contract (addr) to ABI
 	map[common.Address][]abi.Event, // Map contract (addr) to interesting events
 	[]common.Address, // All interesting contract addresses
 	[][]common.Hash, // All interesting event log topics
 ) {
 	var addresses []common.Address
-	for _, addr := range contractAddressesMap {
-		addresses = append(addresses, addr)
+	for key, addr := range contractAddressesMap {
+		if contracts.Contains(contractKeys, key) {
+			addresses = append(addresses, addr)
+		}
 	}
 
 	abiMap := make(map[common.Address]abi.ABI)
 	interestingEventsMap := make(map[common.Address][]abi.Event)
 	var topics []common.Hash
 	for contractName, abiStr := range contractABIsMap {
+		if !contracts.Contains(contractKeys, contractName) {
+			continue
+		}
 
 		contractABI, err := abi.JSON(strings.NewReader(abiStr))
 		if err != nil {
