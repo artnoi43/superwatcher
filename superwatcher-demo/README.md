@@ -2,7 +2,12 @@
 
 This is demo code for using superwatcher.
 
+> As of this update, both superwatcher and this demo are not yet done.
+
 superwatcher-demo shows how to use superwatcher in service code.
+
+This demo code is used to process and track UniswapV3 `Swap`
+and 1inch LimitOrder topics `OrderFilled` and `OrderCanceled` using superwatcher.
 
 The demo code will use [`demoengine.demoEngine`](./domain/usecase/demoengine/engine.go),
 itself an implementation of [`engine.ServiceEngine[T, K]`](/domain/usecase/engine/service_engine.go),
@@ -52,20 +57,13 @@ or just run superwatcher service with the sub-service as the only service.
 ## Sub-engines
 
 1. UniswapV3Factory: 'PoolCreated' event
+
     See package [`uniswapv3poolfactoryengine`](./domain/usecase/uniswapv3poolfactoryengine/).
 
 2. UniswapV3 Pool: 'Swap" event
+
     See package [`uniswapv3poolengine`](./domain/usecase/uniswapv3poolengine/).
 
 3. 1inch Limit Order: 'OrderFilled' and 'OrderCanceled' events
+
     See package [`oneinchlimitorderengine`](./domain/usecase/oneinchlimitorderengine/)].
-
-This demo service will
-
-1. Implements `engine.ServiceEngine[K, T]`, and injects that implementaiton
-into superwatcher `engine.engine[K, T]`.
-
-This demo code is used to process and track UniswapV3 `Swap`
-and 1inch LimitOrder topics `OrderFilled` and `OrderCanceled` using superwatcher.
-
-As of this update, both superwatcher and this demo are not yet done.
