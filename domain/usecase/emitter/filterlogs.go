@@ -87,7 +87,7 @@ func (e *emitter) filterLogs(
 
 	// Wait here for logs and headers
 	if err := concurrent.WaitAndCollectErrors(&wg, getErrChan); err != nil {
-		logger.Error("get fresh data from blockchain failed", zap.String("error", err.Error()))
+		logger.Error("get fresh data from blockchain failed", zap.Error(err))
 		return errors.Wrap(err, "get blockchain data")
 	}
 

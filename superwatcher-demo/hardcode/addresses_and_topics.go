@@ -76,7 +76,7 @@ func DemoAddressesAndTopics(contractKeys ...string) (
 
 		_, interestingEvents, err := contracts.ContractInfo(contractABI, topicKeys...)
 		if err != nil {
-			logger.Panic("failed to init ABI, topics, and address", zap.String("error", err.Error()))
+			logger.Panic("failed to init ABI, topics, and address", zap.Error(err))
 		}
 		interestingEventsMap[contractAddr] = interestingEvents
 

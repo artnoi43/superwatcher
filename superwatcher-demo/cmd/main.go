@@ -136,7 +136,7 @@ func main() {
 		if err := rdb.Close(); err != nil {
 			logger.Error(
 				"error during graceful shutdown - Redis client not properly closed",
-				zap.String("error", err.Error()),
+				zap.Error(err),
 			)
 		}
 		logger.Info("shutdown called")
