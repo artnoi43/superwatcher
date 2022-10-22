@@ -2,9 +2,8 @@
 
 This is demo code for using superwatcher.
 
-> As of this update, both superwatcher and this demo are not yet done.
-
-superwatcher-demo shows how to use superwatcher in service code.
+> As of this update, both superwatcher and this demo are not stable yet.
+Expect __shit tons__ of breaking changes.
 
 This demo code is used to process and track UniswapV3 `Swap`
 and 1inch LimitOrder topics `OrderFilled` and `OrderCanceled` using superwatcher.
@@ -13,11 +12,9 @@ The demo code will use [`demoengine.demoEngine`](./domain/usecase/demoengine/eng
 itself an implementation of [`engine.ServiceEngine[T, K]`](/domain/usecase/engine/service_engine.go),
 to handle all logs interested by the service.
 
-In the main program, all logs from all 3 contracts is _handled_
-by 1 main instance of `engine.watcherEngine`, whose `serviceEngine` field is `demoengine.demoEngine`.
-
-demoengine.demoEngine handles all 3 contracts by wrapping other so-called "sub-engines".
-For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3factoryengine.uniswapv3PoolFactoryEngine.
+`demoengine.demoEngine` handles all 3 contracts by wrapping other so-called ["sub-engines"](./domain/usecase/subenines).
+For example, to handle contract `Uniswapv3Factory`, `demoEngine` uses `uniswapv3factoryengine.uniswapv3PoolFactoryEngine`,
+and for contract `OneInchLimitOrder`, it uses `oneinchlimitorderengine.oneInchLimitOrderEngine`.
 
 ## `demoengine.demoEngine`
 
@@ -55,6 +52,14 @@ or just run superwatcher service with the sub-service as the only service.
 ```
 
 ## Sub-engines
+
+The demo sub-engines are standlone implementation of `engine.ServiceEngine[K, T]`.
+
+In other words, we can just use any one of these sub-engines as the
+superwatcher's _service engine_, or we can use all of them at the same time by
+wrapping _any_ of these sub-engines inside `demoengine.demoEngine`.
+
+My plan for this demo is to have 3 sub-engines for 3 contracts:
 
 1. UniswapV3Factory: 'PoolCreated' event
 
