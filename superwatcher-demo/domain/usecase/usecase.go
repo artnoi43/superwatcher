@@ -1,7 +1,14 @@
 package usecase
 
+import "github.com/artnoi43/superwatcher/domain/usecase/engine"
+
 type (
 	UseCase uint8
+	// DemoKey is used to track various states of various items from different contracts.
+	DemoKey interface {
+		engine.ItemKey
+		GetUseCase() UseCase
+	}
 )
 
 const (

@@ -17,7 +17,7 @@ type demoFSM struct {
 	poolFactoryStates engine.ServiceFSM[entity.Uniswapv3FactoryWatcherKey]
 }
 
-func (fsm *demoFSM) SetServiceState(key DemoKey, state engine.ServiceItemState) {
+func (fsm *demoFSM) SetServiceState(key usecase.DemoKey, state engine.ServiceItemState) {
 	fsm.Lock()
 	defer fsm.Unlock()
 
@@ -34,7 +34,7 @@ func (fsm *demoFSM) SetServiceState(key DemoKey, state engine.ServiceItemState) 
 	logger.Panic("unhandled usecase for *demoFSM.SetServiceState")
 }
 
-func (fsm *demoFSM) GetServiceState(key DemoKey) engine.ServiceItemState {
+func (fsm *demoFSM) GetServiceState(key usecase.DemoKey) engine.ServiceItemState {
 	fsm.RLock()
 	defer fsm.RUnlock()
 

@@ -8,21 +8,22 @@ import (
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 )
 
-type uniswapv3FactoryEngine struct {
-	mapAddrToABI    map[common.Address]abi.ABI
-	mapAddrToEvents map[common.Address][]abi.Event
-	serviceFSM      *poolFactoryFSM
+type uniswapv3PoolFactoryEngine struct {
+	contractABI    abi.ABI
+	contractEvents []abi.Event
+	serviceFSM     *poolFactoryFSM
 }
 
 func NewUniswapV3Engine(
-	mapAddrABI map[common.Address]abi.ABI,
-	mapAddrEvents map[common.Address][]abi.Event,
-) engine.ServiceEngine[entity.Uniswapv3FactoryWatcherKey, *entity.Uniswapv3PoolCreated] {
-	return &uniswapv3FactoryEngine{
-		mapAddrToABI:    mapAddrABI,
-		mapAddrToEvents: mapAddrEvents,
+	contractABI abi.ABI,
+	contractEvents []abi.Event,
+) engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]] {
+	return &uniswapv3PoolFactoryEngine{
+		contractABI:    contractABI,
+		contractEvents: contractEvents,
 		// TODO: Should we add func `NewPoolFactoryFSM`?
 		serviceFSM: &poolFactoryFSM{
 			states: make(map[entity.Uniswapv3FactoryWatcherKey]engine.ServiceItemState),
@@ -30,8 +31,8 @@ func NewUniswapV3Engine(
 	}
 }
 
-func (e *uniswapv3FactoryEngine) ServiceStateTracker() (
-	engine.ServiceFSM[entity.Uniswapv3FactoryWatcherKey],
+func (e *uniswapv3PoolFactoryEngine) ServiceStateTracker() (
+	engine.ServiceFSM[usecase.DemoKey],
 	error,
 ) {
 	if e.serviceFSM == nil {

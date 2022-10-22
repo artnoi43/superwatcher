@@ -44,15 +44,15 @@ var contractTopicsMap = map[common.Address][]string{
 
 // DemoAddressesAndTopics returns contract information for all demo contracts.
 func DemoAddressesAndTopics(contractKeys ...string) (
+	map[string]common.Address, // Map contract (name) to contract addresses
 	map[common.Address]abi.ABI, // Map contract (addr) to ABI
 	map[common.Address][]abi.Event, // Map contract (addr) to interesting events
-	[]common.Address, // All interesting contract addresses
 	[][]common.Hash, // All interesting event log topics
 ) {
-	var addresses []common.Address
+	addresses := make(map[string]common.Address)
 	for key, addr := range contractAddressesMap {
 		if contracts.Contains(contractKeys, key) {
-			addresses = append(addresses, addr)
+			addresses[key] = addr
 		}
 	}
 
@@ -86,5 +86,5 @@ func DemoAddressesAndTopics(contractKeys ...string) (
 		}
 	}
 
-	return abiMap, interestingEventsMap, addresses, [][]common.Hash{topics}
+	return addresses, abiMap, interestingEventsMap, [][]common.Hash{topics}
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -13,9 +14,11 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/data/watcherstate"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/domain/usecase/superwatcher"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/uniswapv3factoryengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
 )
@@ -62,23 +65,40 @@ func main() {
 	reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
-	contractABIs, contractsEvents, addresses, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
+	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
-	poolFactoryEngine := uniswapv3factoryengine.NewUniswapV3Engine(
-		contractABIs,
-		contractsEvents,
+	// Demo sub-services
+	demoServices := make(
+		map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]],
 	)
+
+	// All addresses to be filtered by emitter
+	var watcherAddresses []common.Address
+
+	for contractName, contractAddr := range contractAddresses {
+		switch contractName {
+		case hardcode.Uniswapv3Factory:
+			poolFactoryEngine := uniswapv3factoryengine.NewUniswapV3Engine(
+				contractABIs[contractAddr],
+				contractsEvents[contractAddr],
+			)
+			demoServices[usecase.UseCaseUniswapv3Factory] = poolFactoryEngine
+		}
+
+		watcherAddresses = append(watcherAddresses, contractAddr)
+	}
+
 	watcherEmitter, watcherEngine := superwatcher.New(
 		conf,
 		ethClient,
 		stateDataGateway,
-		addresses,
+		watcherAddresses,
 		topics,
 		nil, // Only use blockChan, fuck logChan
 		blockChan,
 		reorgChan,
 		errChan,
-		poolFactoryEngine,
+		demoServices[usecase.UseCaseUniswapv3Factory], // Now only test run poolFactory sub-service
 		true,
 	)
 

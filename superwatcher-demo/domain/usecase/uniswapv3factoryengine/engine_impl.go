@@ -2,6 +2,7 @@ package uniswapv3factoryengine
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -10,31 +11,22 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 )
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *uniswapv3FactoryEngine) MapLogToItem(
 	log *types.Log,
 ) (
-	*entity.Uniswapv3PoolCreated,
+	engine.ServiceItem[usecase.DemoKey],
 	error,
 ) {
-	contractAddr := log.Address
-	contractABI, ok := e.mapAddrToABI[contractAddr]
-	if !ok {
-		return nil, fmt.Errorf("abi not found for address %s", contractAddr.String())
-	}
-	contractInterestingEvents, ok := e.mapAddrToEvents[contractAddr]
-	if !ok {
-		return nil, fmt.Errorf("events not found for address %s", contractAddr.String())
-	}
-
 	logEventKey := log.Topics[0]
-	for _, event := range contractInterestingEvents {
+	for _, event := range e.contractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
 		if logEventKey == event.ID || event.Name == "PoolCreated" {
-			return mapLogToPoolCreated(contractABI, event.Name, log)
+			return mapLogToPoolCreated(e.contractABI, event.Name, log)
 		}
 	}
 
@@ -43,7 +35,7 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(
 
 // Unused by this service
 func (e *uniswapv3FactoryEngine) ActionOptions(
-	pool *entity.Uniswapv3PoolCreated,
+	pool engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -56,7 +48,7 @@ func (e *uniswapv3FactoryEngine) ActionOptions(
 
 // ItemAction just logs incoming pool
 func (e *uniswapv3FactoryEngine) ItemAction(
-	pool *entity.Uniswapv3PoolCreated,
+	pool engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},
@@ -85,7 +77,7 @@ func (e *uniswapv3FactoryEngine) ItemAction(
 
 // Unused by this service
 func (e *uniswapv3FactoryEngine) ReorgOptions(
-	pool *entity.Uniswapv3PoolCreated,
+	pool engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -99,7 +91,7 @@ func (e *uniswapv3FactoryEngine) ReorgOptions(
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
 // Other service may need more elaborate HandleReorg.
 func (e *uniswapv3FactoryEngine) HandleReorg(
-	pool *entity.Uniswapv3PoolCreated,
+	item engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},
@@ -112,7 +104,21 @@ func (e *uniswapv3FactoryEngine) HandleReorg(
 		logger.Panic("nil serviceState")
 	}
 
-	poolState := serviceState.(uniswapv3PoolFactoryState)
+	poolState, ok := serviceState.(uniswapv3PoolFactoryState)
+	if !ok {
+		logger.Panic(
+			"type assertion failed: serviceState is not of type uniswapv3PoolFactoryState",
+			zap.String("actual type", reflect.TypeOf(serviceState).String()),
+		)
+	}
+	pool, ok := item.(*entity.Uniswapv3PoolCreated)
+	if !ok {
+		logger.Panic(
+			"type assertion failed: item is not of type *entity.Uniswapv3PoolCreated",
+			zap.String("actual type", reflect.TypeOf(item).String()),
+		)
+	}
+
 	switch engineState {
 	case engine.EngineStateProcessed:
 		switch poolState {

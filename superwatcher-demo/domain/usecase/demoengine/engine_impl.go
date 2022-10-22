@@ -9,9 +9,10 @@ import (
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 )
 
-func (e *demoEngine) itemToService(item engine.ServiceItem[demoKey]) engine.ServiceEngine[demoKey, engine.ServiceItem[demoKey]] {
+func (e *demoEngine) itemToService(item engine.ServiceItem[usecase.DemoKey]) engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]] {
 	itemUseCase := item.ItemKey().GetUseCase()
 
 	serviceEngine, ok := e.services[itemUseCase]
@@ -27,7 +28,7 @@ func (e *demoEngine) itemToService(item engine.ServiceItem[demoKey]) engine.Serv
 }
 
 func (e *demoEngine) ServiceStateTracker() (
-	engine.ServiceFSM[demoKey],
+	engine.ServiceFSM[usecase.DemoKey],
 	error,
 ) {
 	if e.fsm == nil {
@@ -41,7 +42,7 @@ func (e *demoEngine) ServiceStateTracker() (
 func (e *demoEngine) MapLogToItem(
 	log *types.Log,
 ) (
-	engine.ServiceItem[demoKey],
+	engine.ServiceItem[usecase.DemoKey],
 	error,
 ) {
 	logUseCase, ok := e.usecases[log.Address]
@@ -59,7 +60,7 @@ func (e *demoEngine) MapLogToItem(
 
 // Unused by this service
 func (e *demoEngine) ActionOptions(
-	item engine.ServiceItem[demoKey],
+	item engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -72,7 +73,7 @@ func (e *demoEngine) ActionOptions(
 
 // ItemAction just logs incoming pool
 func (e *demoEngine) ItemAction(
-	item engine.ServiceItem[demoKey],
+	item engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},
@@ -93,7 +94,7 @@ func (e *demoEngine) ItemAction(
 
 // Unused by this service
 func (e *demoEngine) ReorgOptions(
-	item engine.ServiceItem[demoKey],
+	item engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -107,7 +108,7 @@ func (e *demoEngine) ReorgOptions(
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
 // Other service may need more elaborate HandleReorg.
 func (e *demoEngine) HandleReorg(
-	item engine.ServiceItem[demoKey],
+	item engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},

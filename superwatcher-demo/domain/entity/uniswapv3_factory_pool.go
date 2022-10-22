@@ -28,7 +28,7 @@ func (k Uniswapv3FactoryWatcherKey) BlockNumber() uint64 {
 	return k.blockNumber
 }
 
-func (p *Uniswapv3PoolCreated) ItemKey(opts ...interface{}) Uniswapv3FactoryWatcherKey {
+func (p *Uniswapv3PoolCreated) ItemKey(opts ...interface{}) usecase.DemoKey {
 	return Uniswapv3FactoryWatcherKey{
 		lpAddress:   p.Address.String(),
 		blockNumber: p.BlockCreated,

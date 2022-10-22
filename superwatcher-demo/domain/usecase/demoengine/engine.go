@@ -8,18 +8,12 @@ import (
 )
 
 type (
-	// demoKey is used to track various states of various items from different contracts.
-	demoKey interface {
-		engine.ItemKey
-		GetUseCase() usecase.UseCase
-	}
-
 	// demoEngine wraps "subservices' engines"
 	demoEngine struct {
 		usecases map[common.Address]usecase.UseCase
-		services map[usecase.UseCase]engine.ServiceEngine[demoKey, engine.ServiceItem[demoKey]]
+		services map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]]
 
-		// fsm is a map[usecase.UseCase]engine.ServiceFSM[DemoKey].
+		// fsm is a map[usecase.UseCase]engine.ServiceFSM[usecase.DemoKey].
 		// i.e. it wraps subservice FSM, to be returned by *demoEngine.ServiceStateTracker().
 		// *engine.Engine calls ServiceStateTracker before entering a loop, so the one returned
 		// must have access to all of the subservices' FSMs
@@ -27,11 +21,11 @@ type (
 	}
 )
 
-func newDemoEngine(
+func New(
 	usecases map[common.Address]usecase.UseCase,
-	services map[usecase.UseCase]engine.ServiceEngine[demoKey, engine.ServiceItem[demoKey]],
+	services map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]],
 	fsm *demoFSM,
-) engine.ServiceEngine[demoKey, engine.ServiceItem[demoKey]] {
+) engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]] {
 	return &demoEngine{
 		usecases: usecases,
 		services: services,
