@@ -1,5 +1,20 @@
 package main
 
+/*
+   superwatcher-demo shows how to use/embed superwatcher in service code.
+
+   It is designed to use superwatcher to track the following events:
+   1. UniswapV3Factory: 'PoolCreated' event
+   2. UniswapV3 Pool: 'Swap" event
+   3. 1inch Limit Order: 'OrderFilled' and 'OrderCanceled' events
+
+   All logs from 3 contracts is handled by 1 instance of *engine.watcherEngine,
+   where field *engine.watcherEngine.serviceEngine is demoengine.demoEngine.
+
+   *demoengine.demoEngine handles all 3 contracts by wrapping other so-called "sub-engines".
+   For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3poolfactoryengine.uniswapv3PoolFactoryEngine.
+*/
+
 import (
 	"context"
 	"os/signal"
@@ -68,7 +83,7 @@ func main() {
 	// Hard-coded values for testing
 	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
-	// Demo sub-services
+	// Demo sub-engines
 	demoUseCases := make(map[common.Address]usecase.UseCase)
 	demoServices := make(map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]])
 
