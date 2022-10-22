@@ -9,17 +9,17 @@ import (
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
-func (e *demoEngine) itemToService(item engine.ServiceItem[usecase.DemoKey]) engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]] {
+func (e *demoEngine) itemToService(item engine.ServiceItem[subengines.DemoKey]) engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]] {
 	itemUseCase := item.ItemKey().GetUseCase()
 
 	serviceEngine, ok := e.services[itemUseCase]
 	if !ok {
 		logger.Panic(
 			"usecase has no service",
-			zap.String("usecase", itemUseCase.String()),
+			zap.String("subengine usecase", itemUseCase.String()),
 			zap.String("type of item", reflect.TypeOf(item).String()),
 		)
 	}
@@ -28,7 +28,7 @@ func (e *demoEngine) itemToService(item engine.ServiceItem[usecase.DemoKey]) eng
 }
 
 func (e *demoEngine) ServiceStateTracker() (
-	engine.ServiceFSM[usecase.DemoKey],
+	engine.ServiceFSM[subengines.DemoKey],
 	error,
 ) {
 	if e.fsm == nil {
@@ -42,7 +42,7 @@ func (e *demoEngine) ServiceStateTracker() (
 func (e *demoEngine) MapLogToItem(
 	log *types.Log,
 ) (
-	engine.ServiceItem[usecase.DemoKey],
+	engine.ServiceItem[subengines.DemoKey],
 	error,
 ) {
 	logUseCase, ok := e.usecases[log.Address]
@@ -60,7 +60,7 @@ func (e *demoEngine) MapLogToItem(
 
 // Unused by this service
 func (e *demoEngine) ActionOptions(
-	item engine.ServiceItem[usecase.DemoKey],
+	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -73,7 +73,7 @@ func (e *demoEngine) ActionOptions(
 
 // ItemAction just logs incoming pool
 func (e *demoEngine) ItemAction(
-	item engine.ServiceItem[usecase.DemoKey],
+	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},
@@ -94,7 +94,7 @@ func (e *demoEngine) ItemAction(
 
 // Unused by this service
 func (e *demoEngine) ReorgOptions(
-	item engine.ServiceItem[usecase.DemoKey],
+	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -108,7 +108,7 @@ func (e *demoEngine) ReorgOptions(
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
 // Other service may need more elaborate HandleReorg.
 func (e *demoEngine) HandleReorg(
-	item engine.ServiceItem[usecase.DemoKey],
+	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},

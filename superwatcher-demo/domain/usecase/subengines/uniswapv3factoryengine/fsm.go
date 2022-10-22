@@ -9,7 +9,7 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
 type poolFactoryFSM struct {
@@ -17,7 +17,7 @@ type poolFactoryFSM struct {
 	states map[entity.Uniswapv3FactoryWatcherKey]engine.ServiceItemState
 }
 
-func (fsm *poolFactoryFSM) SetServiceState(key usecase.DemoKey, state engine.ServiceItemState) {
+func (fsm *poolFactoryFSM) SetServiceState(key subengines.DemoKey, state engine.ServiceItemState) {
 	fsm.Lock()
 	defer fsm.Unlock()
 
@@ -32,7 +32,7 @@ func (fsm *poolFactoryFSM) SetServiceState(key usecase.DemoKey, state engine.Ser
 	fsm.states[poolKey] = state
 }
 
-func (fsm *poolFactoryFSM) GetServiceState(key usecase.DemoKey) engine.ServiceItemState {
+func (fsm *poolFactoryFSM) GetServiceState(key subengines.DemoKey) engine.ServiceItemState {
 	fsm.RLock()
 	defer fsm.RUnlock()
 

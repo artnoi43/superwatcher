@@ -9,29 +9,29 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
 type demoFSM struct {
 	sync.RWMutex
-	poolFactoryStates engine.ServiceFSM[usecase.DemoKey]
+	poolFactoryStates engine.ServiceFSM[subengines.DemoKey]
 }
 
 func NewDemoFSM(
-	poolFactoryStates engine.ServiceFSM[usecase.DemoKey],
-) engine.ServiceFSM[usecase.DemoKey] {
+	poolFactoryStates engine.ServiceFSM[subengines.DemoKey],
+) engine.ServiceFSM[subengines.DemoKey] {
 	return &demoFSM{
 		poolFactoryStates: poolFactoryStates,
 	}
 }
 
-func (fsm *demoFSM) SetServiceState(key usecase.DemoKey, state engine.ServiceItemState) {
+func (fsm *demoFSM) SetServiceState(key subengines.DemoKey, state engine.ServiceItemState) {
 	fsm.Lock()
 	defer fsm.Unlock()
 
 	stateUseCase := key.GetUseCase()
 	switch stateUseCase {
-	case usecase.UseCaseUniswapv3Factory:
+	case subengines.UseCaseUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
 		if !ok {
 			logger.Panic("key not Uniswapv3FactoryWatcherKey", zap.String("actual type", reflect.TypeOf(key).String()))
@@ -49,13 +49,13 @@ func (fsm *demoFSM) SetServiceState(key usecase.DemoKey, state engine.ServiceIte
 
 }
 
-func (fsm *demoFSM) GetServiceState(key usecase.DemoKey) engine.ServiceItemState {
+func (fsm *demoFSM) GetServiceState(key subengines.DemoKey) engine.ServiceItemState {
 	fsm.RLock()
 	defer fsm.RUnlock()
 
 	stateUseCase := key.GetUseCase()
 	switch stateUseCase {
-	case usecase.UseCaseUniswapv3Factory:
+	case subengines.UseCaseUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
 		if !ok {
 			logger.Panic("key not Uniswapv3FactoryWatcherKey", zap.String("actual type", reflect.TypeOf(key).String()))

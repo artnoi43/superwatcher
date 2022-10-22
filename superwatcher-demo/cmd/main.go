@@ -33,9 +33,9 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/superwatcher"
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/demoengine"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/uniswapv3factoryengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines/uniswapv3factoryengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
 )
 
@@ -84,8 +84,8 @@ func main() {
 	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
 	// Demo sub-engines
-	demoUseCases := make(map[common.Address]usecase.UseCase)
-	demoServices := make(map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]])
+	demoUseCases := make(map[common.Address]subengines.UseCase)
+	demoServices := make(map[subengines.UseCase]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]])
 
 	// All addresses to be filtered by emitter
 	var watcherAddresses []common.Address
@@ -97,13 +97,13 @@ func main() {
 				contractABIs[contractAddr],
 				contractsEvents[contractAddr],
 			)
-			demoServices[usecase.UseCaseUniswapv3Factory] = poolFactoryEngine
-			demoUseCases[contractAddr] = usecase.UseCaseUniswapv3Factory
+			demoServices[subengines.UseCaseUniswapv3Factory] = poolFactoryEngine
+			demoUseCases[contractAddr] = subengines.UseCaseUniswapv3Factory
 		}
 
 		watcherAddresses = append(watcherAddresses, contractAddr)
 	}
-	poolFactoryFSM, err := demoServices[usecase.UseCaseUniswapv3Factory].ServiceStateTracker()
+	poolFactoryFSM, err := demoServices[subengines.UseCaseUniswapv3Factory].ServiceStateTracker()
 	if err != nil {
 		logger.Panic("error getting poolFactoryFSM from poolFactoryEngine", zap.Error(err))
 	}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
 type uniswapv3PoolFactoryEngine struct {
@@ -20,7 +20,7 @@ type uniswapv3PoolFactoryEngine struct {
 func NewUniswapV3Engine(
 	contractABI abi.ABI,
 	contractEvents []abi.Event,
-) engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]] {
+) engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]] {
 	return &uniswapv3PoolFactoryEngine{
 		contractABI:    contractABI,
 		contractEvents: contractEvents,
@@ -32,7 +32,7 @@ func NewUniswapV3Engine(
 }
 
 func (e *uniswapv3PoolFactoryEngine) ServiceStateTracker() (
-	engine.ServiceFSM[usecase.DemoKey],
+	engine.ServiceFSM[subengines.DemoKey],
 	error,
 ) {
 	if e.serviceFSM == nil {

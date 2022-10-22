@@ -1,4 +1,4 @@
-package usecase
+package subengines
 
 import "github.com/artnoi43/superwatcher/domain/usecase/engine"
 

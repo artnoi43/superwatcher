@@ -22,7 +22,7 @@ For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3facto
 ## `demoengine.demoEngine`
 
 The main engine of this demo service. It implements `engine.ServiceEngine[K, T]`,
-and wraps other so-called _sub-engines_.
+and wraps other so-called [_sub-engines_](./domain/usecase/subengines/).
 
 These sub-engines, too, implements `engine.ServiceEngine[K, T]`, so we can choose
 to either run all of 3 or some of the sub-engines with `demoEngine`,
@@ -58,12 +58,12 @@ or just run superwatcher service with the sub-service as the only service.
 
 1. UniswapV3Factory: 'PoolCreated' event
 
-    See package [`uniswapv3factoryengine`](./domain/usecase/uniswapv3factoryengine/).
+    See package [`subengines/uniswapv3factoryengine`](./domain/usecase/subengines/uniswapv3factoryengine/).
 
 2. UniswapV3 Pool: 'Swap" event
 
-    See package [`uniswapv3poolengine`](./domain/usecase/uniswapv3poolengine/).
+    See package [`subengines/uniswapv3poolengine`](./domain/usecase/subengines/uniswapv3poolengine/).
 
 3. 1inch Limit Order: 'OrderFilled' and 'OrderCanceled' events
 
-    See package [`oneinchlimitorderengine`](./domain/usecase/oneinchlimitorderengine/)].
+    See package [`subengines/oneinchlimitorderengine`](./domain/usecase/subengines/oneinchlimitorderengine/)].

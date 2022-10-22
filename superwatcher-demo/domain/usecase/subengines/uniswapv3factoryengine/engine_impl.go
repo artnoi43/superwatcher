@@ -11,14 +11,14 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *uniswapv3PoolFactoryEngine) MapLogToItem(
 	log *types.Log,
 ) (
-	engine.ServiceItem[usecase.DemoKey],
+	engine.ServiceItem[subengines.DemoKey],
 	error,
 ) {
 	logEventKey := log.Topics[0]
@@ -35,7 +35,7 @@ func (e *uniswapv3PoolFactoryEngine) MapLogToItem(
 
 // Unused by this service
 func (e *uniswapv3PoolFactoryEngine) ActionOptions(
-	pool engine.ServiceItem[usecase.DemoKey],
+	pool engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -48,7 +48,7 @@ func (e *uniswapv3PoolFactoryEngine) ActionOptions(
 
 // ItemAction just logs incoming pool
 func (e *uniswapv3PoolFactoryEngine) ItemAction(
-	pool engine.ServiceItem[usecase.DemoKey],
+	pool engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},
@@ -77,7 +77,7 @@ func (e *uniswapv3PoolFactoryEngine) ItemAction(
 
 // Unused by this service
 func (e *uniswapv3PoolFactoryEngine) ReorgOptions(
-	pool engine.ServiceItem[usecase.DemoKey],
+	pool engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 ) (
@@ -91,7 +91,7 @@ func (e *uniswapv3PoolFactoryEngine) ReorgOptions(
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
 // Other service may need more elaborate HandleReorg.
 func (e *uniswapv3PoolFactoryEngine) HandleReorg(
-	item engine.ServiceItem[usecase.DemoKey],
+	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
 	options ...interface{},
