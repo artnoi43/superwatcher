@@ -52,13 +52,13 @@ or just run superwatcher service with the sub-service as the only service.
 ## Sub-engines
 
 1. UniswapV3Factory: 'PoolCreated' event
-    See package [`uniswapv3poolfactoryengine`](./domain/usecase/uniswapv3poolfactoryengine).
+    See package [`uniswapv3poolfactoryengine`](./domain/usecase/uniswapv3poolfactoryengine/).
 
 2. UniswapV3 Pool: 'Swap" event
-    See package [`uniswapv3poolengine`](./domain/usecase/uniswapv3poolengine).
+    See package [`uniswapv3poolengine`](./domain/usecase/uniswapv3poolengine/).
 
 3. 1inch Limit Order: 'OrderFilled' and 'OrderCanceled' events
-    See package [`oneinchlimitorderengine`](./domain/usecase/oneinchlimitorderengine)].
+    See package [`oneinchlimitorderengine`](./domain/usecase/oneinchlimitorderengine/)].
 
 This demo service will
 
