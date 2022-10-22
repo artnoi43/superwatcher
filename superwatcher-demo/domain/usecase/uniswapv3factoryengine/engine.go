@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
-	watcherengine "github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 )
 
@@ -26,13 +25,13 @@ func NewUniswapV3Engine(
 		mapAddrToEvents: mapAddrEvents,
 		// TODO: Should we add func `NewPoolFactoryFSM`?
 		serviceFSM: &poolFactoryFSM{
-			states: make(map[entity.Uniswapv3FactoryWatcherKey]watcherengine.ServiceItemState),
+			states: make(map[entity.Uniswapv3FactoryWatcherKey]engine.ServiceItemState),
 		},
 	}
 }
 
 func (e *uniswapv3FactoryEngine) ServiceStateTracker() (
-	watcherengine.ServiceFSM[entity.Uniswapv3FactoryWatcherKey],
+	engine.ServiceFSM[entity.Uniswapv3FactoryWatcherKey],
 	error,
 ) {
 	if e.serviceFSM == nil {

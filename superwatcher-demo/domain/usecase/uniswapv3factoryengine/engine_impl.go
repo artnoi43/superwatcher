@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
-	watcherengine "github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 )
@@ -45,8 +44,8 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(
 // Unused by this service
 func (e *uniswapv3FactoryEngine) ActionOptions(
 	pool *entity.Uniswapv3PoolCreated,
-	engineState watcherengine.EngineLogState,
-	serviceState watcherengine.ServiceItemState,
+	engineState engine.EngineLogState,
+	serviceState engine.ServiceItemState,
 ) (
 	[]interface{},
 	error,
@@ -58,11 +57,11 @@ func (e *uniswapv3FactoryEngine) ActionOptions(
 // ItemAction just logs incoming pool
 func (e *uniswapv3FactoryEngine) ItemAction(
 	pool *entity.Uniswapv3PoolCreated,
-	engineState watcherengine.EngineLogState,
-	serviceState watcherengine.ServiceItemState,
+	engineState engine.EngineLogState,
+	serviceState engine.ServiceItemState,
 	options ...interface{},
 ) (
-	watcherengine.ServiceItemState,
+	engine.ServiceItemState,
 	error,
 ) {
 	// TODO: remove the nil check if-blocks
@@ -87,8 +86,8 @@ func (e *uniswapv3FactoryEngine) ItemAction(
 // Unused by this service
 func (e *uniswapv3FactoryEngine) ReorgOptions(
 	pool *entity.Uniswapv3PoolCreated,
-	engineState watcherengine.EngineLogState,
-	serviceState watcherengine.ServiceItemState,
+	engineState engine.EngineLogState,
+	serviceState engine.ServiceItemState,
 ) (
 	[]interface{},
 	error,
@@ -101,11 +100,11 @@ func (e *uniswapv3FactoryEngine) ReorgOptions(
 // Other service may need more elaborate HandleReorg.
 func (e *uniswapv3FactoryEngine) HandleReorg(
 	pool *entity.Uniswapv3PoolCreated,
-	engineState watcherengine.EngineLogState,
-	serviceState watcherengine.ServiceItemState,
+	engineState engine.EngineLogState,
+	serviceState engine.ServiceItemState,
 	options ...interface{},
 ) (
-	watcherengine.ServiceItemState,
+	engine.ServiceItemState,
 	error,
 ) {
 	// TODO: remove the nil check if-blocks
@@ -115,7 +114,7 @@ func (e *uniswapv3FactoryEngine) HandleReorg(
 
 	poolState := serviceState.(uniswapv3PoolFactoryState)
 	switch engineState {
-	case watcherengine.EngineStateProcessed:
+	case engine.EngineStateProcessed:
 		switch poolState {
 		case PoolFactoryStateCreated:
 			if err := e.revertPoolCreated(pool); err != nil {
