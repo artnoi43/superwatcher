@@ -7,7 +7,7 @@ type (
 	// DemoKey is used to track various states of various items from different contracts.
 	DemoKey interface {
 		engine.ItemKey
-		GetUseCase() SubEngine
+		ForSubEngine() SubEngine
 	}
 )
 
@@ -18,8 +18,8 @@ const (
 	SubEngineOneInchLimitOrder
 )
 
-func (uc SubEngine) String() string {
-	switch uc {
+func (se SubEngine) String() string {
+	switch se {
 	case SubEngineInvalid:
 		return "SUBENGINE_INVALID"
 	case SubEngineUniswapv3Factory:

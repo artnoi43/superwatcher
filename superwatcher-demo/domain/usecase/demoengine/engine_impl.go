@@ -13,7 +13,7 @@ import (
 )
 
 func (e *demoEngine) itemToService(item engine.ServiceItem[subengines.DemoKey]) engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]] {
-	itemUseCase := item.ItemKey().GetUseCase()
+	itemUseCase := item.ItemKey().ForSubEngine()
 
 	serviceEngine, ok := e.services[itemUseCase]
 	if !ok {

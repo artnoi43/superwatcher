@@ -29,7 +29,7 @@ func (fsm *demoFSM) SetServiceState(key subengines.DemoKey, state engine.Service
 	fsm.Lock()
 	defer fsm.Unlock()
 
-	stateUseCase := key.GetUseCase()
+	stateUseCase := key.ForSubEngine()
 	switch stateUseCase {
 	case subengines.SubEngineUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
@@ -53,7 +53,7 @@ func (fsm *demoFSM) GetServiceState(key subengines.DemoKey) engine.ServiceItemSt
 	fsm.RLock()
 	defer fsm.RUnlock()
 
-	stateUseCase := key.GetUseCase()
+	stateUseCase := key.ForSubEngine()
 	switch stateUseCase {
 	case subengines.SubEngineUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
