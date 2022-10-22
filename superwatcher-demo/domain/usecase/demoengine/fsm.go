@@ -14,14 +14,23 @@ import (
 
 type demoFSM struct {
 	sync.RWMutex
-	poolFactoryStates engine.ServiceFSM[entity.Uniswapv3FactoryWatcherKey]
+	poolFactoryStates engine.ServiceFSM[usecase.DemoKey]
+}
+
+func NewDemoFSM(
+	poolFactoryStates engine.ServiceFSM[usecase.DemoKey],
+) engine.ServiceFSM[usecase.DemoKey] {
+	return &demoFSM{
+		poolFactoryStates: poolFactoryStates,
+	}
 }
 
 func (fsm *demoFSM) SetServiceState(key usecase.DemoKey, state engine.ServiceItemState) {
 	fsm.Lock()
 	defer fsm.Unlock()
 
-	switch key.GetUseCase() {
+	stateUseCase := key.GetUseCase()
+	switch stateUseCase {
 	case usecase.UseCaseUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
 		if !ok {
@@ -29,24 +38,37 @@ func (fsm *demoFSM) SetServiceState(key usecase.DemoKey, state engine.ServiceIte
 		}
 
 		fsm.poolFactoryStates.SetServiceState(poolFactoryKey, state)
+
+	default:
+		logger.Panic(
+			"unhandled usecase for *demoFSM.SetServiceState",
+			zap.String("usecase", stateUseCase.String()),
+			zap.Any("usecase", stateUseCase),
+		)
 	}
 
-	logger.Panic("unhandled usecase for *demoFSM.SetServiceState")
 }
 
 func (fsm *demoFSM) GetServiceState(key usecase.DemoKey) engine.ServiceItemState {
 	fsm.RLock()
 	defer fsm.RUnlock()
 
-	switch key.GetUseCase() {
+	stateUseCase := key.GetUseCase()
+	switch stateUseCase {
 	case usecase.UseCaseUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
 		if !ok {
 			logger.Panic("key not Uniswapv3FactoryWatcherKey", zap.String("actual type", reflect.TypeOf(key).String()))
 		}
 		return fsm.poolFactoryStates.GetServiceState(poolFactoryKey)
+
+	default:
+		logger.Panic(
+			"unhandled usecase for *demoFSM.GetServiceState",
+			zap.String("usecase", stateUseCase.String()),
+			zap.Any("usecase", stateUseCase),
+		)
 	}
 
-	logger.Panic("unhandled usecase for *demoFSM.GetServiceState")
 	return nil
 }

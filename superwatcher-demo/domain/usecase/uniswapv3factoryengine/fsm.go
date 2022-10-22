@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"sync"
 
+	"go.uber.org/zap"
+
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
-	"go.uber.org/zap"
 )
 
 type poolFactoryFSM struct {

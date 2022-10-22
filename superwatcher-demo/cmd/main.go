@@ -19,6 +19,7 @@ import (
 	"github.com/artnoi43/superwatcher/lib/enums"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/demoengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/uniswapv3factoryengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
 )
@@ -68,9 +69,8 @@ func main() {
 	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
 	// Demo sub-services
-	demoServices := make(
-		map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]],
-	)
+	demoUseCases := make(map[common.Address]usecase.UseCase)
+	demoServices := make(map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]])
 
 	// All addresses to be filtered by emitter
 	var watcherAddresses []common.Address
@@ -83,10 +83,24 @@ func main() {
 				contractsEvents[contractAddr],
 			)
 			demoServices[usecase.UseCaseUniswapv3Factory] = poolFactoryEngine
+			demoUseCases[contractAddr] = usecase.UseCaseUniswapv3Factory
 		}
 
 		watcherAddresses = append(watcherAddresses, contractAddr)
 	}
+	poolFactoryFSM, err := demoServices[usecase.UseCaseUniswapv3Factory].ServiceStateTracker()
+	if err != nil {
+		logger.Panic("error getting poolFactoryFSM from poolFactoryEngine", zap.Error(err))
+	}
+
+	// demoEngine only wraps uniswapv3PoolFactoryEngine for now.
+	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
+	// and like wise needs their FSMs too.
+	demoEngine := demoengine.New(
+		demoUseCases,
+		demoServices,
+		demoengine.NewDemoFSM(poolFactoryFSM),
+	)
 
 	watcherEmitter, watcherEngine := superwatcher.New(
 		conf,
@@ -98,7 +112,7 @@ func main() {
 		blockChan,
 		reorgChan,
 		errChan,
-		demoServices[usecase.UseCaseUniswapv3Factory], // Now only test run poolFactory sub-service
+		demoEngine,
 		true,
 	)
 

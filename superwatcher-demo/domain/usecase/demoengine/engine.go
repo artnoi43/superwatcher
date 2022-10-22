@@ -1,9 +1,13 @@
 package demoengine
 
 import (
+	"reflect"
+
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
+	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 )
 
@@ -24,11 +28,16 @@ type (
 func New(
 	usecases map[common.Address]usecase.UseCase,
 	services map[usecase.UseCase]engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]],
-	fsm *demoFSM,
+	fsm engine.ServiceFSM[usecase.DemoKey],
 ) engine.ServiceEngine[usecase.DemoKey, engine.ServiceItem[usecase.DemoKey]] {
+	demoFSM, ok := fsm.(*demoFSM)
+	if !ok {
+		logger.Panic("fsm is not *demoFSM", zap.String("actual type", reflect.TypeOf(fsm).String()))
+	}
+
 	return &demoEngine{
 		usecases: usecases,
 		services: services,
-		fsm:      fsm,
+		fsm:      demoFSM,
 	}
 }

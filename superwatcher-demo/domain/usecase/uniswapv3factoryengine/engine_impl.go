@@ -15,7 +15,7 @@ import (
 )
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *uniswapv3FactoryEngine) MapLogToItem(
+func (e *uniswapv3PoolFactoryEngine) MapLogToItem(
 	log *types.Log,
 ) (
 	engine.ServiceItem[usecase.DemoKey],
@@ -34,7 +34,7 @@ func (e *uniswapv3FactoryEngine) MapLogToItem(
 }
 
 // Unused by this service
-func (e *uniswapv3FactoryEngine) ActionOptions(
+func (e *uniswapv3PoolFactoryEngine) ActionOptions(
 	pool engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -47,7 +47,7 @@ func (e *uniswapv3FactoryEngine) ActionOptions(
 }
 
 // ItemAction just logs incoming pool
-func (e *uniswapv3FactoryEngine) ItemAction(
+func (e *uniswapv3PoolFactoryEngine) ItemAction(
 	pool engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -76,7 +76,7 @@ func (e *uniswapv3FactoryEngine) ItemAction(
 }
 
 // Unused by this service
-func (e *uniswapv3FactoryEngine) ReorgOptions(
+func (e *uniswapv3PoolFactoryEngine) ReorgOptions(
 	pool engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -90,7 +90,7 @@ func (e *uniswapv3FactoryEngine) ReorgOptions(
 // HandleReorg handles reorged event
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
 // Other service may need more elaborate HandleReorg.
-func (e *uniswapv3FactoryEngine) HandleReorg(
+func (e *uniswapv3PoolFactoryEngine) HandleReorg(
 	item engine.ServiceItem[usecase.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -144,7 +144,7 @@ func (e *uniswapv3FactoryEngine) HandleReorg(
 }
 
 // Unused by this service
-func (e *uniswapv3FactoryEngine) HandleEmitterError(err error) error {
+func (e *uniswapv3PoolFactoryEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
 	return nil
 }
