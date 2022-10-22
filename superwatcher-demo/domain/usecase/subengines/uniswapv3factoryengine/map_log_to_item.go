@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/logutils"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/logutils"
 )
 
 // mapLogToPoolCreated maps *types.Log to entity.Uniswapv3PoolCreated.
