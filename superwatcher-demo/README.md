@@ -17,7 +17,7 @@ In the main program, all logs from all 3 contracts is _handled_
 by 1 main instance of `engine.watcherEngine`, whose `serviceEngine` field is `demoengine.demoEngine`.
 
 demoengine.demoEngine handles all 3 contracts by wrapping other so-called "sub-engines".
-For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3poolfactoryengine.uniswapv3PoolFactoryEngine.
+For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3factoryengine.uniswapv3PoolFactoryEngine.
 
 ## `demoengine.demoEngine`
 
@@ -58,7 +58,7 @@ or just run superwatcher service with the sub-service as the only service.
 
 1. UniswapV3Factory: 'PoolCreated' event
 
-    See package [`uniswapv3poolfactoryengine`](./domain/usecase/uniswapv3poolfactoryengine/).
+    See package [`uniswapv3factoryengine`](./domain/usecase/uniswapv3factoryengine/).
 
 2. UniswapV3 Pool: 'Swap" event
 

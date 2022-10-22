@@ -12,7 +12,7 @@ package main
    where field *engine.watcherEngine.serviceEngine is demoengine.demoEngine.
 
    *demoengine.demoEngine handles all 3 contracts by wrapping other so-called "sub-engines".
-   For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3poolfactoryengine.uniswapv3PoolFactoryEngine.
+   For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3factoryengine.uniswapv3PoolFactoryEngine.
 */
 
 import (
