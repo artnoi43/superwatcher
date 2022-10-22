@@ -3,6 +3,7 @@ package entity
 import (
 	"fmt"
 
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -17,6 +18,10 @@ type Uniswapv3PoolCreated struct {
 type Uniswapv3FactoryWatcherKey struct {
 	lpAddress   string
 	blockNumber uint64
+}
+
+func (k Uniswapv3FactoryWatcherKey) GetUseCase() usecase.UseCase {
+	return usecase.UseCaseUniswapv3Factory
 }
 
 func (k Uniswapv3FactoryWatcherKey) BlockNumber() uint64 {
