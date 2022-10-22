@@ -64,7 +64,7 @@ func main() {
 
 	stateDataGateway := watcherstate.NewWatcherStateRedisClient(
 		chain,
-		"testSuperWatcherClient",
+		"superwatcher-demo",
 		rdb,
 	)
 
