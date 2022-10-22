@@ -3,31 +3,31 @@ package subengines
 import "github.com/artnoi43/superwatcher/domain/usecase/engine"
 
 type (
-	UseCase uint8
+	SubEngine uint8
 	// DemoKey is used to track various states of various items from different contracts.
 	DemoKey interface {
 		engine.ItemKey
-		GetUseCase() UseCase
+		GetUseCase() SubEngine
 	}
 )
 
 const (
-	UseCaseInvalid UseCase = iota
-	UseCaseUniswapv3Factory
-	UseCaseUniswapv3Pool
-	UseCaseOneInchLimitOrder
+	SubEngineInvalid SubEngine = iota
+	SubEngineUniswapv3Factory
+	SubEngineUniswapv3Pool
+	SubEngineOneInchLimitOrder
 )
 
-func (uc UseCase) String() string {
+func (uc SubEngine) String() string {
 	switch uc {
-	case UseCaseInvalid:
-		return "USECASE_INVALID"
-	case UseCaseUniswapv3Factory:
-		return "USECASE_UNISWAPV3POOLFACTORY"
-	case UseCaseUniswapv3Pool:
-		return "USECASE_UNISWAPV3POOl"
-	case UseCaseOneInchLimitOrder:
-		return "USECASE_ONEINCHLIMITORDER"
+	case SubEngineInvalid:
+		return "SUBENGINE_INVALID"
+	case SubEngineUniswapv3Factory:
+		return "SUBENGINE_UNISWAPV3POOLFACTORY"
+	case SubEngineUniswapv3Pool:
+		return "SUBENGINE_UNISWAPV3POOl"
+	case SubEngineOneInchLimitOrder:
+		return "SUBENGINE_ONEINCHLIMITORDER"
 	}
 
 	panic("unhandled demo usecase")

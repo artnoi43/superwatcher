@@ -20,8 +20,8 @@ type Uniswapv3FactoryWatcherKey struct {
 	blockNumber uint64
 }
 
-func (k Uniswapv3FactoryWatcherKey) GetUseCase() subengines.UseCase {
-	return subengines.UseCaseUniswapv3Factory
+func (k Uniswapv3FactoryWatcherKey) GetUseCase() subengines.SubEngine {
+	return subengines.SubEngineUniswapv3Factory
 }
 
 func (k Uniswapv3FactoryWatcherKey) BlockNumber() uint64 {

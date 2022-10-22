@@ -84,8 +84,8 @@ func main() {
 	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
 	// Demo sub-engines
-	demoUseCases := make(map[common.Address]subengines.UseCase)
-	demoServices := make(map[subengines.UseCase]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]])
+	demoUseCases := make(map[common.Address]subengines.SubEngine)
+	demoServices := make(map[subengines.SubEngine]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]])
 
 	// All addresses to be filtered by emitter
 	var watcherAddresses []common.Address
@@ -97,13 +97,13 @@ func main() {
 				contractABIs[contractAddr],
 				contractsEvents[contractAddr],
 			)
-			demoServices[subengines.UseCaseUniswapv3Factory] = poolFactoryEngine
-			demoUseCases[contractAddr] = subengines.UseCaseUniswapv3Factory
+			demoServices[subengines.SubEngineUniswapv3Factory] = poolFactoryEngine
+			demoUseCases[contractAddr] = subengines.SubEngineUniswapv3Factory
 		}
 
 		watcherAddresses = append(watcherAddresses, contractAddr)
 	}
-	poolFactoryFSM, err := demoServices[subengines.UseCaseUniswapv3Factory].ServiceStateTracker()
+	poolFactoryFSM, err := demoServices[subengines.SubEngineUniswapv3Factory].ServiceStateTracker()
 	if err != nil {
 		logger.Panic("error getting poolFactoryFSM from poolFactoryEngine", zap.Error(err))
 	}

@@ -14,8 +14,8 @@ import (
 type (
 	// demoEngine wraps "subservices' engines"
 	demoEngine struct {
-		usecases map[common.Address]subengines.UseCase
-		services map[subengines.UseCase]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]]
+		usecases map[common.Address]subengines.SubEngine
+		services map[subengines.SubEngine]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]]
 
 		// fsm is a map[subengines.UseCase]engine.ServiceFSM[subengines.DemoKey].
 		// i.e. it wraps subservice FSM, to be returned by *demoEngine.ServiceStateTracker().
@@ -26,8 +26,8 @@ type (
 )
 
 func New(
-	usecases map[common.Address]subengines.UseCase,
-	services map[subengines.UseCase]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]],
+	usecases map[common.Address]subengines.SubEngine,
+	services map[subengines.SubEngine]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]],
 	fsm engine.ServiceFSM[subengines.DemoKey],
 ) engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]] {
 	demoFSM, ok := fsm.(*demoFSM)

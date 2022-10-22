@@ -31,7 +31,7 @@ func (fsm *demoFSM) SetServiceState(key subengines.DemoKey, state engine.Service
 
 	stateUseCase := key.GetUseCase()
 	switch stateUseCase {
-	case subengines.UseCaseUniswapv3Factory:
+	case subengines.SubEngineUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
 		if !ok {
 			logger.Panic("key not Uniswapv3FactoryWatcherKey", zap.String("actual type", reflect.TypeOf(key).String()))
@@ -55,7 +55,7 @@ func (fsm *demoFSM) GetServiceState(key subengines.DemoKey) engine.ServiceItemSt
 
 	stateUseCase := key.GetUseCase()
 	switch stateUseCase {
-	case subengines.UseCaseUniswapv3Factory:
+	case subengines.SubEngineUniswapv3Factory:
 		poolFactoryKey, ok := key.(entity.Uniswapv3FactoryWatcherKey)
 		if !ok {
 			logger.Panic("key not Uniswapv3FactoryWatcherKey", zap.String("actual type", reflect.TypeOf(key).String()))
