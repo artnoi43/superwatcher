@@ -34,7 +34,7 @@ func (e *uniswapv3PoolFactoryEngine) MapLogToItem(
 }
 
 // Unused by this service
-func (e *uniswapv3PoolFactoryEngine) ActionOptions(
+func (e *uniswapv3PoolFactoryEngine) ProcessOptions(
 	pool engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -46,8 +46,8 @@ func (e *uniswapv3PoolFactoryEngine) ActionOptions(
 	return nil, nil
 }
 
-// ItemAction just logs incoming pool
-func (e *uniswapv3PoolFactoryEngine) ItemAction(
+// ProcessItem just logs incoming pool
+func (e *uniswapv3PoolFactoryEngine) ProcessItem(
 	pool engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,

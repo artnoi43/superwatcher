@@ -11,11 +11,11 @@ type ServiceEngine[K ItemKey, T ServiceItem[K]] interface {
 	MapLogToItem(l *types.Log) (T, error)
 
 	// ActionOptions can be implemented to define arbitary options to be passed to ItemAction.
-	ActionOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)
+	ProcessOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)
 
-	// ItemAction is called every time a new, fresh log is converted into ServiceItem,
+	// ProcessItem is called every time a new, fresh log is converted into ServiceItem,
 	// The state returned represents the service state that will be assigned to the ServiceItem.
-	ItemAction(T, EngineLogState, ServiceItemState, ...interface{}) (ServiceItemState, error)
+	ProcessItem(T, EngineLogState, ServiceItemState, ...interface{}) (ServiceItemState, error)
 
 	// ReorgOption can be implemented to define arbitary options to be passed to HandleReorg.
 	ReorgOptions(T, EngineLogState, ServiceItemState) ([]interface{}, error)

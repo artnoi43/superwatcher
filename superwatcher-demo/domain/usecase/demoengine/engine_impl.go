@@ -59,7 +59,7 @@ func (e *demoEngine) MapLogToItem(
 }
 
 // Unused by this service
-func (e *demoEngine) ActionOptions(
+func (e *demoEngine) ProcessOptions(
 	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -68,11 +68,11 @@ func (e *demoEngine) ActionOptions(
 	error,
 ) {
 	serviceEngine := e.itemToService(item)
-	return serviceEngine.ActionOptions(item, engineState, serviceState)
+	return serviceEngine.ProcessOptions(item, engineState, serviceState)
 }
 
-// ItemAction just logs incoming pool
-func (e *demoEngine) ItemAction(
+// ProcessItem just logs incoming pool
+func (e *demoEngine) ProcessItem(
 	item engine.ServiceItem[subengines.DemoKey],
 	engineState engine.EngineLogState,
 	serviceState engine.ServiceItemState,
@@ -89,7 +89,7 @@ func (e *demoEngine) ItemAction(
 	}
 
 	serviceEngine := e.itemToService(item)
-	return serviceEngine.ItemAction(item, engineState, serviceState, options)
+	return serviceEngine.ProcessItem(item, engineState, serviceState, options)
 }
 
 // Unused by this service

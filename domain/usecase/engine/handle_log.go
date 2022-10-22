@@ -42,7 +42,11 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 		EngineStateReorgHandled:
 
 		// If we saw/processed this log/item, skip it
-		debug.DebugMsg(debugMode, "handleLog skip due to engineState", zap.String("state", engineState.String()))
+		debug.DebugMsg(
+			debugMode,
+			"handleLog skip due to engineState",
+			zap.String("engineState", engineState.String()),
+		)
 		return nil
 	}
 
@@ -58,19 +62,20 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 	key := item.ItemKey()
 	itemServiceState := serviceFSM.GetServiceState(key)
 	if itemServiceState == nil {
-
+		logger.Panic("nil service state", zap.Any("itemKey", key))
 	}
-	actionOptions, err := serviceEngine.ActionOptions(item, engineState, itemServiceState)
+
+	actionOptions, err := serviceEngine.ProcessOptions(item, engineState, itemServiceState)
 	if err != nil {
 		return errors.Wrap(err, "failed to get itemAction options from service")
 	}
-	// TODO: Or the returned type from ItemAction should be event?
-	processedState, err := serviceEngine.ItemAction(
+	// TODO: Or the returned type from ProcessItem should be event?
+	processedState, err := serviceEngine.ProcessItem(
 		item,
 		engineState,
 		itemServiceState,
 		actionOptions...,
-	// Get options for ItemAction from serviceEngine code
+	// Get options for ProcessItem from serviceEngine code
 	)
 	if err != nil {
 		return errors.Wrapf(
