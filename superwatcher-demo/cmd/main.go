@@ -28,7 +28,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/data/watcherstate"
-	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/domain/usecase/superwatcher"
 	"github.com/artnoi43/superwatcher/lib/enums"
@@ -76,9 +76,8 @@ func main() {
 		syscall.SIGTERM,
 	)
 
-	blockChan := make(chan *reorg.BlockInfo)
+	filterResultChan := make(chan *emitter.FilterResult)
 	errChan := make(chan error)
-	reorgChan := make(chan *reorg.BlockInfo)
 
 	// Hard-coded values for testing
 	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
@@ -123,9 +122,7 @@ func main() {
 		stateDataGateway,
 		watcherAddresses,
 		topics,
-		nil, // Only use blockChan, fuck logChan
-		blockChan,
-		reorgChan,
+		filterResultChan, // Only use blockChan, fuck logChan
 		errChan,
 		demoEngine,
 		true,
@@ -159,5 +156,6 @@ func main() {
 			logger.Error("DEMO: engine error", zap.Error(err))
 		}
 	}()
+
 	wg.Wait()
 }

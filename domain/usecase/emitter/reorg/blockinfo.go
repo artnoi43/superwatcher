@@ -23,6 +23,7 @@ func NewBlockInfo(
 	}
 }
 
+// String returns the block hash with 0x prepended
 func (b *BlockInfo) String() string {
 	return b.Hash.String()
 }

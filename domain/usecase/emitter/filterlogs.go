@@ -120,6 +120,7 @@ func (e *emitter) filterLogs(
 	}
 
 	// Publish log(s) and reorged block, and add canon block to tracker
+	filterResult := new(FilterResult)
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
 			logger.Info(
@@ -128,17 +129,16 @@ func (e *emitter) filterLogs(
 				zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()),
 			)
 
-			// For debugging
-			reorgBlock, foundInTracker := e.tracker.GetTrackerBlockInfo(blockNumber)
+			reorgedBlock, foundInTracker := e.tracker.GetTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
 				logger.Panic(
 					"blockInfo marked as reorged but was not found in tracker",
 					zap.Uint64("blockNumber", blockNumber),
-					zap.String("freshHash", reorgBlock.String()),
+					zap.String("freshHash", reorgedBlock.String()),
 				)
 			}
 
-			e.publishReorg(reorgBlock)
+			filterResult.ReorgedBlocks = append(filterResult.ReorgedBlocks, reorgedBlock)
 			continue
 		}
 
@@ -148,11 +148,14 @@ func (e *emitter) filterLogs(
 
 		// Publish block with > 0 block
 		if len(b.Logs) > 0 {
-			e.publishBlock(b)
+			filterResult.GoodBlocks = append(filterResult.GoodBlocks, b)
 		}
 		// Add ONLY CANONICAL block into tracker
 		e.tracker.AddTrackerBlock(b)
 	}
+
+	// Publish filterResult via e.filterResultChan
+	e.publishFilterResult(filterResult)
 
 	// End loop
 	logger.Info(

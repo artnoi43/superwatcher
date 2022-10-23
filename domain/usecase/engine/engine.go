@@ -40,36 +40,15 @@ func newWatcherEngine[K ItemKey, T ServiceItem[K]](
 // As of this writing, it's not even 50% close to the final version I have in mind.
 func (e *engine[K, T]) Loop(ctx context.Context) error {
 	go func() {
-		if err := e.handleBlock(); err != nil {
-			logger.Panic("handleBlock error", zap.Error(err))
-		}
-	}()
-
-	go func() {
-		if err := e.handleReorg(); err != nil {
-			logger.Panic("handleReorg error", zap.Error(err))
+		if err := e.handleFilterResult(); err != nil {
+			logger.Error("handleFilterResult error", zap.Error(err))
 		}
 	}()
 
 	return e.handleError()
 }
 
-func (e *engine[K, T]) handleLog() error {
-	e.debugMsg("*engine.handleLog started")
-	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleLog")
-	if err != nil {
-		return err
-	}
-
-	for {
-		newLog := e.client.WatcherCurrentLog()
-		if err := handleLog(newLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
-			return errors.Wrap(err, "handleLog failed in engine.HandleLog")
-		}
-	}
-}
-
-func (e *engine[K, T]) handleBlock() error {
+func (e *engine[K, T]) handleFilterResult() error {
 	e.debugMsg("*engine.handleBlock started")
 	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
 	if err != nil {
@@ -77,38 +56,24 @@ func (e *engine[K, T]) handleBlock() error {
 	}
 
 	for {
-		newBlock := e.client.WatcherCurrentBlock()
-		for _, log := range newBlock.Logs {
-			if err := handleLog(
-				log,
-				serviceEngine,
-				serviceFSM,
-				engineFSM,
-				e.debug,
-			); err != nil {
-				return errors.Wrap(err, "handleLog failed in handleBlock")
+		result := e.client.WatcherResult()
+		e.debugMsg("handleFilterResult: got new filterResult", zap.Int("len goodBlocks", len(result.GoodBlocks)), zap.Int("len reorgedBlocks", len(result.ReorgedBlocks)))
+
+		// Handle fresh, good blocks
+		for _, goodBlock := range result.GoodBlocks {
+			for _, goodLog := range goodBlock.Logs {
+				if err := handleLog(goodLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
+					return errors.Wrap(err, "")
+				}
 			}
 		}
-	}
-}
 
-func (e *engine[K, T]) handleReorg() error {
-	e.debugMsg("*engine.handleReorg started")
-	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
-	if err != nil {
-		return err
-	}
-
-	for {
-		reorgedBlock := e.client.WatcherReorg()
-		for _, reorgedLog := range reorgedBlock.Logs {
-			if err := handleReorgedLog(
-				reorgedLog,
-				serviceEngine,
-				serviceFSM,
-				engineFSM,
-			); err != nil {
-				return errors.Wrap(err, "handleReorg failed in handleReorgedLog")
+		// Handle reorged logs
+		for _, reorgedBlock := range result.ReorgedBlocks {
+			for _, reorgedLog := range reorgedBlock.Logs {
+				if err := handleReorgedLog(reorgedLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
+					return errors.Wrap(err, "")
+				}
 			}
 		}
 	}

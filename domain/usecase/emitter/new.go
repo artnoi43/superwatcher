@@ -2,7 +2,6 @@ package emitter
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/config"
@@ -18,9 +17,7 @@ func New(
 	stateDataGateway datagateway.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
-	logChan chan<- *types.Log,
-	blockChan chan<- *reorg.BlockInfo,
-	reorgChan chan<- *reorg.BlockInfo,
+	filterResultChan chan<- *FilterResult,
 	errChan chan<- error,
 	debug bool,
 ) WatcherEmitter {
@@ -33,10 +30,8 @@ func New(
 		startBlock:       conf.StartBlock,
 		addresses:        addresses,
 		topics:           topics,
-		logChan:          logChan,
-		blockChan:        blockChan,
+		filterResultChan: filterResultChan,
 		errChan:          errChan,
-		reorgChan:        reorgChan,
 		debug:            debug,
 	}
 }

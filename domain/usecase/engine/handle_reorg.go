@@ -13,6 +13,7 @@ func handleReorgedLog[K ItemKey, T ServiceItem[K]](
 	serviceEngine ServiceEngine[K, T],
 	serviceFSM ServiceFSM[K],
 	engineFSM EngineFSM,
+	debug bool,
 ) error {
 	engineKey := engineLogStateKeyFromLog(reorgedLog)
 	engineState := engineFSM.GetEngineState(engineKey)

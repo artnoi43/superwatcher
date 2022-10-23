@@ -7,9 +7,33 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
+
+// DEPRECATED - use handleLog instead
+func handleBlock[K ItemKey, T ServiceItem[K]](
+	block *reorg.BlockInfo,
+	serviceEngine ServiceEngine[K, T],
+	serviceFSM ServiceFSM[K],
+	engineFSM EngineFSM,
+	debugMode bool,
+) error {
+	for _, log := range block.Logs {
+		if err := handleLog(
+			log,
+			serviceEngine,
+			serviceFSM,
+			engineFSM,
+			debugMode,
+		); err != nil {
+			return errors.Wrapf(err, "error handling block number %d txHash %s", log.BlockNumber, log.TxHash.String())
+		}
+	}
+
+	return nil
+}
 
 // handleLog is a pure function for handling a single Ethereum event log
 func handleLog[K ItemKey, T ServiceItem[K]](

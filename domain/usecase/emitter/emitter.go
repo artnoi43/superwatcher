@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -36,11 +35,10 @@ type emitter struct {
 	// Redis-store for tracking last recorded block
 	stateDataGateway datagateway.StateDataGateway
 
-	// These fields are comms with for other services
-	logChan   chan<- *types.Log
-	blockChan chan<- *reorg.BlockInfo
-	reorgChan chan<- *reorg.BlockInfo
-	errChan   chan<- error
+	// These fields are gateways via which
+	// external services interact with emitter
+	filterResultChan chan<- *FilterResult
+	errChan          chan<- error
 
 	debug bool
 }
@@ -72,9 +70,7 @@ func (e *emitter) Loop(ctx context.Context) error {
 }
 
 func (e *emitter) shutdown() {
-	close(e.logChan)
-	close(e.blockChan)
-	close(e.reorgChan)
+	close(e.filterResultChan)
 	close(e.errChan)
 }
 
