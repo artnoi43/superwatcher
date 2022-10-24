@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/artnoi43/gsl v0.0.0-20220907221312-557cf6f3848b
-	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/holiman/uint256 v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/wangjia184/sortedset v0.0.0-20220209072355-af6d6d227aa7
 	go.uber.org/zap v1.23.0
