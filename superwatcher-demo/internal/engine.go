@@ -37,7 +37,6 @@ var isSolvingReorgChan = make(chan int)
 
 func NewEngine(conf *config.Config,
 	client ethClient,
-
 	addresses []common.Address,
 	topics [][]common.Hash,
 
@@ -72,11 +71,9 @@ func (e *engine) Loop(ctx context.Context) error {
 func (e *engine) HandleLog(handleLog func(e *types.Log)) {
 
 	go func() {
-		i := 0
 
 		for {
 
-			fmt.Println("continue", i)
 			log := <-e.logChan
 
 			fmt.Println("logggg---->", log)

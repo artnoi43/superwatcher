@@ -52,10 +52,11 @@ func main() {
 		conf,
 		ethClient, addresses,
 		topics)
+
 	defer stop()
 
-	enginew.HandleLog(func(a *types.Log) {
-
+	enginew.HandleLog(func(log *types.Log) {
+		// Do something about log
 	})
 
 	enginew.HandleReorg()
