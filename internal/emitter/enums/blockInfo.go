@@ -1,4 +1,4 @@
-package reorg
+package enums
 
 import (
 	"github.com/ethereum/go-ethereum/common"

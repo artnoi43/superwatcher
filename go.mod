@@ -3,13 +3,9 @@ module github.com/artnoi43/superwatcher
 go 1.19
 
 require (
-	github.com/artnoi43/gsl v0.0.0-20220907221312-557cf6f3848b
 	github.com/ethereum/go-ethereum v1.10.25
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/holiman/uint256 v1.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/wangjia184/sortedset v0.0.0-20220209072355-af6d6d227aa7
-	go.uber.org/zap v1.23.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -25,13 +21,11 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
+	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.10 // indirect
 	github.com/tklauser/numcpus v0.5.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20221012134737-56aed061732a // indirect
-	golang.org/x/exp v0.0.0-20221012211006-4de253d81b95 // indirect
 	golang.org/x/sys v0.0.0-20221013171732-95e765b1cc43 // indirect
 	golang.org/x/text v0.3.8 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect

@@ -1,4 +1,4 @@
-package internal
+package engine
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/emitter"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/emitter/reorg"
+	"github.com/artnoi43/superwatcher/internal/emitter"
+	"github.com/artnoi43/superwatcher/internal/emitter/enums"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -24,7 +24,7 @@ type ethClient interface {
 type engine struct {
 	emitter            emitter.Emitter
 	logChan            chan *types.Log
-	reorgChan          chan *reorg.BlockInfo
+	reorgChan          chan *enums.BlockInfo
 	isSolvingReorgChan chan int
 }
 type Engine interface {
@@ -43,7 +43,7 @@ func NewEngine(conf *config.Config,
 ) Engine {
 
 	logChan := make(chan *types.Log)
-	reorgChan := make(chan *reorg.BlockInfo)
+	reorgChan := make(chan *enums.BlockInfo)
 	emitter := emitter.NewEmitter(
 		conf,
 		client,

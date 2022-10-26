@@ -6,15 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	engine "github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/lib/enums"
-	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
-	engine "github.com/artnoi43/superwatcher/superwatcher-demo/internal"
+	"github.com/artnoi43/superwatcher/internal/emitter/enums"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -45,23 +44,23 @@ func main() {
 		context.Background(), syscall.SIGQUIT,
 		syscall.SIGTERM,
 	)
+	var addresses []common.Address
+	var topics [][]common.Hash
 
-	_, addresses, topics := hardcode.GetABIAddressesAndTopics()
-
-	enginew := engine.NewEngine(
+	client := engine.NewEngine(
 		conf,
 		ethClient, addresses,
 		topics)
 
 	defer stop()
 
-	enginew.HandleLog(func(log *types.Log) {
+	client.HandleLog(func(log *types.Log) {
 		// Do something about log
 	})
 
-	enginew.HandleReorg()
+	client.HandleReorg()
 
-	if err := enginew.Loop(ctx); err != nil {
-		logger.Error("main error", zap.String("error", err.Error()))
+	if err := client.Loop(ctx); err != nil {
+
 	}
 }
