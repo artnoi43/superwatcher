@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	"github.com/wangjia184/sortedset"
 	"go.uber.org/zap"
@@ -19,6 +20,8 @@ type EngineStateTracker interface {
 
 // Tracker name needs revision!
 type Tracker struct {
+	sync.Mutex
+
 	set   *sortedset.SortedSet
 	debug bool
 }
@@ -34,6 +37,9 @@ func NewTracker(debug bool) *Tracker {
 func (t *Tracker) ClearUntil(blockNumber uint64) {
 	debug.DebugMsg(t.debug, "clearing engine state tracker", zap.Uint64("until", blockNumber))
 
+	t.Lock()
+	defer t.Unlock()
+
 	for {
 		oldest := t.set.PeekMin()
 		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
@@ -45,12 +51,16 @@ func (t *Tracker) ClearUntil(blockNumber uint64) {
 
 // AddBlockInfo add a new *BlockInfo to t
 func (t *Tracker) SetEngineState(key engineLogStateKey, state EngineLogState) {
+	t.Lock()
+	defer t.Unlock()
 
 	t.set.AddOrUpdate(key.String(), sortedset.SCORE(key.blockNumber), state)
 }
 
 // GetSavedBlockByBlockNumber returns *BlockInfo from t with key blockNumber
 func (t *Tracker) GetEngineState(key engineLogStateKey) EngineLogState {
+	t.Lock()
+	defer t.Unlock()
 
 	node := t.set.GetByKey(key.String())
 	if node == nil {
@@ -68,6 +78,8 @@ func (t *Tracker) GetEngineState(key engineLogStateKey) EngineLogState {
 }
 
 func (t *Tracker) Len() int {
+	t.Lock()
+	defer t.Unlock()
 
 	return t.set.GetCount()
 }

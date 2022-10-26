@@ -16,4 +16,7 @@ type (
 		String() string
 		IsValid() bool
 	}
+
+	ServiceItemState State
+	ServiceItemEvent Event
 )

@@ -11,8 +11,3 @@ type ServiceItem interface {
 	ItemKey(...interface{}) ItemKey
 	DebugString() string
 }
-
-type (
-	ServiceItemState State
-	ServiceItemEvent Event
-)
