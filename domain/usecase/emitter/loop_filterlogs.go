@@ -11,6 +11,12 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
+type filterLogStatus struct {
+	IsReorging bool   `json:"isReorging"`
+	FromBlock  uint64 `json:"fromBlock"`
+	ToBlock    uint64 `json:"toBlock"`
+}
+
 func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	sleep := func() {
 		time.Sleep(time.Second * time.Duration(e.config.LoopInterval))
@@ -18,6 +24,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	loopCtx := context.Background()
 	// Assume that this is a normal first start (watcher restarted).
 	lookBackFirstStart := true
+	var status filterLogStatus
 
 filterLoop:
 	for {
@@ -62,8 +69,9 @@ filterLoop:
 				continue filterLoop
 			}
 
+			// If first run or status.IsReorging, then we go back to filter previous blocks.
 			var fromBlock, toBlock uint64
-			if lookBackFirstStart {
+			if lookBackFirstStart || status.IsReorging {
 				// Toggle
 				lookBackFirstStart = false
 				// Start with going back lookBack * maxLookBack times if watcher was restarted
@@ -80,6 +88,12 @@ filterLoop:
 				fromBlock, toBlock = fromBlockToBlock(currentBlockNumber, lastRecordedBlock, e.config.LookBackBlocks)
 			}
 
+			toggleStatusIsReorging := func(isReorging bool) {
+				status.IsReorging = isReorging
+				status.FromBlock = fromBlock
+				status.ToBlock = toBlock
+			}
+
 			logger.Info(
 				"calling filterLogs",
 				zap.Uint64("fromBlock", fromBlock),
@@ -92,11 +106,17 @@ filterLoop:
 			); err != nil {
 				if errors.Is(err, errFromBlockReorged) {
 					// Continue to filter from fromBlock
-					logger.Info("fromBlock reorged", zap.Error(err))
+					toggleStatusIsReorging(true)
+
+					logger.Info("fromBlock reorged", zap.Any("filterLogStatus", status))
 					continue
 				}
+
+				toggleStatusIsReorging(false)
 				return errors.Wrap(err, "filterLogs error")
 			}
+
+			toggleStatusIsReorging(false)
 		}
 	}
 }

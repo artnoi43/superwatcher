@@ -163,6 +163,8 @@ func (e *emitter) filterLogs(
 		zap.Int("eventLogs (filtered)", lenLogs),
 		zap.Int("processLogs (all logs processed)", len(processLogsByBlockNumber)),
 	)
+
+	// TODO: engine should be the one writing lastRecordedBlock
 	if err := e.stateDataGateway.SetLastRecordedBlock(ctx, toBlock); err != nil {
 		return errors.Wrap(err, "failed to save lastRecordedBlock to redis")
 	}

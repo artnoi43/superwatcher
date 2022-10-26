@@ -39,6 +39,7 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 
 	engine := engine.New(
 		serviceEngine,
+		stateDataGateway,
 		filterResultChan,
 		errChan,
 		debug,
