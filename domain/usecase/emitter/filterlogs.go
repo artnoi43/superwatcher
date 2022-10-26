@@ -170,7 +170,7 @@ func (e *emitter) filterLogs(
 	}
 
 	// Publish filterResult via e.filterResultChan
-	e.publishFilterResult(filterResult)
+	e.emitFilterResult(filterResult)
 
 	// End loop
 	logger.Info(

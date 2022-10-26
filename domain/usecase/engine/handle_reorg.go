@@ -48,7 +48,7 @@ func handleReorgedLog(
 		return errors.Wrapf(err, "failed to get reorgOptions from service")
 	}
 
-	stateAfterHandledReorged, err := serviceEngine.HandleReorg(
+	postReorgState, err := serviceEngine.HandleReorg(
 		reorgedItem,
 		engineState,
 		serviceStateTracker.GetServiceState(key),
@@ -63,7 +63,7 @@ func handleReorgedLog(
 		return fmt.Errorf("invalid engineState: %s (%d)", engineState.String(), engineState)
 	}
 	engineStateTracker.SetEngineState(engineKey, engineState)
-	serviceStateTracker.SetServiceState(key, stateAfterHandledReorged)
+	serviceStateTracker.SetServiceState(key, postReorgState)
 
 	return nil
 }

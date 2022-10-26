@@ -6,7 +6,7 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
-func (e *emitter) publishFilterResult(result *FilterResult) {
+func (e *emitter) emitFilterResult(result *FilterResult) {
 	if e.filterResultChan == nil {
 		e.debugMsg("publishReorg", zap.String("debug", "filterResultChan is nil"))
 		return

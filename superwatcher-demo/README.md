@@ -36,7 +36,7 @@ or just run superwatcher service with the sub-service as the only service.
 │                  │ implemented by          │           │                                     │
 │                  │                         │           │                                     │
 │                  ▼                         │     ┌─────┼─────── demoengine.demoEngine        │
-│       struct engine.watcherEngine          │     │     │                           │         │
+│       struct engine.engine                 │     │     │                           │         │
 │                                            │     ├─────┼─── sub-engine 1 ◄─────────┤ wraps   │
 │                  │                         │     │     │                           │         │
 │                  │                         │     ├─────┼─── sub-engine 2 ◄─────────┤ wraps   │
