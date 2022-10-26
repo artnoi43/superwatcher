@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/domain/datagateway"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitterclient"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
@@ -15,7 +16,7 @@ type WatcherEngine interface {
 }
 
 type engine[K ItemKey, T ServiceItem[K]] struct {
-	client           EmitterClient[T]             // Interfaces with emitter
+	client           emitterclient.Client[T]      // Interfaces with emitter
 	serviceEngine    ServiceEngine[K, T]          // Injected service code
 	stateDataGateway datagateway.StateDataGateway // Saves lastRecordedBlock to Redis
 	engineFSM        EngineFSM                    // Engine internal state machine
@@ -23,7 +24,7 @@ type engine[K ItemKey, T ServiceItem[K]] struct {
 }
 
 func newWatcherEngine[K ItemKey, T ServiceItem[K]](
-	client EmitterClient[T],
+	client emitterclient.Client[T],
 	serviceEngine ServiceEngine[K, T],
 	statDataGateway datagateway.StateDataGateway,
 	debug bool,

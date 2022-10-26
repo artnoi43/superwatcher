@@ -1,4 +1,4 @@
-package engine
+package emitterclient
 
 import (
 	"go.uber.org/zap"
@@ -7,7 +7,8 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
-type EmitterClient[T any] interface {
+// Client interfaces with emitter.WatcherEmitter via these methods
+type Client[T any] interface {
 	WatcherResult() *emitter.FilterResult
 	WatcherEmitterSync()
 	WatcherError() error
@@ -15,6 +16,8 @@ type EmitterClient[T any] interface {
 	Shutdown()
 }
 
+// emitterClient is the actual implementation of Client.
+// It uses channels to communicate with emitter.
 type emitterClient[T any] struct {
 	emitterSyncChan  chan<- struct{}
 	filterResultChan <-chan *emitter.FilterResult
@@ -28,7 +31,7 @@ func NewEmitterClient[T any](
 	filterResultChan <-chan *emitter.FilterResult,
 	errChan <-chan error,
 	debug bool,
-) EmitterClient[T] {
+) Client[T] {
 	return &emitterClient[T]{
 		filterResultChan: filterResultChan,
 		emitterSyncChan:  emitterSyncChan,

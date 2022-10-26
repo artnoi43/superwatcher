@@ -1,20 +1,5 @@
 package main
 
-/*
-   superwatcher-demo shows how to use/embed superwatcher in service code.
-
-   It is designed to use superwatcher to track the following events:
-   1. UniswapV3Factory: 'PoolCreated' event
-   2. UniswapV3 Pool: 'Swap" event
-   3. 1inch Limit Order: 'OrderFilled' and 'OrderCanceled' events
-
-   All logs from 3 contracts is handled by 1 instance of *engine.watcherEngine,
-   where field *engine.watcherEngine.serviceEngine is demoengine.demoEngine.
-
-   *demoengine.demoEngine handles all 3 contracts by wrapping other so-called "sub-engines".
-   For example, to handle contract Uniswapv3Factory, demoEngine uses uniswapv3factoryengine.uniswapv3PoolFactoryEngine.
-*/
-
 import (
 	"context"
 	"os/signal"
@@ -68,7 +53,7 @@ func main() {
 		rdb,
 	)
 
-	ctx, stop := signal.NotifyContext(
+	ctx, cancel := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGHUP,
 		syscall.SIGINT,
@@ -129,7 +114,8 @@ func main() {
 	)
 
 	shutdown := func() {
-		stop()
+		// Cancel context to stop both superwatcher emitter and engine
+		cancel()
 
 		ethClient.Close()
 		if err := rdb.Close(); err != nil {
@@ -138,7 +124,8 @@ func main() {
 				zap.Error(err),
 			)
 		}
-		logger.Info("shutdown called")
+
+		logger.Info("graceful shutdown successful")
 	}
 
 	defer shutdown()

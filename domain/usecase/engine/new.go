@@ -3,6 +3,7 @@ package engine
 import (
 	"github.com/artnoi43/superwatcher/domain/datagateway"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
+	"github.com/artnoi43/superwatcher/domain/usecase/emitterclient"
 )
 
 func New[K ItemKey, T ServiceItem[K]](
@@ -15,7 +16,7 @@ func New[K ItemKey, T ServiceItem[K]](
 ) WatcherEngine {
 
 	// TODO: Do we still need EmitterClient?
-	emitterClient := NewEmitterClient[T](
+	emitterClient := emitterclient.NewEmitterClient[T](
 		syncChan,
 		filterResultChan,
 		errChan,
