@@ -44,16 +44,16 @@ func newWatcherEngine[K ItemKey, T ServiceItem[K]](
 // As of this writing, it's not even 50% close to the final version I have in mind.
 func (e *engine[K, T]) Loop(ctx context.Context) error {
 	go func() {
-		if err := e.handleFilterResult(); err != nil {
-			logger.Error("handleFilterResult error", zap.Error(err))
+		if err := e.run(ctx); err != nil {
+			logger.Error("engine error", zap.Error(err))
 		}
 	}()
 
 	return e.handleError()
 }
 
-func (e *engine[K, T]) handleFilterResult() error {
-	e.debugMsg("*engine.handleBlock started")
+func (e *engine[K, T]) run(ctx context.Context) error {
+	e.debugMsg("*engine.run started")
 	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
 	if err != nil {
 		return err
@@ -61,25 +61,34 @@ func (e *engine[K, T]) handleFilterResult() error {
 
 	for {
 		result := e.client.WatcherResult()
-		e.debugMsg("handleFilterResult: got new filterResult", zap.Int("len goodBlocks", len(result.GoodBlocks)), zap.Int("len reorgedBlocks", len(result.ReorgedBlocks)))
-
-		// Handle fresh, good blocks
-		for _, goodBlock := range result.GoodBlocks {
-			for _, goodLog := range goodBlock.Logs {
-				if err := handleLog(goodLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
-					return errors.Wrap(err, "")
-				}
-			}
-		}
+		e.debugMsg("*engine.run: got new filterResult", zap.Int("goodBlocks", len(result.GoodBlocks)), zap.Int("reorgedBlocks", len(result.ReorgedBlocks)))
 
 		// Handle reorged logs
 		for _, reorgedBlock := range result.ReorgedBlocks {
 			for _, reorgedLog := range reorgedBlock.Logs {
 				if err := handleReorgedLog(reorgedLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
-					return errors.Wrap(err, "")
+					return errors.Wrap(err, "*engine.run: handleReorgedLog error")
 				}
 			}
 		}
+
+		// Handle fresh, good blocks
+		for _, goodBlock := range result.GoodBlocks {
+			for _, goodLog := range goodBlock.Logs {
+				if err := handleLog(goodLog, serviceEngine, serviceFSM, engineFSM, e.debug); err != nil {
+					return errors.Wrap(err, "*engine.run: handleLog error")
+				}
+			}
+		}
+
+		// Save lastRecordedBlock
+		if err := e.stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock); err != nil {
+			return errors.Wrap(err, "*engine.run: failed to save lastRecordedBlock to redis")
+		}
+		e.debugMsg("set lastRecordedBlock", zap.Uint64("blockNumber", result.LastGoodBlock))
+
+		// Signal emitter to progress
+		e.client.WatcherNextFilterLogs()
 	}
 }
 

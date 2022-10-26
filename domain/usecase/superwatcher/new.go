@@ -26,12 +26,16 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 	emitter.WatcherEmitter,
 	engine.WatcherEngine,
 ) {
+
+	syncChan := make(chan struct{})
+
 	emitter := emitter.New(
 		conf,
 		ethClient,
 		stateDataGateway,
 		addresses,
 		topics,
+		syncChan,
 		filterResultChan,
 		errChan,
 		debug,
@@ -40,6 +44,7 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 	engine := engine.New(
 		serviceEngine,
 		stateDataGateway,
+		syncChan,
 		filterResultChan,
 		errChan,
 		debug,

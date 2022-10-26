@@ -119,8 +119,8 @@ func (e *emitter) filterLogs(
 		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
 	}
 
-	// Publish log(s) and reorged block, and add canon block to tracker
 	filterResult := new(FilterResult)
+	// Publish log(s) and reorged block, and add canon block to tracker
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
 			logger.Info(
@@ -154,21 +154,36 @@ func (e *emitter) filterLogs(
 		e.tracker.AddTrackerBlock(b)
 	}
 
+	// ToBlock will be the last good block (not reorged)
+	filterResult.FromBlock = fromBlock
+	if len(wasReorged) == 0 {
+		filterResult.LastGoodBlock = toBlock
+	} else {
+		if l := len(filterResult.GoodBlocks); l == 0 {
+			// If there's no block with interesting log in this loop,
+			// then filter this whole range again in the next loop.
+			filterResult.LastGoodBlock = fromBlock
+		} else {
+			// Use last good block number as ToBlock
+			filterResult.LastGoodBlock = filterResult.GoodBlocks[l-1].Number
+		}
+	}
+
 	// Publish filterResult via e.filterResultChan
 	e.publishFilterResult(filterResult)
 
 	// End loop
 	logger.Info(
-		"number of logs processed by filterLogs",
+		"number of logs published by filterLogs",
 		zap.Int("eventLogs (filtered)", lenLogs),
 		zap.Int("processLogs (all logs processed)", len(processLogsByBlockNumber)),
+		zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
+		zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
 	)
 
-	// TODO: engine should be the one writing lastRecordedBlock
-	if err := e.stateDataGateway.SetLastRecordedBlock(ctx, toBlock); err != nil {
-		return errors.Wrap(err, "failed to save lastRecordedBlock to redis")
-	}
-	logger.Info("set lastRecordedBlock", zap.Uint64("blockNumber", toBlock))
+	// Waits until engine syncs
+	<-e.syncChan
+	e.debugMsg("engine and emitter synced")
 
 	return nil
 }

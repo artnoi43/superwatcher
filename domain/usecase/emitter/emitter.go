@@ -39,6 +39,7 @@ type emitter struct {
 	// external services interact with emitter
 	filterResultChan chan<- *FilterResult
 	errChan          chan<- error
+	syncChan         chan struct{}
 
 	debug bool
 }
@@ -70,6 +71,7 @@ func (e *emitter) Loop(ctx context.Context) error {
 }
 
 func (e *emitter) shutdown() {
+	close(e.syncChan)
 	close(e.filterResultChan)
 	close(e.errChan)
 }

@@ -8,6 +8,7 @@ import (
 func New[K ItemKey, T ServiceItem[K]](
 	serviceEngine ServiceEngine[K, T],
 	stateDataGateway datagateway.StateDataGateway,
+	syncChan chan<- struct{},
 	filterResultChan <-chan *emitter.FilterResult,
 	errChan <-chan error,
 	debug bool,
@@ -15,6 +16,7 @@ func New[K ItemKey, T ServiceItem[K]](
 
 	// TODO: Do we still need EmitterClient?
 	emitterClient := NewEmitterClient[T](
+		syncChan,
 		filterResultChan,
 		errChan,
 		debug,
