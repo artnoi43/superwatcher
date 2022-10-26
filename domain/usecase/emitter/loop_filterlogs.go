@@ -24,49 +24,56 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	loopCtx := context.Background()
 	// Assume that this is a normal first start (watcher restarted).
 	lookBackFirstStart := true
+
+	// This will keep track of fromBlock/toBlock, as well as reorg status
 	var status filterLogStatus
 
-filterLoop:
 	for {
-		logger.Info("starting filterLoop")
+		e.debugMsg("new loopFilterLogs loop", zap.Any("current_status", status))
+
 		if !lookBackFirstStart {
 			sleep()
 		}
+
 		select {
 		// Graceful shutdown in main
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
+			// Get chain's tallest block number and compare it with lastRecordedBlock
 			currentBlockNumber, err := e.client.BlockNumber(loopCtx)
 			if err != nil {
 				return errors.Wrap(err, "failed to get current block number from node")
 			}
+
+			// lastRecordedBlock was saved by engine.
+			// The saved value is block number of the last element of FilterResult.GoodBlocks
 			lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 			if err != nil {
 				// Return error if not datagateway.ErrRecordNotFound
 				if !errors.Is(err, datagateway.ErrRecordNotFound) {
 					return errors.Wrap(err, "failed to get last recorded block from Redis")
 				}
+
 				// If no lastRecordedBlock => watcher has never been run on the host: there's no need to look back.
 				lookBackFirstStart = false
 				// If no lastRecordedBlock, use startBlock (contract genesis block)
 				lastRecordedBlock = e.startBlock
 			}
 
-			logger.Info(
+			e.debugMsg(
 				"recent blocks",
 				zap.Uint64("currentBlock", currentBlockNumber),
 				zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 			)
 
-			// Handle if there's no new block yet
+			// Continue if there's no new block yet
 			if lastRecordedBlock == currentBlockNumber {
-				logger.Info(
+				e.debugMsg(
 					"no new block, skipping",
 					zap.Uint64("currentBlock", currentBlockNumber),
-					zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 				)
-				continue filterLoop
+				continue
 			}
 
 			// If first run or status.IsReorging, then we go back to filter previous blocks.
@@ -74,6 +81,7 @@ filterLoop:
 			if lookBackFirstStart || status.IsReorging {
 				// Toggle
 				lookBackFirstStart = false
+
 				// Start with going back lookBack * maxLookBack times if watcher was restarted
 				goBack := e.config.LookBackBlocks * e.config.LookBackRetries
 				fromBlock = lastRecordedBlock + 1 - goBack
@@ -94,11 +102,13 @@ filterLoop:
 				status.ToBlock = toBlock
 			}
 
-			logger.Info(
+			e.debugMsg(
 				"calling filterLogs",
 				zap.Uint64("fromBlock", fromBlock),
 				zap.Uint64("toBlock", toBlock),
+				zap.Any("current_status", status),
 			)
+
 			if err := e.filterLogs(
 				loopCtx,
 				fromBlock,
@@ -108,15 +118,25 @@ filterLoop:
 					// Continue to filter from fromBlock
 					toggleStatusIsReorging(true)
 
-					logger.Info("fromBlock reorged", zap.Any("filterLogStatus", status))
+					logger.Warn("fromBlock reorged", zap.Any("filterLogStatus", status))
+					continue
+
+				} else if errors.Is(err, errFetchError) {
+					// TODO: decide this
+					// Continue if client failed to get headers/logs
+					logger.Warn("client failed to fetch", zap.Error(err))
 					continue
 				}
 
-				toggleStatusIsReorging(false)
-				return errors.Wrap(err, "filterLogs error")
+				return errors.Wrap(err, "unexpected filterLogs error")
 			}
 
 			toggleStatusIsReorging(false)
+
+			e.debugMsg(
+				"filterLogs returned successfully",
+				zap.Any("current_status", status),
+			)
 		}
 	}
 }

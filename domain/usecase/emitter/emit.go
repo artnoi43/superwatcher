@@ -8,16 +8,27 @@ import (
 
 func (e *emitter) emitFilterResult(result *FilterResult) {
 	if e.filterResultChan == nil {
-		e.debugMsg("publishReorg", zap.String("debug", "filterResultChan is nil"))
+		e.debugMsg("emitFilterResult", zap.String("debug", "filterResultChan is nil"))
 		return
 	}
 
-	// Publish
 	if result != nil {
-		e.debugMsg("publishReorg", zap.Any("b", result))
+		e.debugMsg("emitFilterResult", zap.Any("b", result))
 		e.filterResultChan <- result
 		return
 	}
 
-	logger.Panic("nil log sent to publishFilterResult")
+	logger.Panic("nil filterResult got sent to emitFilterREsult")
+}
+
+func (e *emitter) emitError(err error) {
+	if e.errChan == nil {
+		e.debugMsg("emitError", zap.String("debug", "errChan is nil"))
+	}
+
+	if err != nil {
+		e.errChan <- err
+	}
+
+	logger.Panic("nil error got sent to emitError")
 }

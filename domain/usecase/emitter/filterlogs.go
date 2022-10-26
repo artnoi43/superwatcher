@@ -4,16 +4,15 @@ import (
 	"context"
 	"math/big"
 	"sync"
-	"time"
 
 	"github.com/artnoi43/gsl/concurrent"
-	"github.com/avast/retry-go"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
+	"github.com/artnoi43/superwatcher/lib"
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
@@ -36,36 +35,33 @@ func (e *emitter) filterLogs(
 
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
-		eventLogs, err = e.client.FilterLogs(ctx, ethereum.FilterQuery{
-			FromBlock: big.NewInt(int64(fromBlock)),
-			ToBlock:   big.NewInt(int64(toBlock)),
-			Addresses: e.addresses,
-			Topics:    e.topics,
+		eventLogs, err = lib.RetryWithReturn(func() ([]types.Log, error) {
+			return e.client.FilterLogs(ctx, ethereum.FilterQuery{
+				FromBlock: big.NewInt(int64(fromBlock)),
+				ToBlock:   big.NewInt(int64(toBlock)),
+				Addresses: e.addresses,
+				Topics:    e.topics,
+			})
 		})
+
 		if err != nil {
-			getErrChan <- errors.Wrap(err, "error filtering event logs")
+			// TODO: what the actual fuck?
+			getErrChan <- wrapErrBlockNumber(err, errFetchLogs, (fromBlock+toBlock)/2)
 		}
 	}
 
 	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
-		err := retry.Do(func() error {
-			header, err := e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
-			if err != nil {
-				return err
-			}
-			mut.Lock()
-			headersByBlockNumber[blockNumber] = header
-			mut.Unlock()
-			return nil
-		},
-			retry.Attempts(10),
-			retry.Delay(300*time.Millisecond),
-			retry.DelayType(retry.FixedDelay),
-		)
+		header, err := lib.RetryWithReturn(func() (*types.Header, error) {
+			return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
+		})
 		if err != nil {
-			getErrChan <- errors.Wrapf(err, "failed to get header for block %d", blockNumber)
+			getErrChan <- wrapErrBlockNumber(err, errFetchHeader, blockNumber)
 		}
+
+		mut.Lock()
+		headersByBlockNumber[blockNumber] = header
+		mut.Unlock()
 	}
 
 	// Get fresh logs, and block headers (fromBlock-toBlock)
