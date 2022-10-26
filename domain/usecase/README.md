@@ -6,7 +6,7 @@ namely, `emitter.WatcherEmitter`, `emitterclient.Client`, and `engine.WatcherEng
 ## [The superwatcher emitter](./emitter/) `emitter.WatcherEmitter`
 
 This interface represents the _emitter_ part of superwatcher, and is implemented
-by `\*emitter.emitter`.
+by `emitter.emitter`.
 
 The _emitter_ engages in an infinite loop (),
 filering a range of blocks and _emitting_ event logs that match the filter query
