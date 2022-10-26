@@ -3,21 +3,20 @@
 This package contains 3 _use case_ components of the superwatchers,
 namely, `emitter.WatcherEmitter`, `emitterclient.Client`, and `engine.WatcherEngine`.
 
-## [The superwatcher emitter](./emitter/) `emitter.WatcherEmitter`
+## [The superwatcher emitter](./emitter/)
 
-This interface represents the _emitter_ part of superwatcher, and is implemented
-by `emitter.emitter`.
+The `emitter.WatcherEmitter` interface represents the _emitter_ part of superwatcher,
+and is implemented by `emitter.emitter`.
 
-The _emitter_ engages in an infinite loop (),
-filering a range of blocks and _emitting_ event logs that match the filter query
-to the superwatcher in the form of [`FilterResult`](./emitter/filter_result.go).
+The _emitter_ engages in an infinite loop, filering a range of blocks and _emitting_
+event logs that match the filter query to the superwatcher in the form of [`FilterResult`](./emitter/filter_result.go).
 
 It then waits until the engine is done processing the published logs before
 it continues another loop (i.e. it syncs with the engine).
 
-### Emitter implementation `*emitter.emitter`
+### Emitter implementation
 
-The main logic emitter starts with [`loopFilterLogs`](./emitter/loop_filterlogs.go),
+The main emitter logic starts with [`loopFilterLogs`](./emitter/loop_filterlogs.go),
 which repeatedly calls [`filterLogs`](./emitter/filterlogs.go) with different
 filter range.
 
@@ -47,9 +46,10 @@ in `emitter.emitter.loopFilterLogs`.
    be incremented. The emitter will try to filter the same block range until it is
    sure that the log data is canonical.
 
-## [The superwatcher emitter client](./emitterclient/) `emitterclient.Client`
+## [The superwatcher emitter client](./emitterclient/)
 
-The emitter client helps abstracts `emitter.WatcherEmitter` away from `engine.WatcherEngine`.
+The emitter client `emitterclient.Client` helps abstracts `emitter.WatcherEmitter`
+away from `engine.WatcherEngine`.
 
 It shares the comms channels with the emitter implementation, and can send and
 receive data to and from the emitter.
@@ -81,7 +81,7 @@ is that:
    and that item can have a key for accessing its service states
 
 2. This _item_ instance is something your business domain needs from the log that
-   the service will some operations on, using `ServiceEngine.ProcessItem`.
+   the service will perform some operations on. The operations are done using `ServiceEngine.ProcessItem`.
 
 > Due to requests, changes are being planned to use more than 1 event log to
 > create an _item_ (artifact). This is because some business item may need more than
@@ -90,14 +90,14 @@ is that:
 Another thing to remember when using the engine is that it used 2 main kinds of _states_
 to decide which log to act upon if seen and how.
 
-### Engine log state `engine.EngineLogState`
+### [Engine log state](./engine/engine_log_states.go)
 
-This state type is the first kind of state the engine uses. The states represent
-the state of an event log _according to the engine_.
+The type `engine.EngineLogState` is the 1 of the 2 state kinds the engine uses.
+The states represent the state of an event log _according to the engine_.
 
-It is used to decide which log we should ignore - because the emitter filters in
-a sliding window-ish way, which means that the seen and processed logs may be emitted
-to the engine over and over again.
+**It is used to decide which log we should ignore - because the emitter filters logs
+in a sliding window-ish way, which means that the seen and processed logs may be
+emitted to the engine over and over again**.
 
 This includes states like `Null`, `Seen`, `Processed`, `Reorged`, `ReorgHandled`.
 
@@ -105,10 +105,14 @@ Because of these states, the service code does not have to care about these filt
 statuses - and the service authors can just focus on implementing their domain-specific
 states instead.
 
-### External service states [`engine.ServiceItemState`](./engine/external_service_states.go)
+### [External service states](./engine/external_service_states.go)
 
-This state type is a some what optional interface for external services to implement
-external state machine to _manage the service actions during chain reorg_.
+The state interface type `engine.ServiceItemState` is a some what optional interface
+for external services to _control and manage the service actions on the log item
+(artifact)_.
+
+They are mostly _read_ and _returned_ in `ServiceItem.ProcessItem` and `ServiceItem.HandleReorg`,
+and is comitted to the tracker by the engine, not the service.
 
 It is the state of the service _item_ (`engine.ServiceItem`), and as of this writing,
 an _item_ is created from `log`.
