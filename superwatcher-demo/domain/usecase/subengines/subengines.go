@@ -1,6 +1,9 @@
 package subengines
 
-import "github.com/artnoi43/superwatcher/domain/usecase/engine"
+import (
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
+	"github.com/artnoi43/superwatcher/lib/logger"
+)
 
 type (
 	SubEngine uint8
@@ -10,6 +13,14 @@ type (
 		ForSubEngine() SubEngine
 	}
 )
+
+func AssertDemoKey(itemKey engine.ItemKey) DemoKey {
+	demoKey, ok := itemKey.(DemoKey)
+	if !ok {
+		logger.Panic("type assertion failed - itemKey is not DemoKey")
+	}
+	return demoKey
+}
 
 const (
 	SubEngineInvalid SubEngine = iota

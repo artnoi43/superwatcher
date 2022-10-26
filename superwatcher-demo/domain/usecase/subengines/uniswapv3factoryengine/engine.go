@@ -8,38 +8,37 @@ import (
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
 type uniswapv3PoolFactoryEngine struct {
 	contractABI    abi.ABI
 	contractEvents []abi.Event
-	serviceFSM     *poolFactoryFSM
+	stateTracker   *poolFactoryStateTracker
 }
 
 func NewUniswapV3Engine(
 	contractABI abi.ABI,
 	contractEvents []abi.Event,
-) engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]] {
+) engine.ServiceEngine {
 	return &uniswapv3PoolFactoryEngine{
 		contractABI:    contractABI,
 		contractEvents: contractEvents,
 		// TODO: Should we add func `NewPoolFactoryFSM`?
-		serviceFSM: &poolFactoryFSM{
+		stateTracker: &poolFactoryStateTracker{
 			states: make(map[entity.Uniswapv3FactoryWatcherKey]engine.ServiceItemState),
 		},
 	}
 }
 
 func (e *uniswapv3PoolFactoryEngine) ServiceStateTracker() (
-	engine.ServiceFSM[subengines.DemoKey],
+	engine.ServiceStateTracker,
 	error,
 ) {
-	if e.serviceFSM == nil {
+	if e.stateTracker == nil {
 		return nil, errors.New("nil uniswapv3FactoryEngine.serviceFSM")
 	}
 
-	return e.serviceFSM, nil
+	return e.stateTracker, nil
 }
 
 func parseLogDataToUniswapv3Factory(unpacked map[string]interface{}) (*entity.Uniswapv3PoolCreated, error) {

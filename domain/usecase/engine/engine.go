@@ -15,30 +15,32 @@ type WatcherEngine interface {
 	Loop(context.Context) error
 }
 
-type engine[K ItemKey, T ServiceItem[K]] struct {
-	client           emitterclient.Client[T]      // Interfaces with emitter
-	serviceEngine    ServiceEngine[K, T]          // Injected service code
-	stateDataGateway datagateway.StateDataGateway // Saves lastRecordedBlock to Redis
-	engineFSM        EngineFSM                    // Engine internal state machine
-	debug            bool
+// engine is the actual implementation for WatcherEngine.
+// engine uses emitterclient.Client to talk/sync to emitter.
+type engine struct {
+	client             emitterclient.Client         // Interfaces with emitter
+	serviceEngine      ServiceEngine                // Injected service code
+	stateDataGateway   datagateway.StateDataGateway // Saves lastRecordedBlock to Redis
+	engineStateTracker EngineStateTracker           // Engine internal state machine
+	debug              bool
 }
 
-func newWatcherEngine[K ItemKey, T ServiceItem[K]](
-	client emitterclient.Client[T],
-	serviceEngine ServiceEngine[K, T],
+func newWatcherEngine(
+	client emitterclient.Client,
+	serviceEngine ServiceEngine,
 	statDataGateway datagateway.StateDataGateway,
 	debug bool,
 ) WatcherEngine {
-	return &engine[K, T]{
-		client:           client,
-		serviceEngine:    serviceEngine,
-		stateDataGateway: statDataGateway,
-		engineFSM:        NewEngineFSM(),
-		debug:            debug,
+	return &engine{
+		client:             client,
+		serviceEngine:      serviceEngine,
+		stateDataGateway:   statDataGateway,
+		engineStateTracker: NewTracker(debug),
+		debug:              debug,
 	}
 }
 
-func (e *engine[K, T]) Loop(ctx context.Context) error {
+func (e *engine) Loop(ctx context.Context) error {
 	go func() {
 		if err := e.run(ctx); err != nil {
 			e.debugMsg("*engine.run exited", zap.Error(err))
@@ -51,16 +53,18 @@ func (e *engine[K, T]) Loop(ctx context.Context) error {
 }
 
 // shutdown is not exported, and the user of the engine should not attempt to call it.
-func (e *engine[K, T]) shutdown() {
+func (e *engine) shutdown() {
 	e.client.Shutdown()
 }
 
-func (e *engine[K, T]) run(ctx context.Context) error {
+func (e *engine) run(ctx context.Context) error {
 	e.debugMsg("*engine.run started")
 	serviceEngine, serviceFSM, engineFSM, err := e.initStuff("handleBlock")
 	if err != nil {
 		return err
 	}
+
+	emitterLookBackBlock := e.client.WatcherConfig().LookBackBlocks
 
 	for {
 		result := e.client.WatcherResult()
@@ -96,12 +100,14 @@ func (e *engine[K, T]) run(ctx context.Context) error {
 		}
 		e.debugMsg("set lastRecordedBlock", zap.Uint64("blockNumber", result.LastGoodBlock))
 
+		// TODO: Until what block number should we clear?
+		e.engineStateTracker.ClearUntil(result.LastGoodBlock - emitterLookBackBlock)
 		// Signal emitter to progress
 		e.client.WatcherEmitterSync()
 	}
 }
 
-func (e *engine[K, T]) handleError() error {
+func (e *engine) handleError() error {
 	e.debugMsg("*engine.handleError started")
 	for {
 		err := e.client.WatcherError()
@@ -121,15 +127,15 @@ func (e *engine[K, T]) handleError() error {
 	return nil
 }
 
-func (e *engine[K, T]) initStuff(method string) (ServiceEngine[K, T], ServiceFSM[K], EngineFSM, error) {
+func (e *engine) initStuff(method string) (ServiceEngine, ServiceStateTracker, EngineStateTracker, error) {
 	serviceFSM, err := e.serviceEngine.ServiceStateTracker()
 	if err != nil {
 		return nil, nil, nil, errors.Wrapf(err, "failed to init serviceFSM for %s", method)
 	}
 
-	return e.serviceEngine, serviceFSM, e.engineFSM, nil
+	return e.serviceEngine, serviceFSM, e.engineStateTracker, nil
 }
 
-func (e *engine[K, T]) debugMsg(msg string, fields ...zap.Field) {
+func (e *engine) debugMsg(msg string, fields ...zap.Field) {
 	debug.DebugMsg(e.debug, msg, fields...)
 }

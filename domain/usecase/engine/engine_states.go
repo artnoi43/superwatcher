@@ -14,18 +14,18 @@ type (
 )
 
 const (
-	EngineStateNull EngineLogState = iota
-	EngineStateSeen
-	EngineStateProcessed
-	EngineStateReorged
-	EngineStateReorgHandled
-	EngineStateInvalid
+	EngineLogStateNull EngineLogState = iota
+	EngineLogStateSeen
+	EngineLogStateProcessed
+	EngineLogStateReorged
+	EngineLogStateReorgHandled
+	EngineLogStateInvalid
 
-	EngineEventInvalid EngineLogEvent = iota
-	EngineEventGotLog
-	EngineEventProcess
-	EngineEventReorg
-	EngineEventHandleReorg
+	EngineLogEventInvalid EngineLogEvent = iota
+	EngineLogEventGotLog
+	EngineLogEventProcess
+	EngineLogEventReorg
+	EngineLogEventHandleReorg
 )
 
 type stateEvent = struct {
@@ -34,30 +34,30 @@ type stateEvent = struct {
 }
 
 var engineStateTransitionTable = map[stateEvent]EngineLogState{
-	{state: EngineStateNull, event: EngineEventGotLog}:      EngineStateSeen,
-	{state: EngineStateNull, event: EngineEventProcess}:     EngineStateInvalid,
-	{state: EngineStateNull, event: EngineEventReorg}:       EngineStateReorged,
-	{state: EngineStateNull, event: EngineEventHandleReorg}: EngineStateInvalid,
+	{state: EngineLogStateNull, event: EngineLogEventGotLog}:      EngineLogStateSeen,
+	{state: EngineLogStateNull, event: EngineLogEventProcess}:     EngineLogStateInvalid,
+	{state: EngineLogStateNull, event: EngineLogEventReorg}:       EngineLogStateReorged,
+	{state: EngineLogStateNull, event: EngineLogEventHandleReorg}: EngineLogStateInvalid,
 
-	{state: EngineStateSeen, event: EngineEventGotLog}:      EngineStateSeen,
-	{state: EngineStateSeen, event: EngineEventProcess}:     EngineStateProcessed,
-	{state: EngineStateSeen, event: EngineEventReorg}:       EngineStateReorged,
-	{state: EngineStateSeen, event: EngineEventHandleReorg}: EngineStateReorgHandled,
+	{state: EngineLogStateSeen, event: EngineLogEventGotLog}:      EngineLogStateSeen,
+	{state: EngineLogStateSeen, event: EngineLogEventProcess}:     EngineLogStateProcessed,
+	{state: EngineLogStateSeen, event: EngineLogEventReorg}:       EngineLogStateReorged,
+	{state: EngineLogStateSeen, event: EngineLogEventHandleReorg}: EngineLogStateReorgHandled,
 
-	{state: EngineStateProcessed, event: EngineEventGotLog}:      EngineStateProcessed,
-	{state: EngineStateProcessed, event: EngineEventProcess}:     EngineStateProcessed,
-	{state: EngineStateProcessed, event: EngineEventReorg}:       EngineStateReorged,
-	{state: EngineStateProcessed, event: EngineEventHandleReorg}: EngineStateReorgHandled,
+	{state: EngineLogStateProcessed, event: EngineLogEventGotLog}:      EngineLogStateProcessed,
+	{state: EngineLogStateProcessed, event: EngineLogEventProcess}:     EngineLogStateProcessed,
+	{state: EngineLogStateProcessed, event: EngineLogEventReorg}:       EngineLogStateReorged,
+	{state: EngineLogStateProcessed, event: EngineLogEventHandleReorg}: EngineLogStateReorgHandled,
 
-	{state: EngineStateReorged, event: EngineEventGotLog}:      EngineStateReorged,
-	{state: EngineStateReorged, event: EngineEventProcess}:     EngineStateInvalid,
-	{state: EngineStateReorged, event: EngineEventReorg}:       EngineStateReorged,
-	{state: EngineStateReorged, event: EngineEventHandleReorg}: EngineStateReorgHandled,
+	{state: EngineLogStateReorged, event: EngineLogEventGotLog}:      EngineLogStateReorged,
+	{state: EngineLogStateReorged, event: EngineLogEventProcess}:     EngineLogStateInvalid,
+	{state: EngineLogStateReorged, event: EngineLogEventReorg}:       EngineLogStateReorged,
+	{state: EngineLogStateReorged, event: EngineLogEventHandleReorg}: EngineLogStateReorgHandled,
 
-	{state: EngineStateReorgHandled, event: EngineEventGotLog}:      EngineStateInvalid,
-	{state: EngineStateReorgHandled, event: EngineEventProcess}:     EngineStateInvalid,
-	{state: EngineStateReorgHandled, event: EngineEventReorg}:       EngineStateReorged,
-	{state: EngineStateReorgHandled, event: EngineEventHandleReorg}: EngineStateInvalid,
+	{state: EngineLogStateReorgHandled, event: EngineLogEventGotLog}:      EngineLogStateInvalid,
+	{state: EngineLogStateReorgHandled, event: EngineLogEventProcess}:     EngineLogStateInvalid,
+	{state: EngineLogStateReorgHandled, event: EngineLogEventReorg}:       EngineLogStateReorged,
+	{state: EngineLogStateReorgHandled, event: EngineLogEventHandleReorg}: EngineLogStateInvalid,
 }
 
 func (state *EngineLogState) Fire(event EngineLogEvent) {
@@ -71,17 +71,17 @@ func (state *EngineLogState) Fire(event EngineLogEvent) {
 
 func (state EngineLogState) String() string {
 	switch state {
-	case EngineStateNull:
+	case EngineLogStateNull:
 		return "NULL"
-	case EngineStateSeen:
+	case EngineLogStateSeen:
 		return "SEEN"
-	case EngineStateProcessed:
+	case EngineLogStateProcessed:
 		return "PROCESSED"
-	case EngineStateReorged:
+	case EngineLogStateReorged:
 		return "REORGED"
-	case EngineStateReorgHandled:
+	case EngineLogStateReorgHandled:
 		return "REORG_HANDLED"
-	case EngineStateInvalid:
+	case EngineLogStateInvalid:
 		return "INVALID_ENGINE_STATE"
 	}
 
@@ -90,14 +90,14 @@ func (state EngineLogState) String() string {
 
 func (state EngineLogState) IsValid() bool {
 	switch state {
-	case EngineStateInvalid:
+	case EngineLogStateInvalid:
 		return false
 	case
-		EngineStateNull,
-		EngineStateSeen,
-		EngineStateProcessed,
-		EngineStateReorged,
-		EngineStateReorgHandled:
+		EngineLogStateNull,
+		EngineLogStateSeen,
+		EngineLogStateProcessed,
+		EngineLogStateReorged,
+		EngineLogStateReorgHandled:
 		return true
 	}
 
@@ -106,13 +106,13 @@ func (state EngineLogState) IsValid() bool {
 
 func (event EngineLogEvent) String() string {
 	switch event {
-	case EngineEventGotLog:
+	case EngineLogEventGotLog:
 		return "Got Log"
-	case EngineEventProcess:
+	case EngineLogEventProcess:
 		return "Process"
-	case EngineEventReorg:
+	case EngineLogEventReorg:
 		return "Got Reorg"
-	case EngineEventHandleReorg:
+	case EngineLogEventHandleReorg:
 		return "Handle Reorg"
 	}
 
@@ -121,13 +121,13 @@ func (event EngineLogEvent) String() string {
 
 func (event EngineLogEvent) IsValid() bool {
 	switch event {
-	case EngineEventInvalid:
+	case EngineLogEventInvalid:
 		return false
 	case
-		EngineEventGotLog,
-		EngineEventProcess,
-		EngineEventReorg,
-		EngineEventHandleReorg:
+		EngineLogEventGotLog,
+		EngineLogEventProcess,
+		EngineLogEventReorg,
+		EngineLogEventHandleReorg:
 		return true
 	}
 

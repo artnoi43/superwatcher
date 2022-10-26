@@ -69,7 +69,7 @@ func main() {
 
 	// Demo sub-engines
 	demoUseCases := make(map[common.Address]subengines.SubEngine)
-	demoServices := make(map[subengines.SubEngine]engine.ServiceEngine[subengines.DemoKey, engine.ServiceItem[subengines.DemoKey]])
+	demoServices := make(map[subengines.SubEngine]engine.ServiceEngine)
 
 	// All addresses to be filtered by emitter
 	var watcherAddresses []common.Address

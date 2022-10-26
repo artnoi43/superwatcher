@@ -9,15 +9,14 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
-type poolFactoryFSM struct {
+type poolFactoryStateTracker struct {
 	sync.RWMutex
 	states map[entity.Uniswapv3FactoryWatcherKey]engine.ServiceItemState
 }
 
-func (fsm *poolFactoryFSM) SetServiceState(key subengines.DemoKey, state engine.ServiceItemState) {
+func (fsm *poolFactoryStateTracker) SetServiceState(key engine.ItemKey, state engine.ServiceItemState) {
 	fsm.Lock()
 	defer fsm.Unlock()
 
@@ -32,7 +31,7 @@ func (fsm *poolFactoryFSM) SetServiceState(key subengines.DemoKey, state engine.
 	fsm.states[poolKey] = state
 }
 
-func (fsm *poolFactoryFSM) GetServiceState(key subengines.DemoKey) engine.ServiceItemState {
+func (fsm *poolFactoryStateTracker) GetServiceState(key engine.ItemKey) engine.ServiceItemState {
 	fsm.RLock()
 	defer fsm.RUnlock()
 

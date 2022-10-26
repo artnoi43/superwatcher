@@ -3,13 +3,13 @@
 This is demo code for using superwatcher.
 
 > As of this update, both superwatcher and this demo are not stable yet.
-Expect __shit tons__ of breaking changes.
+> Expect **shit tons** of breaking changes.
 
 This demo code is used to process and track UniswapV3 `Swap`
 and 1inch LimitOrder topics `OrderFilled` and `OrderCanceled` using superwatcher.
 
 The demo code will use [`demoengine.demoEngine`](./domain/usecase/demoengine/engine.go),
-itself an implementation of [`engine.ServiceEngine[T, K]`](/domain/usecase/engine/service_engine.go),
+itself an implementation of [`engine.ServiceEngine`](/domain/usecase/engine/external_service_engine.go),
 to handle all logs interested by the service.
 
 `demoengine.demoEngine` handles all 3 contracts by wrapping other so-called ["sub-engines"](./domain/usecase/subenines).
@@ -63,12 +63,12 @@ My plan for this demo is to have 3 sub-engines for 3 contracts:
 
 1. UniswapV3Factory: 'PoolCreated' event
 
-    See package [`subengines/uniswapv3factoryengine`](./domain/usecase/subengines/uniswapv3factoryengine/).
+   See package [`subengines/uniswapv3factoryengine`](./domain/usecase/subengines/uniswapv3factoryengine/).
 
 2. UniswapV3 Pool: 'Swap" event
 
-    See package [`subengines/uniswapv3poolengine`](./domain/usecase/subengines/uniswapv3poolengine/).
+   See package [`subengines/uniswapv3poolengine`](./domain/usecase/subengines/uniswapv3poolengine/).
 
 3. 1inch Limit Order: 'OrderFilled' and 'OrderCanceled' events
 
-    See package [`subengines/oneinchlimitorderengine`](./domain/usecase/subengines/oneinchlimitorderengine/)].
+   See package [`subengines/oneinchlimitorderengine`](./domain/usecase/subengines/oneinchlimitorderengine/)].

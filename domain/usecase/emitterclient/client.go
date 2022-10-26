@@ -3,22 +3,25 @@ package emitterclient
 import (
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
 
 // Client interfaces with emitter.WatcherEmitter via these methods
-type Client[T any] interface {
+type Client interface {
 	WatcherResult() *emitter.FilterResult
 	WatcherEmitterSync()
 	WatcherError() error
+	WatcherConfig() *config.Config
 
 	Shutdown()
 }
 
 // emitterClient is the actual implementation of Client.
 // It uses channels to communicate with emitter.
-type emitterClient[T any] struct {
+type emitterClient struct {
+	emitterConfig    *config.Config
 	emitterSyncChan  chan<- struct{}
 	filterResultChan <-chan *emitter.FilterResult
 	errChan          <-chan error
@@ -26,13 +29,15 @@ type emitterClient[T any] struct {
 	debug bool
 }
 
-func NewEmitterClient[T any](
+func NewEmitterClient(
+	emitterConfig *config.Config,
 	emitterSyncChan chan<- struct{},
 	filterResultChan <-chan *emitter.FilterResult,
 	errChan <-chan error,
 	debug bool,
-) Client[T] {
-	return &emitterClient[T]{
+) Client {
+	return &emitterClient{
+		emitterConfig:    emitterConfig,
 		filterResultChan: filterResultChan,
 		emitterSyncChan:  emitterSyncChan,
 		errChan:          errChan,
@@ -40,7 +45,7 @@ func NewEmitterClient[T any](
 	}
 }
 
-func (c *emitterClient[T]) Shutdown() {
+func (c *emitterClient) Shutdown() {
 	if c.emitterSyncChan != nil {
 		c.debugMsg("closing emitterClient.emitterSyncChan")
 		close(c.emitterSyncChan)
@@ -50,11 +55,15 @@ func (c *emitterClient[T]) Shutdown() {
 }
 
 // WatcherNextFilterLogs sends a low-cost signal to emitter to return from emitter.filterLogs
-func (c *emitterClient[T]) WatcherEmitterSync() {
+func (c *emitterClient) WatcherEmitterSync() {
 	c.emitterSyncChan <- struct{}{}
 }
 
-func (c *emitterClient[T]) WatcherResult() *emitter.FilterResult {
+func (c *emitterClient) WatcherConfig() *config.Config {
+	return c.emitterConfig
+}
+
+func (c *emitterClient) WatcherResult() *emitter.FilterResult {
 	result, ok := <-c.filterResultChan
 	if ok {
 		return result
@@ -64,7 +73,7 @@ func (c *emitterClient[T]) WatcherResult() *emitter.FilterResult {
 	return nil
 }
 
-func (c *emitterClient[T]) WatcherError() error {
+func (c *emitterClient) WatcherError() error {
 	err, ok := <-c.errChan
 	if ok {
 		return err
@@ -74,6 +83,6 @@ func (c *emitterClient[T]) WatcherError() error {
 	return nil
 }
 
-func (c *emitterClient[T]) debugMsg(msg string, fields ...zap.Field) {
+func (c *emitterClient) debugMsg(msg string, fields ...zap.Field) {
 	debug.DebugMsg(c.debug, msg, fields...)
 }

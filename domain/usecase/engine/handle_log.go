@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -13,19 +14,19 @@ import (
 )
 
 // DEPRECATED - use handleLog instead
-func handleBlock[K ItemKey, T ServiceItem[K]](
+func handleBlock(
 	block *reorg.BlockInfo,
-	serviceEngine ServiceEngine[K, T],
-	serviceFSM ServiceFSM[K],
-	engineFSM EngineFSM,
+	serviceEngine ServiceEngine,
+	serviceStateTracker ServiceStateTracker,
+	engineStateTracker EngineStateTracker,
 	debugMode bool,
 ) error {
 	for _, log := range block.Logs {
 		if err := handleLog(
 			log,
 			serviceEngine,
-			serviceFSM,
-			engineFSM,
+			serviceStateTracker,
+			engineStateTracker,
 			debugMode,
 		); err != nil {
 			return errors.Wrapf(err, "error handling block number %d txHash %s", log.BlockNumber, log.TxHash.String())
@@ -36,11 +37,11 @@ func handleBlock[K ItemKey, T ServiceItem[K]](
 }
 
 // handleLog is a pure function for handling a single Ethereum event log
-func handleLog[K ItemKey, T ServiceItem[K]](
+func handleLog(
 	log *types.Log,
-	serviceEngine ServiceEngine[K, T],
-	serviceFSM ServiceFSM[K],
-	engineFSM EngineFSM,
+	serviceEngine ServiceEngine,
+	serviceStateTracker ServiceStateTracker,
+	engineStateTracker EngineStateTracker,
 	debugMode bool,
 ) error {
 	debug.DebugMsg(debugMode, "*engine.handleLog: gotLog", zap.Any("log", log))
@@ -54,16 +55,18 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 	}
 
 	engineKey := engineLogStateKeyFromLog(log)
-	engineState := engineFSM.GetEngineState(engineKey)
+	debug.DebugMsg(debugMode, "*engine.handleLog: got engineKey", zap.Any("key", engineKey), zap.String("keyType", reflect.TypeOf(engineKey).String()))
+	engineState := engineStateTracker.GetEngineState(engineKey)
+
 	switch engineState {
-	case EngineStateNull:
-		engineState.Fire(EngineEventGotLog)
-		engineFSM.SetEngineState(engineKey, engineState)
+	case EngineLogStateNull:
+		engineState.Fire(EngineLogEventGotLog)
+		engineStateTracker.SetEngineState(engineKey, engineState)
 	case
-		EngineStateSeen,
-		EngineStateReorged,
-		EngineStateProcessed,
-		EngineStateReorgHandled:
+		EngineLogStateSeen,
+		EngineLogStateReorged,
+		EngineLogStateProcessed,
+		EngineLogStateReorgHandled:
 
 		// If we saw/processed this log/item, skip it
 		debug.DebugMsg(
@@ -84,7 +87,7 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 	}
 
 	key := item.ItemKey()
-	itemServiceState := serviceFSM.GetServiceState(key)
+	itemServiceState := serviceStateTracker.GetServiceState(key)
 	if itemServiceState == nil {
 		logger.Panic("nil service state", zap.Any("itemKey", key))
 	}
@@ -109,14 +112,14 @@ func handleLog[K ItemKey, T ServiceItem[K]](
 		)
 	}
 
-	engineState.Fire(EngineEventProcess)
+	engineState.Fire(EngineLogEventProcess)
 	if !engineState.IsValid() {
 		return fmt.Errorf("invalid state %s", engineState.String())
 	}
 
 	// Update states
-	engineFSM.SetEngineState(engineKey, engineState)
-	serviceFSM.SetServiceState(key, processedState)
+	engineStateTracker.SetEngineState(engineKey, engineState)
+	serviceStateTracker.SetServiceState(key, processedState)
 
 	return nil
 }

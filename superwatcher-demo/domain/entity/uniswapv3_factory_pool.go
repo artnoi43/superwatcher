@@ -3,8 +3,10 @@ package entity
 import (
 	"fmt"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
 type Uniswapv3PoolCreated struct {
@@ -28,7 +30,7 @@ func (k Uniswapv3FactoryWatcherKey) BlockNumber() uint64 {
 	return k.blockNumber
 }
 
-func (p *Uniswapv3PoolCreated) ItemKey(opts ...interface{}) subengines.DemoKey {
+func (p *Uniswapv3PoolCreated) ItemKey(opts ...interface{}) engine.ItemKey {
 	return Uniswapv3FactoryWatcherKey{
 		lpAddress:   p.Address.String(),
 		blockNumber: p.BlockCreated,

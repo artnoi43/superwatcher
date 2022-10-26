@@ -10,7 +10,7 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 )
 
-func New[K engine.ItemKey, T engine.ServiceItem[K]](
+func New(
 	conf *config.Config,
 	ethClient *ethclient.Client,
 	stateDataGateway datagateway.StateDataGateway,
@@ -20,7 +20,7 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 	// TODO: For prod, should we create chans inside this func instead?
 	filterResultChan chan *emitter.FilterResult,
 	errChan chan error,
-	serviceEngine engine.ServiceEngine[K, T],
+	serviceEngine engine.ServiceEngine,
 	debug bool,
 ) (
 	emitter.WatcherEmitter,
@@ -42,6 +42,7 @@ func New[K engine.ItemKey, T engine.ServiceItem[K]](
 	)
 
 	engine := engine.New(
+		conf,
 		serviceEngine,
 		stateDataGateway,
 		syncChan,

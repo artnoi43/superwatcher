@@ -8,15 +8,15 @@ import (
 )
 
 // handleReorgedLog is a pure function for handling a reorganized event log.
-func handleReorgedLog[K ItemKey, T ServiceItem[K]](
+func handleReorgedLog(
 	reorgedLog *types.Log,
-	serviceEngine ServiceEngine[K, T],
-	serviceFSM ServiceFSM[K],
-	engineFSM EngineFSM,
+	serviceEngine ServiceEngine,
+	serviceStateTracker ServiceStateTracker,
+	engineStateTracker EngineStateTracker,
 	debug bool,
 ) error {
 	engineKey := engineLogStateKeyFromLog(reorgedLog)
-	engineState := engineFSM.GetEngineState(engineKey)
+	engineState := engineStateTracker.GetEngineState(engineKey)
 
 	// TODO: Work this out.
 	// As of now, we will only handle reorg if it's 1st reorg.
@@ -24,13 +24,13 @@ func handleReorgedLog[K ItemKey, T ServiceItem[K]](
 	switch engineState {
 	case
 		// First reorg of this log
-		EngineStateSeen,
-		EngineStateProcessed:
-		engineState.Fire(EngineEventReorg)
+		EngineLogStateSeen,
+		EngineLogStateProcessed:
+		engineState.Fire(EngineLogEventReorg)
 		if !engineState.IsValid() {
 			return errors.Wrap(err, "failed to update engine state to EngineEventGotReorg")
 		}
-		engineFSM.SetEngineState(engineKey, engineState)
+		engineStateTracker.SetEngineState(engineKey, engineState)
 	}
 
 	reorgedItem, err := serviceEngine.MapLogToItem(reorgedLog)
@@ -42,7 +42,7 @@ func handleReorgedLog[K ItemKey, T ServiceItem[K]](
 	handleReorgOptions, err := serviceEngine.ReorgOptions(
 		reorgedItem,
 		engineState,
-		serviceFSM.GetServiceState(key),
+		serviceStateTracker.GetServiceState(key),
 	)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get reorgOptions from service")
@@ -51,19 +51,19 @@ func handleReorgedLog[K ItemKey, T ServiceItem[K]](
 	stateAfterHandledReorged, err := serviceEngine.HandleReorg(
 		reorgedItem,
 		engineState,
-		serviceFSM.GetServiceState(key),
+		serviceStateTracker.GetServiceState(key),
 		handleReorgOptions,
 	)
 	if err != nil {
 		return errors.Wrapf(err, "failed to handle reorg for item %s", reorgedItem.DebugString())
 	}
 
-	engineState.Fire(EngineEventHandleReorg)
+	engineState.Fire(EngineLogEventHandleReorg)
 	if !engineState.IsValid() {
 		return fmt.Errorf("invalid engineState: %s (%d)", engineState.String(), engineState)
 	}
-	engineFSM.SetEngineState(engineKey, engineState)
-	serviceFSM.SetServiceState(key, stateAfterHandledReorged)
+	engineStateTracker.SetEngineState(engineKey, engineState)
+	serviceStateTracker.SetServiceState(key, stateAfterHandledReorged)
 
 	return nil
 }

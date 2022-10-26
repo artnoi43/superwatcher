@@ -1,13 +1,15 @@
 package engine
 
 import (
+	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/domain/datagateway"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
 	"github.com/artnoi43/superwatcher/domain/usecase/emitterclient"
 )
 
-func New[K ItemKey, T ServiceItem[K]](
-	serviceEngine ServiceEngine[K, T],
+func New(
+	emitterConfig *config.Config,
+	serviceEngine ServiceEngine,
 	stateDataGateway datagateway.StateDataGateway,
 	syncChan chan<- struct{},
 	filterResultChan <-chan *emitter.FilterResult,
@@ -16,7 +18,8 @@ func New[K ItemKey, T ServiceItem[K]](
 ) WatcherEngine {
 
 	// TODO: Do we still need EmitterClient?
-	emitterClient := emitterclient.NewEmitterClient[T](
+	emitterClient := emitterclient.NewEmitterClient(
+		emitterConfig,
 		syncChan,
 		filterResultChan,
 		errChan,
