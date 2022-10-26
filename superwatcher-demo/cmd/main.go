@@ -129,6 +129,8 @@ func main() {
 	)
 
 	shutdown := func() {
+		stop()
+
 		ethClient.Close()
 		if err := rdb.Close(); err != nil {
 			logger.Error(
@@ -139,12 +141,11 @@ func main() {
 		logger.Info("shutdown called")
 	}
 
-	defer stop()
 	defer shutdown()
 
 	go func() {
 		if err := watcherEmitter.Loop(ctx); err != nil {
-			logger.Error("DEMO: emitter error", zap.Error(err))
+			logger.Error("DEMO: emitter returned an error", zap.Error(err))
 		}
 	}()
 
@@ -153,7 +154,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := watcherEngine.Loop(ctx); err != nil {
-			logger.Error("DEMO: engine error", zap.Error(err))
+			logger.Error("DEMO: engine returned an error", zap.Error(err))
 		}
 	}()
 

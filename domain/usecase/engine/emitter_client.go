@@ -9,8 +9,10 @@ import (
 
 type EmitterClient[T any] interface {
 	WatcherResult() *emitter.FilterResult
-	WatcherNextFilterLogs()
+	WatcherEmitterSync()
 	WatcherError() error
+
+	Shutdown()
 }
 
 type emitterClient[T any] struct {
@@ -35,8 +37,17 @@ func NewEmitterClient[T any](
 	}
 }
 
+func (c *emitterClient[T]) Shutdown() {
+	if c.emitterSyncChan != nil {
+		c.debugMsg("closing emitterClient.emitterSyncChan")
+		close(c.emitterSyncChan)
+	} else {
+		c.debugMsg("emitterClient: emitterSyncChan was already closed")
+	}
+}
+
 // WatcherNextFilterLogs sends a low-cost signal to emitter to return from emitter.filterLogs
-func (c *emitterClient[T]) WatcherNextFilterLogs() {
+func (c *emitterClient[T]) WatcherEmitterSync() {
 	c.emitterSyncChan <- struct{}{}
 }
 

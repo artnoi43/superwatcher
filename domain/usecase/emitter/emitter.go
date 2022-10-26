@@ -39,7 +39,7 @@ type emitter struct {
 	// external services interact with emitter
 	filterResultChan chan<- *FilterResult
 	errChan          chan<- error
-	syncChan         chan struct{}
+	syncChan         <-chan struct{}
 
 	debug bool
 }
@@ -54,7 +54,8 @@ type Config struct {
 	IntervalSecond  int             `mapstructure:"interval_second" json:"intervalSecond"`
 }
 
-// Loop wraps loopFilterLogs with graceful shutdown code.
+// Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.
+// When ctx is camcled else where, Loop calls *emitter.shutdown and returns ctx.Err()
 func (e *emitter) Loop(ctx context.Context) error {
 	for {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
@@ -71,7 +72,6 @@ func (e *emitter) Loop(ctx context.Context) error {
 }
 
 func (e *emitter) shutdown() {
-	close(e.syncChan)
 	close(e.filterResultChan)
 	close(e.errChan)
 }

@@ -7,11 +7,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/domain/datagateway"
-	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/lib/logger/debug"
 )
-
-var ErrChanClosed = errors.New("emitterClient channel closed")
 
 type WatcherEngine interface {
 	Loop(context.Context) error
@@ -40,16 +37,21 @@ func newWatcherEngine[K ItemKey, T ServiceItem[K]](
 	}
 }
 
-// Loop is subject to great changes.
-// As of this writing, it's not even 50% close to the final version I have in mind.
 func (e *engine[K, T]) Loop(ctx context.Context) error {
 	go func() {
 		if err := e.run(ctx); err != nil {
-			logger.Error("engine error", zap.Error(err))
+			e.debugMsg("*engine.run exited", zap.Error(err))
 		}
+
+		defer e.shutdown()
 	}()
 
 	return e.handleError()
+}
+
+// shutdown is not exported, and the user of the engine should not attempt to call it.
+func (e *engine[K, T]) shutdown() {
+	e.client.Shutdown()
 }
 
 func (e *engine[K, T]) run(ctx context.Context) error {
@@ -61,6 +63,12 @@ func (e *engine[K, T]) run(ctx context.Context) error {
 
 	for {
 		result := e.client.WatcherResult()
+		// emitter channels are closed if the result is nil
+		if result == nil {
+			e.debugMsg("*engine.run: got nil filterResult, emitter was probably shutdown")
+			return nil
+		}
+
 		e.debugMsg("*engine.run: got new filterResult", zap.Int("goodBlocks", len(result.GoodBlocks)), zap.Int("reorgedBlocks", len(result.ReorgedBlocks)))
 
 		// Handle reorged logs
@@ -88,7 +96,7 @@ func (e *engine[K, T]) run(ctx context.Context) error {
 		e.debugMsg("set lastRecordedBlock", zap.Uint64("blockNumber", result.LastGoodBlock))
 
 		// Signal emitter to progress
-		e.client.WatcherNextFilterLogs()
+		e.client.WatcherEmitterSync()
 	}
 }
 
@@ -106,8 +114,10 @@ func (e *engine[K, T]) handleError() error {
 			continue
 		}
 
-		e.debugMsg("got nil error from emitter - should not happen")
+		e.debugMsg("got nil error from emitter - should not happen unless errChan was closed")
+		break
 	}
+	return nil
 }
 
 func (e *engine[K, T]) initStuff(method string) (ServiceEngine[K, T], ServiceFSM[K], EngineFSM, error) {

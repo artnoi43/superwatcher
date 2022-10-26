@@ -17,7 +17,7 @@ func New(
 	stateDataGateway datagateway.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
-	syncChan chan struct{}, // Send-receive so that emitter can close this chan
+	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
 	filterResultChan chan<- *FilterResult,
 	errChan chan<- error,
 	debug bool,
