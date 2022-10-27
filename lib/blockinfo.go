@@ -1,6 +1,8 @@
-package reorg
+package lib
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -26,4 +28,8 @@ func NewBlockInfo(
 // String returns the block hash with 0x prepended
 func (b *BlockInfo) String() string {
 	return b.Hash.String()
+}
+
+func (b *BlockInfo) BlockNumberString() string {
+	return fmt.Sprintf("%d", b.Number)
 }

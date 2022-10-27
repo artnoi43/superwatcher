@@ -17,7 +17,7 @@ import (
 )
 
 // filterLogs filters Ethereum event logs from fromBlock to toBlock,
-// and sends *types.Log and *reorg.BlockInfo through w.logChan and w.reorgChan respectively.
+// and sends *types.Log and *lib.BlockInfo through w.logChan and w.reorgChan respectively.
 // If an error is encountered, filterLogs returns with error.
 // filterLogs should not be the one sending the error through w.errChan.
 func (e *emitter) filterLogs(
@@ -139,7 +139,8 @@ func (e *emitter) filterLogs(
 		}
 
 		// Populate blockInfo with fresh info
-		b := reorg.NewBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
+		// Old, unreorged blocks will not be added to filterResult.GoodBlocks
+		b := lib.NewBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
 		b.Logs = freshLogsByBlockNumber[blockNumber]
 
 		// Publish block with > 0 block

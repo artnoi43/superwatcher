@@ -7,6 +7,7 @@ import (
 
 	"github.com/wangjia184/sortedset"
 
+	"github.com/artnoi43/superwatcher/lib"
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
@@ -22,7 +23,7 @@ func NewTracker() *Tracker {
 }
 
 // AddBlockInfo add a new *BlockInfo to t
-func (t *Tracker) AddTrackerBlock(b *BlockInfo) {
+func (t *Tracker) AddTrackerBlock(b *lib.BlockInfo) {
 	k := strconv.FormatInt(int64(b.Number), 10)
 	t.set.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }
@@ -39,13 +40,13 @@ func (t *Tracker) ClearUntil(blockNumber uint64) {
 }
 
 // GetSavedBlockByBlockNumber returns *BlockInfo from t with key blockNumber
-func (t *Tracker) GetTrackerBlockInfo(blockNumber uint64) (*BlockInfo, bool) {
+func (t *Tracker) GetTrackerBlockInfo(blockNumber uint64) (*lib.BlockInfo, bool) {
 	k := strconv.FormatUint(blockNumber, 10)
 	node := t.set.GetByKey(k)
 	if node == nil {
 		return nil, false
 	}
-	val, ok := node.Value.(*BlockInfo)
+	val, ok := node.Value.(*lib.BlockInfo)
 	if !ok {
 		logger.Panic(fmt.Sprintf("type assertion failed - expecting *BlockInfo, found %s", reflect.TypeOf(node.Value)))
 	}

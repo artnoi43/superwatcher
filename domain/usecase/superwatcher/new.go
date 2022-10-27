@@ -10,6 +10,8 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 )
 
+// New returns the default implementation of emitter.WatcherEmitter and emitter.WatcherEngine.
+// These two objects are paired, and this is the preferred way of initializting superwatcher.
 func New(
 	conf *config.Config,
 	ethClient *ethclient.Client,

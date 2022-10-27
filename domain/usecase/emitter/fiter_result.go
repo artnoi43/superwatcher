@@ -1,11 +1,11 @@
 package emitter
 
-import "github.com/artnoi43/superwatcher/domain/usecase/emitter/reorg"
+import "github.com/artnoi43/superwatcher/lib"
 
 // FilterResult is published by emitter
 type FilterResult struct {
 	FromBlock     uint64
 	LastGoodBlock uint64
-	GoodBlocks    []*reorg.BlockInfo
-	ReorgedBlocks []*reorg.BlockInfo
+	GoodBlocks    []*lib.BlockInfo
+	ReorgedBlocks []*lib.BlockInfo
 }
