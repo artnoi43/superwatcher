@@ -88,11 +88,11 @@ func (e *emitter) filterLogs(
 	}
 
 	lenLogs := len(eventLogs)
-	logger.Info("got event logs", zap.Int("number of filtered logs", lenLogs))
-	logger.Info("got headers and logs", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
+	e.debugMsg("got event logs", zap.Int("number of filtered logs", lenLogs))
+	e.debugMsg("got headers and logs", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
 
 	// Clear all tracker's blocks before fromBlock - lookBackBlocks
-	logger.Info("clearing tracker", zap.Uint64("clearUntil", fromBlock-e.config.LookBackBlocks))
+	e.debugMsg("clearing tracker", zap.Uint64("clearUntil", fromBlock-e.config.LookBackBlocks))
 	e.tracker.ClearUntil(fromBlock - e.config.LookBackBlocks)
 
 	/* Use code from reorg package to manage/handle chain reorg */
@@ -120,7 +120,7 @@ func (e *emitter) filterLogs(
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
 			logger.Info(
-				"chain reorg detected",
+				"emitter: chain reorg detected",
 				zap.Uint64("blockNumber", blockNumber),
 				zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()),
 			)
@@ -170,7 +170,7 @@ func (e *emitter) filterLogs(
 	e.emitFilterResult(filterResult)
 
 	// End loop
-	logger.Info(
+	e.debugMsg(
 		"number of logs published by filterLogs",
 		zap.Int("eventLogs (filtered)", lenLogs),
 		zap.Int("processLogs (all logs processed)", len(processLogsByBlockNumber)),
