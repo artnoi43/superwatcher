@@ -54,11 +54,14 @@ func main() {
 
 	defer stop()
 
-	client.HandleLog(func(log *types.Log) {
+	client.LogHandler(func(log []*types.Log) (engine.Artifact, error) {
 		// Do something about log
+		return engine.Artifact{}, nil
 	})
 
-	client.HandleReorg()
+	client.ReorgHandler(func(Log []*types.Log, artifact []engine.Artifact) (engine.Artifact, error) {
+		return engine.Artifact{}, nil
+	})
 
 	if err := client.Loop(ctx); err != nil {
 

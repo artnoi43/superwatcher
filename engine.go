@@ -23,14 +23,23 @@ type ethClient interface {
 
 type engine struct {
 	emitter            emitter.Emitter
-	logChan            chan *types.Log
-	reorgChan          chan *enums.BlockInfo
+	logChan            chan []*types.Log
+	reorgChan          chan []*enums.BlockInfo
 	isSolvingReorgChan chan int
 }
+
+type Artifact struct {
+	ProcessResult string
+}
+
+type Log struct {
+	Log types.Log
+}
+
 type Engine interface {
 	Loop(ctx context.Context) error
-	HandleLog(handleLog func(e *types.Log))
-	HandleReorg()
+	LogHandler(handleLog func(e []*types.Log) (Artifact, error))
+	ReorgHandler(HandleReorg func(Log []*types.Log, artifact []Artifact) (Artifact, error))
 }
 
 var isSolvingReorgChan = make(chan int)
@@ -42,8 +51,8 @@ func NewEngine(conf *config.Config,
 
 ) Engine {
 
-	logChan := make(chan *types.Log)
-	reorgChan := make(chan *enums.BlockInfo)
+	logChan := make(chan []*types.Log)
+	reorgChan := make(chan []*enums.BlockInfo)
 	emitter := emitter.NewEmitter(
 		conf,
 		client,
@@ -68,7 +77,7 @@ func (e *engine) Loop(ctx context.Context) error {
 
 }
 
-func (e *engine) HandleLog(handleLog func(e *types.Log)) {
+func (e *engine) LogHandler(handleLog func(e []*types.Log) (Artifact, error)) {
 
 	go func() {
 
@@ -83,7 +92,7 @@ func (e *engine) HandleLog(handleLog func(e *types.Log)) {
 
 }
 
-func (e *engine) HandleReorg() {
+func (e *engine) ReorgHandler(HandleReorg func(Log []*types.Log, artifact []Artifact) (Artifact, error)) {
 
 	go func() {
 		for reorg := range e.reorgChan {
