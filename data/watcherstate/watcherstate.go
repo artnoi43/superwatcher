@@ -70,3 +70,7 @@ func (s *watcherStateRedisCli) GetLastRecordedBlock(
 
 	return lastRecordedBlock, nil
 }
+
+func (s *watcherStateRedisCli) Shutdown() error {
+	return s.redisCli.Close()
+}
