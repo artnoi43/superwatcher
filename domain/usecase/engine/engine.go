@@ -38,7 +38,8 @@ func (e *engine) Loop(ctx context.Context) error {
 
 // shutdown is not exported, and the user of the engine should not attempt to call it.
 func (e *engine) shutdown() {
-	e.stateDataGateway.Shutdown()
+	// TODO: Should we close Redis or should the service does it?
+	// e.stateDataGateway.Shutdown()
 	e.emitterClient.Shutdown()
 }
 func (e *engine) debugMsg(msg string, fields ...zap.Field) {

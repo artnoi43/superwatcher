@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
@@ -30,7 +29,7 @@ func (k Uniswapv3FactoryWatcherKey) BlockNumber() uint64 {
 	return k.blockNumber
 }
 
-func (p *Uniswapv3PoolCreated) ItemKey(opts ...interface{}) engine.ItemKey {
+func (p *Uniswapv3PoolCreated) ItemKey(opts ...interface{}) any {
 	return Uniswapv3FactoryWatcherKey{
 		lpAddress:   p.Address.String(),
 		blockNumber: p.BlockCreated,

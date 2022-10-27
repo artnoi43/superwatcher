@@ -87,10 +87,6 @@ func main() {
 
 		watcherAddresses = append(watcherAddresses, contractAddr)
 	}
-	poolFactoryFSM, err := demoServices[subengines.SubEngineUniswapv3Factory].ServiceStateTracker()
-	if err != nil {
-		logger.Panic("error getting poolFactoryFSM from poolFactoryEngine", zap.Error(err))
-	}
 
 	// demoEngine only wraps uniswapv3PoolFactoryEngine for now.
 	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
@@ -98,7 +94,6 @@ func main() {
 	demoEngine := demoengine.New(
 		demoUseCases,
 		demoServices,
-		demoengine.NewDemoFSM(poolFactoryFSM),
 	)
 
 	watcherEmitter, watcherEngine := superwatcher.New(

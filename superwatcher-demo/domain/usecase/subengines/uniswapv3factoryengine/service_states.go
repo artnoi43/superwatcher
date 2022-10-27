@@ -2,8 +2,6 @@ package uniswapv3factoryengine
 
 import (
 	"fmt"
-
-	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 )
 
 type (
@@ -49,13 +47,14 @@ func (state uniswapv3PoolFactoryState) IsValid() bool {
 	return false
 }
 
-func (state uniswapv3PoolFactoryState) Fire(event engine.Event) engine.State {
+func (state uniswapv3PoolFactoryState) Fire(event uniswapv3PoolFactoryEvent) uniswapv3PoolFactoryState {
 	newState, found := uniswapv3PoolFactoryStateTransitionTable[uniswapv3StateTableKey{
 		state: state,
-		event: event.(uniswapv3PoolFactoryEvent),
+		event: event,
 	}]
+
 	if !found {
-		return nil
+		panic("unknown path in state transition table")
 	}
 
 	state = newState

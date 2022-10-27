@@ -23,7 +23,7 @@ type MetadataTracker interface {
 
 // Tracker name needs revision!
 type Tracker struct {
-	sync.Mutex
+	sync.RWMutex
 
 	// set maps blockNumber to blockMetadata
 	set   *sortedset.SortedSet
@@ -38,17 +38,19 @@ func NewTracker(debug bool) *Tracker {
 }
 
 // ClearUntil removes items in t from left to right.
+// TODO: Currently broken
 func (t *Tracker) ClearUntil(blockNumber uint64) {
-	debug.DebugMsg(t.debug, "clearing engine state tracker", zap.Uint64("until", blockNumber))
-
 	t.Lock()
 	defer t.Unlock()
+
+	debug.DebugMsg(t.debug, "clearing engine state tracker", zap.Uint64("until", blockNumber))
 
 	for {
 		oldest := t.set.PeekMin()
 		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
 			break
 		}
+
 		t.set.PopMin()
 	}
 }
@@ -61,8 +63,8 @@ func (t *Tracker) SetBlockMetadata(b *lib.BlockInfo, metadata *blockMetadata) {
 }
 
 func (t *Tracker) GetBlockMetadata(b *lib.BlockInfo) *blockMetadata {
-	t.Lock()
-	defer t.Unlock()
+	t.RLock()
+	defer t.RUnlock()
 
 	node := t.set.GetByKey(b.BlockNumberString())
 	// Avoid panicking when assert type on nil value
@@ -102,8 +104,8 @@ func (t *Tracker) GetBlockState(b *lib.BlockInfo) EngineBlockState {
 }
 
 func (t *Tracker) Len() int {
-	t.Lock()
-	defer t.Unlock()
+	t.RLock()
+	defer t.RUnlock()
 
 	return t.set.GetCount()
 }

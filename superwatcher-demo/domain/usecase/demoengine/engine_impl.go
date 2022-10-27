@@ -1,137 +1,66 @@
 package demoengine
 
 import (
-	"errors"
-	"reflect"
-
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
-func (e *demoEngine) itemToService(item engine.ServiceItem) engine.ServiceEngine {
-	key := item.ItemKey()
-	demoKey := subengines.AssertDemoKey(key)
-	itemUseCase := demoKey.ForSubEngine()
-
-	serviceEngine, ok := e.services[itemUseCase]
-	if !ok {
-		logger.Panic(
-			"usecase has no service",
-			zap.String("subengine usecase", itemUseCase.String()),
-			zap.String("type of item", reflect.TypeOf(item).String()),
-		)
-	}
-
-	return serviceEngine
-}
-
-func (e *demoEngine) ServiceStateTracker() (
-	engine.ServiceStateTracker,
-	error,
-) {
-	if e.stateTracker == nil {
-		return nil, errors.New("nil *demoEngine.fsm")
-	}
-
-	return e.stateTracker, nil
-}
-
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *demoEngine) MapLogToItem(
-	log *types.Log,
+func (e *demoEngine) HandleGoodBlock(
+	logs []*types.Log,
+	artifacts []engine.Artifact, // Ignore
 ) (
-	engine.ServiceItem,
+	[]engine.Artifact,
 	error,
 ) {
-	logUseCase, ok := e.usecases[log.Address]
-	if !ok {
-		logger.Panic("usecase not found", zap.String("usecase", logUseCase.String()))
+	logsMap := e.mapLogsToSubEngine(logs)
+
+	var retArtifacts []engine.Artifact
+	for subEngine, logs := range logsMap {
+		serviceEngine, ok := e.services[subEngine]
+		if !ok {
+			return nil, errors.Wrapf(errNoService, "subengine: %s", subEngine.String())
+		}
+
+		subArtifacts, err := serviceEngine.HandleGoodBlock(logs, artifacts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "subengine %s HandleGoodBlock failed", subEngine.String())
+		}
+
+		retArtifacts = append(retArtifacts, subArtifacts)
 	}
 
-	serviceEngine, ok := e.services[logUseCase]
-	if !ok {
-		logger.Panic("")
-	}
-
-	return serviceEngine.MapLogToItem(log)
+	return retArtifacts, nil
 }
 
-// Unused by this service
-func (e *demoEngine) ProcessOptions(
-	item engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-) (
-	[]interface{},
-	error,
-) {
-	serviceEngine := e.itemToService(item)
-	return serviceEngine.ProcessOptions(item, engineState, serviceState)
-}
+func (e *demoEngine) HandleReorgedBlock(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
+	logsMap := e.mapLogsToSubEngine(logs)
 
-// ProcessItem just logs incoming pool
-func (e *demoEngine) ProcessItem(
-	item engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-	options ...interface{},
-) (
-	engine.ServiceItemState,
-	error,
-) {
-	if serviceState == nil {
-		logger.Panic("nil serviceState")
-	}
-	if item == nil {
-		logger.Panic("nil item")
+	var retArtifacts []engine.Artifact
+	for subEngine, logs := range logsMap {
+		serviceEngine, ok := e.services[subEngine]
+		if !ok {
+			return nil, errors.Wrapf(errNoService, "subengine", subEngine.String())
+		}
+
+		subArtifacts, err := serviceEngine.HandleReorgedBlock(logs, artifacts)
+		if err != nil {
+			return nil, errors.Wrapf(err, "subengine %s HandleReorgedBlock failed", subEngine.String())
+		}
+
+		retArtifacts = append(retArtifacts, subArtifacts)
 	}
 
-	serviceEngine := e.itemToService(item)
-	return serviceEngine.ProcessItem(item, engineState, serviceState, options)
-}
-
-// Unused by this service
-func (e *demoEngine) ReorgOptions(
-	item engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-) (
-	[]interface{},
-	error,
-) {
-	return nil, nil
-}
-
-// HandleReorg handles reorged event
-// In uniswapv3poolfactory case, we only revert PoolCreated in the db.
-// Other service may need more elaborate HandleReorg.
-func (e *demoEngine) HandleReorg(
-	item engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-	options ...interface{},
-) (
-	engine.ServiceItemState,
-	error,
-) {
-	// TODO: remove the nil check if-blocks
-	if serviceState == nil {
-		logger.Panic("nil serviceState")
-	}
-	if item == nil {
-		logger.Panic("nil item")
-	}
-
-	serviceEngine := e.itemToService(item)
-	return serviceEngine.HandleReorg(item, engineState, serviceState, options...)
+	return retArtifacts, nil
 }
 
 // Unused by this service
 func (e *demoEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
+
 	return nil
 }

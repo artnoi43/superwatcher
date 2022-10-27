@@ -33,7 +33,7 @@ func (e *engine) handleResult(ctx context.Context) error {
 
 			e.metadataTracker.SetBlockState(block, blockState)
 
-			artifacts, err := e.serviceEngine.HandleReorgedBlockLogs(block.Logs, metadata.artifacts)
+			artifacts, err := e.serviceEngine.HandleReorgedBlock(block.Logs, metadata.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "e.serviceEngine.HandleReorgedBlockLogs failed")
 			}
@@ -61,7 +61,7 @@ func (e *engine) handleResult(ctx context.Context) error {
 				continue
 			}
 
-			artifacts, err := e.serviceEngine.HandleGoodBlockLogs(block.Logs, metadata.artifacts)
+			artifacts, err := e.serviceEngine.HandleGoodBlock(block.Logs, metadata.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}
@@ -80,5 +80,7 @@ func (e *engine) handleResult(ctx context.Context) error {
 		)
 
 		e.stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
+
+		e.emitterClient.WatcherEmitterSync()
 	}
 }

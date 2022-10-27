@@ -2,7 +2,6 @@ package uniswapv3factoryengine
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -14,136 +13,126 @@ import (
 )
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *uniswapv3PoolFactoryEngine) MapLogToItem(
-	log *types.Log,
+func (e *uniswapv3PoolFactoryEngine) HandleGoodBlock(
+	logs []*types.Log,
+	artifacts []engine.Artifact, // Ignore
 ) (
-	engine.ServiceItem,
+	[]engine.Artifact,
 	error,
 ) {
+	var logArtifact poolFactoryArtifact
+	var err error
+	for _, log := range logs {
+		logArtifact, err = e.HandleGoodLog(log)
+		if err != nil {
+			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
+		}
+	}
+
+	return []engine.Artifact{logArtifact}, nil
+}
+
+func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryArtifact, error) {
+	var artifact poolFactoryArtifact
 	logEventKey := log.Topics[0]
+
 	for _, event := range e.contractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
 		if logEventKey == event.ID || event.Name == "PoolCreated" {
-			return mapLogToPoolCreated(e.contractABI, event.Name, log)
+			pool, err := mapLogToPoolCreated(e.contractABI, event.Name, log)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to map PoolCreated log to domain struct")
+			}
+			artifact[*pool] = PoolFactoryStateCreated
+		}
+	}
+
+	return artifact, nil
+}
+
+func (e *uniswapv3PoolFactoryEngine) HandleReorgedBlock(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
+
+	var logArtifact poolFactoryArtifact
+	var err error
+	for _, log := range logs {
+		logArtifact, err = e.handleReorgedLog(log, artifacts)
+		if err != nil {
+			return nil, errors.Wrap(err, "uniswapv3PoolFactoryEngine.handleReorgedLog failed")
+		}
+	}
+
+	return []engine.Artifact{logArtifact}, nil
+}
+
+func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact) (poolFactoryArtifact, error) {
+
+	var returnArtifacts []engine.Artifact
+	logEventKey := log.Topics[0]
+
+	// Find poolFactory artifact here
+	var poolArtifact poolFactoryArtifact
+	for _, a := range artifacts {
+		pa, ok := a.(poolFactoryArtifact)
+		if !ok {
+			logger.Debug("found non-pool artifact")
+			continue
+		}
+
+		poolArtifact = pa
+	}
+
+	for _, event := range e.contractEvents {
+		// This engine is supposed to handle more than 1 event,
+		// but it's not yet finished now.
+		if logEventKey == event.ID || event.Name == "PoolCreated" {
+			pool, err := mapLogToPoolCreated(e.contractABI, event.Name, log)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to map PoolCreated log to domain struct")
+			}
+
+			processArtifacts, err := e.handleReorgedPool(pool, poolArtifact)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to handle reorged PoolCreated")
+			}
+
+			returnArtifacts = append(returnArtifacts, processArtifacts)
 		}
 	}
 
 	return nil, fmt.Errorf("event topic %s not found", logEventKey)
 }
 
-// Unused by this service
-func (e *uniswapv3PoolFactoryEngine) ProcessOptions(
-	pool engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-) (
-	[]interface{},
-	error,
-) {
-
-	return nil, nil
-}
-
-// ProcessItem just logs incoming pool
-func (e *uniswapv3PoolFactoryEngine) ProcessItem(
-	pool engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-	options ...interface{},
-) (
-	engine.ServiceItemState,
-	error,
-) {
-	// TODO: remove the nil check if-blocks
-	if serviceState == nil {
-		logger.Panic("nil serviceState")
-	}
-
-	poolState := serviceState.(uniswapv3PoolFactoryState)
-	switch engineState {
-	case engine.EngineLogStateNull:
-		switch poolState {
-		case PoolFactoryStateNull:
-			// Pretend this is DB operations
-			logger.Info("DEMO: got new poolCreated, writing to db..")
-			return PoolFactoryStateCreated, nil
-		}
-	}
-
-	return serviceState, nil
-}
-
-// Unused by this service
-func (e *uniswapv3PoolFactoryEngine) ReorgOptions(
-	pool engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-) (
-	[]interface{},
-	error,
-) {
-	return nil, nil
-}
-
-// HandleReorg handles reorged event
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
 // Other service may need more elaborate HandleReorg.
-func (e *uniswapv3PoolFactoryEngine) HandleReorg(
-	item engine.ServiceItem,
-	engineState engine.EngineLogState,
-	serviceState engine.ServiceItemState,
-	options ...interface{},
+func (e *uniswapv3PoolFactoryEngine) handleReorgedPool(
+	pool *entity.Uniswapv3PoolCreated,
+	poolArtifact poolFactoryArtifact,
 ) (
-	engine.ServiceItemState,
+	poolFactoryArtifact,
 	error,
 ) {
-	// TODO: remove the nil check if-blocks
-	if serviceState == nil {
-		logger.Panic("nil serviceState")
-	}
+	poolState := poolArtifact[*pool]
 
-	poolState, ok := serviceState.(uniswapv3PoolFactoryState)
-	if !ok {
-		logger.Panic(
-			"type assertion failed: serviceState is not of type uniswapv3PoolFactoryState",
-			zap.String("actual type", reflect.TypeOf(serviceState).String()),
-		)
-	}
-	pool, ok := item.(*entity.Uniswapv3PoolCreated)
-	if !ok {
-		logger.Panic(
-			"type assertion failed: item is not of type *entity.Uniswapv3PoolCreated",
-			zap.String("actual type", reflect.TypeOf(item).String()),
-		)
-	}
-
-	switch engineState {
-	case engine.EngineLogStateProcessed:
-		switch poolState {
-		case PoolFactoryStateCreated:
-			if err := e.revertPoolCreated(pool); err != nil {
-				return serviceState, errors.Wrapf(
-					err, "failed to revert poolCreated for pool %s",
-					pool.Address.String(),
-				)
-			}
-
-			return PoolFactoryStateNull, nil
+	switch poolState {
+	case PoolFactoryStateCreated:
+		if err := e.revertPoolCreated(pool); err != nil {
+			return nil, errors.Wrapf(err, "failed to revert poolCreated for pool %s", pool.Address.String())
 		}
 	}
 
-	logger.Panic(
-		"unhandled scenario",
-		zap.String("engineState", engineState.String()),
-		zap.String("poolState", poolState.String()),
-	)
-
-	return serviceState, nil
+	poolArtifact[*pool] = PoolFactoryStateNull
+	return poolArtifact, nil
 }
 
 // Unused by this service
 func (e *uniswapv3PoolFactoryEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
+	return nil
+}
+
+func (e *uniswapv3PoolFactoryEngine) createPool(pool *entity.Uniswapv3PoolCreated) error {
+	logger.Debug("createPool: got pool", zap.Any("pool", pool))
+
 	return nil
 }

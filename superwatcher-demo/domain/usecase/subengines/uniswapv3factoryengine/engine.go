@@ -13,7 +13,6 @@ import (
 type uniswapv3PoolFactoryEngine struct {
 	contractABI    abi.ABI
 	contractEvents []abi.Event
-	stateTracker   *poolFactoryStateTracker
 }
 
 func NewUniswapV3Engine(
@@ -23,22 +22,7 @@ func NewUniswapV3Engine(
 	return &uniswapv3PoolFactoryEngine{
 		contractABI:    contractABI,
 		contractEvents: contractEvents,
-		// TODO: Should we add func `NewPoolFactoryFSM`?
-		stateTracker: &poolFactoryStateTracker{
-			states: make(map[entity.Uniswapv3FactoryWatcherKey]engine.ServiceItemState),
-		},
 	}
-}
-
-func (e *uniswapv3PoolFactoryEngine) ServiceStateTracker() (
-	engine.ServiceStateTracker,
-	error,
-) {
-	if e.stateTracker == nil {
-		return nil, errors.New("nil uniswapv3FactoryEngine.serviceFSM")
-	}
-
-	return e.stateTracker, nil
 }
 
 func parseLogDataToUniswapv3Factory(unpacked map[string]interface{}) (*entity.Uniswapv3PoolCreated, error) {
