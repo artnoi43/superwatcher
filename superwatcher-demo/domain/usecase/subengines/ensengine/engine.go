@@ -7,8 +7,7 @@ import (
 )
 
 type ensEngine struct {
-	// https://etherscan.io/address/0x3ef51736315f52d568d6d2cf289419b9cfffe782
-	limitOrderContract contracts.BasicContract
+	ensContract contracts.BasicContract
 }
 
 func NewEnsEngine(

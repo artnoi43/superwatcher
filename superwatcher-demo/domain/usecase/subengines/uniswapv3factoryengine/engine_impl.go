@@ -27,7 +27,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	for _, log := range logs {
 		logArtifact, err = e.HandleGoodLog(log)
 		if err != nil {
-			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
+			return nil, errors.Wrapf(err, "poolfactory.HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
 	}
 
