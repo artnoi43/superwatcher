@@ -29,9 +29,9 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	var status filterLogStatus
 
 	for {
-		e.debugMsg("new loopFilterLogs loop", zap.Any("current_status", status))
-
+		// Don't sleep or log status on first loop
 		if !lookBackFirstStart {
+			e.debugMsg("new loopFilterLogs loop", zap.Any("current_status", status))
 			sleep()
 		}
 

@@ -69,7 +69,7 @@ func (t *Tracker) GetBlockMetadata(b *lib.BlockInfo) *blockMetadata {
 	node := t.set.GetByKey(b.BlockNumberString())
 	// Avoid panicking when assert type on nil value
 	if node == nil {
-		return nil
+		return &blockMetadata{blockNumber: b.Number}
 	}
 
 	metadata, ok := node.Value.(*blockMetadata)

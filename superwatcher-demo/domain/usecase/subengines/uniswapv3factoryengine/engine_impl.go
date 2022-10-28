@@ -13,13 +13,15 @@ import (
 )
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *uniswapv3PoolFactoryEngine) HandleGoodBlock(
+func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []engine.Artifact, // Ignore
 ) (
 	[]engine.Artifact,
 	error,
 ) {
+	logger.Debug("poolfactory.HandleGoodLog", zap.Any("input artifacts", artifacts))
+
 	var logArtifact poolFactoryArtifact
 	var err error
 	for _, log := range logs {
@@ -33,7 +35,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodBlock(
 }
 
 func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryArtifact, error) {
-	var artifact poolFactoryArtifact
+	artifact := make(poolFactoryArtifact)
 	logEventKey := log.Topics[0]
 
 	for _, event := range e.contractEvents {
@@ -44,6 +46,14 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryA
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to map PoolCreated log to domain struct")
 			}
+			if pool == nil {
+				logger.Panic("nil pool mapped - should not happen")
+			}
+			if err := e.handlePoolCreated(pool); err != nil {
+				return nil, errors.Wrap(err, "failed to process poolCreated")
+			}
+
+			// Saves engine artifact
 			artifact[*pool] = PoolFactoryStateCreated
 		}
 	}
@@ -51,7 +61,8 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryA
 	return artifact, nil
 }
 
-func (e *uniswapv3PoolFactoryEngine) HandleReorgedBlock(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
+func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
+	logger.Debug("poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
 	var logArtifact poolFactoryArtifact
 	var err error

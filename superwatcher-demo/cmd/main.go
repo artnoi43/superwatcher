@@ -108,7 +108,8 @@ func main() {
 		true,
 	)
 
-	shutdown := func() {
+	// Graceful shutdown
+	defer func() {
 		// Cancel context to stop both superwatcher emitter and engine
 		cancel()
 
@@ -121,9 +122,7 @@ func main() {
 		}
 
 		logger.Info("graceful shutdown successful")
-	}
-
-	defer shutdown()
+	}()
 
 	go func() {
 		if err := watcherEmitter.Loop(ctx); err != nil {

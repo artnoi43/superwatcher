@@ -26,7 +26,7 @@ type engine struct {
 
 func (e *engine) Loop(ctx context.Context) error {
 	go func() {
-		if err := e.handleResult(ctx); err != nil {
+		if err := e.handleLogs(ctx); err != nil {
 			e.debugMsg("*engine.run exited", zap.Error(err))
 		}
 
@@ -42,6 +42,7 @@ func (e *engine) shutdown() {
 	// e.stateDataGateway.Shutdown()
 	e.emitterClient.Shutdown()
 }
+
 func (e *engine) debugMsg(msg string, fields ...zap.Field) {
 	debug.DebugMsg(e.debug, msg, fields...)
 }

@@ -9,12 +9,16 @@ import (
 	"github.com/artnoi43/superwatcher/lib/logger"
 )
 
-func (e *engine) handleResult(ctx context.Context) error {
+func (e *engine) handleLogs(ctx context.Context) error {
 	// Get emitterConfig to clear tracker metadata based on lookBackBlocks
 	emitterConfig := e.emitterClient.WatcherConfig()
 
 	for {
 		result := e.emitterClient.WatcherResult()
+		if result == nil {
+			e.debugMsg("handleLogs got nil result, emitterClient was probably shutdown, returning..")
+			return nil
+		}
 
 		for _, block := range result.ReorgedBlocks {
 			metadata := e.metadataTracker.GetBlockMetadata(block)
@@ -33,7 +37,7 @@ func (e *engine) handleResult(ctx context.Context) error {
 
 			e.metadataTracker.SetBlockState(block, blockState)
 
-			artifacts, err := e.serviceEngine.HandleReorgedBlock(block.Logs, metadata.artifacts)
+			artifacts, err := e.serviceEngine.HandleReorgedLogs(block.Logs, metadata.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "e.serviceEngine.HandleReorgedBlockLogs failed")
 			}
@@ -61,7 +65,7 @@ func (e *engine) handleResult(ctx context.Context) error {
 				continue
 			}
 
-			artifacts, err := e.serviceEngine.HandleGoodBlock(block.Logs, metadata.artifacts)
+			artifacts, err := e.serviceEngine.HandleGoodLogs(block.Logs, metadata.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}
