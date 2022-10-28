@@ -1,22 +1,13 @@
 package logutils
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 )
-
-// EventUnpackInputsIntoMap use given event to parse input from binary format to Go map.
-func EventUnpackInputsIntoMap(
-	event abi.Event,
-	log *types.Log,
-) (
-	map[string]interface{},
-	error,
-) {
-	return nil, errors.New("not implemented")
-}
 
 // UnpackLogDataIntoMap uses contract's ABI to parse the data bytes into map of key-value pair
 func UnpackLogDataIntoMap(
@@ -33,4 +24,20 @@ func UnpackLogDataIntoMap(
 	}
 
 	return unpacked, nil
+}
+
+func ExtractFieldFromUnpacked[T any](unpacked map[string]interface{}, field string) (T, error) {
+	var t T
+
+	v, found := unpacked[field]
+	if !found {
+		return t, fmt.Errorf("field %s not found in unpacked", field)
+	}
+
+	value, ok := v.(T)
+	if !ok {
+		return t, fmt.Errorf("type assertion failed: field %s is not %s", field, reflect.TypeOf(t))
+	}
+
+	return value, nil
 }

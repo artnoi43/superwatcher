@@ -7,6 +7,6 @@ import (
 
 type poolFactoryArtifact map[entity.Uniswapv3PoolCreated]uniswapv3PoolFactoryState
 
-func (a poolFactoryArtifact) ForSubEngine() subengines.SubEngine {
+func (a poolFactoryArtifact) ForSubEngine() subengines.SubEngineEnum {
 	return subengines.SubEngineUniswapv3Factory
 }

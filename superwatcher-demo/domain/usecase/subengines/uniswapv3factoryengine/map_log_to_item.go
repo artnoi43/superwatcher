@@ -24,7 +24,7 @@ func mapLogToPoolCreated(
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to unpack uniswapv3factory logs (event %s)", eventName)
 	}
-	poolCreated, err := parseLogDataToUniswapv3Factory(unpacked)
+	poolCreated, err := parsePoolCreatedUnpackedMap(unpacked)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert unpacked log data to *entity.Uniswapv3PoolCreated")
 	}

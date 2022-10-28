@@ -9,6 +9,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/ens"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/oneinchlimitorder"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3factory"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3pool"
@@ -22,28 +23,33 @@ const (
 	uniswapv3FactoryAddr  = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
 	OneInchLimitOrder     = "oneInchLimitOrder"
 	oneInchLimitOrderAddr = "0x119c71d3bbac22029622cbaec24854d3d32d2828"
+	ENS                   = "ens"
+	ENSAddr               = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
 )
 
 var contractABIsMap = map[string]string{
 	Uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
 	Uniswapv3Factory:  uniswapv3factory.Uniswapv3FactoryABI,
 	OneInchLimitOrder: oneinchlimitorder.OneInchLimitOrderABI,
+	ENS:               ens.EnsABI,
 }
 
 var contractAddressesMap = map[string]common.Address{
 	Uniswapv3Pool:     common.HexToAddress(uniswapv3PoolAddr),
 	Uniswapv3Factory:  common.HexToAddress(uniswapv3FactoryAddr),
 	OneInchLimitOrder: common.HexToAddress(oneInchLimitOrderAddr),
+	ENS:               common.HexToAddress(ENSAddr),
 }
 
 var contractTopicsMap = map[common.Address][]string{
 	contractAddressesMap[Uniswapv3Pool]:     {"Swap"},
 	contractAddressesMap[Uniswapv3Factory]:  {"PoolCreated"},
-	contractAddressesMap[OneInchLimitOrder]: {"OrderFilled", "OrderCanceled"},
+	contractAddressesMap[OneInchLimitOrder]: {"OrderCreated", "OrderCanceled", "OrderFilled"},
+	contractAddressesMap[ENS]:               {"NameRegistered", "Transfer", "NewOwner", "NewTTL"},
 }
 
 // DemoAddressesAndTopics returns contract information for all demo contracts.
-func DemoAddressesAndTopics(contractKeys ...string) (
+func DemoAddressesAndTopics(contractNames ...string) (
 	map[string]common.Address, // Map contract (name) to contract addresses
 	map[common.Address]abi.ABI, // Map contract (addr) to ABI
 	map[common.Address][]abi.Event, // Map contract (addr) to interesting events
@@ -51,7 +57,7 @@ func DemoAddressesAndTopics(contractKeys ...string) (
 ) {
 	addresses := make(map[string]common.Address)
 	for key, addr := range contractAddressesMap {
-		if contracts.Contains(contractKeys, key) {
+		if contracts.Contains(contractNames, key) {
 			addresses[key] = addr
 		}
 	}
@@ -60,7 +66,7 @@ func DemoAddressesAndTopics(contractKeys ...string) (
 	interestingEventsMap := make(map[common.Address][]abi.Event)
 	var topics []common.Hash
 	for contractName, abiStr := range contractABIsMap {
-		if !contracts.Contains(contractKeys, contractName) {
+		if !contracts.Contains(contractNames, contractName) {
 			continue
 		}
 

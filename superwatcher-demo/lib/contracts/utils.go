@@ -5,6 +5,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+type BasicContract struct {
+	ContractABI    abi.ABI
+	ContractEvents []abi.Event
+}
+
 // ContractInfo reads abiStr and returns the Go ABI,
 // as well as all `abi.Event`s whose name matches eventKeys.
 func ContractInfo(contractABI abi.ABI, eventKeys ...string) (abi.ABI, []abi.Event, error) {

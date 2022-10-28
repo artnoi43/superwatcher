@@ -68,8 +68,8 @@ func main() {
 	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
 
 	// Demo sub-engines
-	demoUseCases := make(map[common.Address]subengines.SubEngine)
-	demoServices := make(map[subengines.SubEngine]engine.ServiceEngine)
+	demoUseCases := make(map[common.Address]subengines.SubEngineEnum)
+	demoServices := make(map[subengines.SubEngineEnum]engine.ServiceEngine)
 
 	// All addresses to be filtered by emitter
 	var watcherAddresses []common.Address

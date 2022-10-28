@@ -21,7 +21,7 @@ type Uniswapv3FactoryWatcherKey struct {
 	blockNumber uint64
 }
 
-func (k Uniswapv3FactoryWatcherKey) ForSubEngine() subengines.SubEngine {
+func (k Uniswapv3FactoryWatcherKey) ForSubEngine() subengines.SubEngineEnum {
 	return subengines.SubEngineUniswapv3Factory
 }
 

@@ -9,8 +9,8 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
 
-func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEngine][]*types.Log {
-	logsMap := make(map[subengines.SubEngine][]*types.Log)
+func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEngineEnum][]*types.Log {
+	logsMap := make(map[subengines.SubEngineEnum][]*types.Log)
 
 	for _, log := range logs {
 		subEngine, ok := e.logToSubEngine(log)
@@ -23,7 +23,7 @@ func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEng
 	return logsMap
 }
 
-func (e *demoEngine) logToSubEngine(log *types.Log) (subengines.SubEngine, bool) {
+func (e *demoEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, bool) {
 	se, ok := e.usecases[log.Address]
 	if !ok {
 		return subengines.SubEngineInvalid, false

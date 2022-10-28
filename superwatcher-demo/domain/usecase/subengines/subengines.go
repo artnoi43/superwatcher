@@ -5,10 +5,10 @@ import (
 )
 
 type (
-	SubEngine uint8
+	SubEngineEnum uint8
 	// DemoKey is used to track various states of various items from different contracts.
 	DemoKey interface {
-		ForSubEngine() SubEngine
+		ForSubEngine() SubEngineEnum
 	}
 )
 
@@ -21,13 +21,13 @@ func AssertDemoKey(itemKey any) DemoKey {
 }
 
 const (
-	SubEngineInvalid SubEngine = iota
+	SubEngineInvalid SubEngineEnum = iota
 	SubEngineUniswapv3Factory
 	SubEngineUniswapv3Pool
 	SubEngineOneInchLimitOrder
 )
 
-func (se SubEngine) String() string {
+func (se SubEngineEnum) String() string {
 	switch se {
 	case SubEngineInvalid:
 		return "SUBENGINE_INVALID"

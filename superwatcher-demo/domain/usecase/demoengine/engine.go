@@ -10,14 +10,14 @@ import (
 type (
 	// demoEngine wraps "subservices' engines"
 	demoEngine struct {
-		usecases map[common.Address]subengines.SubEngine
-		services map[subengines.SubEngine]engine.ServiceEngine
+		usecases map[common.Address]subengines.SubEngineEnum
+		services map[subengines.SubEngineEnum]engine.ServiceEngine
 	}
 )
 
 func New(
-	usecases map[common.Address]subengines.SubEngine,
-	services map[subengines.SubEngine]engine.ServiceEngine,
+	usecases map[common.Address]subengines.SubEngineEnum,
+	services map[subengines.SubEngineEnum]engine.ServiceEngine,
 ) engine.ServiceEngine {
 	return &demoEngine{
 		usecases: usecases,

@@ -38,11 +38,11 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryA
 	artifact := make(poolFactoryArtifact)
 	logEventKey := log.Topics[0]
 
-	for _, event := range e.contractEvents {
+	for _, event := range e.poolFactoryContract.ContractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
 		if logEventKey == event.ID || event.Name == "PoolCreated" {
-			pool, err := mapLogToPoolCreated(e.contractABI, event.Name, log)
+			pool, err := mapLogToPoolCreated(e.poolFactoryContract.ContractABI, event.Name, log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to map PoolCreated log to domain struct")
 			}
@@ -93,11 +93,11 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 		poolArtifact = pa
 	}
 
-	for _, event := range e.contractEvents {
+	for _, event := range e.poolFactoryContract.ContractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
 		if logEventKey == event.ID || event.Name == "PoolCreated" {
-			pool, err := mapLogToPoolCreated(e.contractABI, event.Name, log)
+			pool, err := mapLogToPoolCreated(e.poolFactoryContract.ContractABI, event.Name, log)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to map PoolCreated log to domain struct")
 			}
