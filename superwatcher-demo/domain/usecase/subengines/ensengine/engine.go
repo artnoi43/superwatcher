@@ -7,7 +7,8 @@ import (
 )
 
 type ensEngine struct {
-	ensContract contracts.BasicContract
+	ensRegistrar  contracts.BasicContract
+	ensController contracts.BasicContract
 }
 
 func NewEnsEngine(

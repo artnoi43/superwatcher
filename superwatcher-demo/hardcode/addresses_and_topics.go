@@ -9,7 +9,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/ens"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/ens/ensregistrar"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/oneinchlimitorder"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3factory"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/uniswapv3pool"
@@ -23,29 +23,33 @@ const (
 	uniswapv3FactoryAddr  = "0x1f98431c8ad98523631ae4a59f267346ea31f984"
 	OneInchLimitOrder     = "oneInchLimitOrder"
 	oneInchLimitOrderAddr = "0x119c71d3bbac22029622cbaec24854d3d32d2828"
-	ENS                   = "ens"
-	ENSAddr               = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+	ENSRegistrar          = "ens"
+	ENSRegistrarAddr      = "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+	ENSController         = "enscontroller"
+	ENSControllerAddr     = "0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5"
 )
 
 var contractABIsMap = map[string]string{
 	Uniswapv3Pool:     uniswapv3pool.Uniswapv3PoolABI,
 	Uniswapv3Factory:  uniswapv3factory.Uniswapv3FactoryABI,
 	OneInchLimitOrder: oneinchlimitorder.OneInchLimitOrderABI,
-	ENS:               ens.EnsABI,
+	ENSRegistrar:      ensregistrar.EnsRegistrarABI,
 }
 
 var contractAddressesMap = map[string]common.Address{
 	Uniswapv3Pool:     common.HexToAddress(uniswapv3PoolAddr),
 	Uniswapv3Factory:  common.HexToAddress(uniswapv3FactoryAddr),
 	OneInchLimitOrder: common.HexToAddress(oneInchLimitOrderAddr),
-	ENS:               common.HexToAddress(ENSAddr),
+	ENSRegistrar:      common.HexToAddress(ENSRegistrarAddr),
+	ENSController:     common.HexToAddress(ENSControllerAddr),
 }
 
 var contractTopicsMap = map[common.Address][]string{
 	contractAddressesMap[Uniswapv3Pool]:     {"Swap"},
 	contractAddressesMap[Uniswapv3Factory]:  {"PoolCreated"},
 	contractAddressesMap[OneInchLimitOrder]: {"OrderCreated", "OrderCanceled", "OrderFilled"},
-	contractAddressesMap[ENS]:               {"NameRegistered", "Transfer", "NewOwner", "NewTTL"},
+	contractAddressesMap[ENSRegistrar]:      {"NameRegistered", "Transfer", "NewOwner", "NewTTL"},
+	contractAddressesMap[ENSController]:     {"NameRegistered"},
 }
 
 // DemoAddressesAndTopics returns contract information for all demo contracts.

@@ -36,66 +36,80 @@ func (e *ensEngine) HandleGoodLogs(
 	return retArtifacts, nil
 }
 
-func (e *ensEngine) HandleGoodLog(log *types.Log) (engine.Artifact, error) {
+func (e *ensEngine) HandleGoodLog(log *types.Log) (ENSArtifact, error) {
 	logEventKey := log.Topics[0]
 
-	var output engine.Artifact
-	for _, event := range e.ensContract.ContractEvents {
+	artifact := ENSArtifact{BlockNumber: log.BlockNumber}
+	for _, event := range e.ensRegistrar.ContractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
 		if logEventKey == event.ID {
 			switch event.Name {
 			case "NameRegistered": // New domain registered
-			case "Transfer": // Logged when the owner of a node transfers ownership to a new account.
+				newEns, err := e.newName(log, event.Name)
+				if err != nil {
+					return artifact, errors.Wrap(err, "failed to create new name from log")
+				}
+				artifact.ENS = *newEns
+			case "NewOwner", "Transfer": // Logged when the owner of a node transfers ownership to a new account.
 			}
 		}
 	}
 
-	return output, errors.New("not implemented")
+	return artifact, nil
 }
 
 func (e *ensEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
 	logger.Debug("poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
-	var ensDomains []entity.ENS
+	var outputArtifacts []engine.Artifact
 	for _, log := range logs {
 		ens, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {
 			return nil, errors.Wrap(err, "ensEngine.handleReorgedLog failed")
 		}
 
-		ensDomains = append(ensDomains, ens)
+		outputArtifacts = append(outputArtifacts, ens)
 	}
 
 	// TODO: Fix engine.Artifact
-	return []engine.Artifact{ensDomains}, nil
+	return outputArtifacts, nil
 }
 
-func (e *ensEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact) (entity.ENS, error) {
+func (e *ensEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact) (ENSArtifact, error) {
 
-	var ens entity.ENS
+	var ensArtifacts []ENSArtifact
 	for _, a := range artifacts {
-		pa, ok := a.(entity.ENS)
+		artifact, ok := a.(ENSArtifact)
 		if !ok {
 			logger.Debug("found non-pool artifact")
 			continue
 		}
 
-		ens = pa
+		ensArtifacts = append(ensArtifacts, artifact)
 	}
 
+	artifact := ENSArtifact{BlockNumber: log.BlockNumber}
+
 	logEventKey := log.Topics[0]
-	for _, event := range e.ensContract.ContractEvents {
+	for _, event := range e.ensRegistrar.ContractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
 		if logEventKey == event.ID {
 			switch event.Name {
-
+			case "NameRegistered":
+				newEns, err := e.newName(log, event.Name)
+				if err != nil {
+					return artifact, errors.Wrap(err, "failed to create new name from log")
+				}
+				artifact.ENS = *newEns
+				return artifact, nil
 			}
 		}
+
 	}
 
-	return ens, fmt.Errorf("event topic %s not found", logEventKey)
+	return artifact, fmt.Errorf("event topic %s not found", logEventKey)
 }
 
 // Unused by this service

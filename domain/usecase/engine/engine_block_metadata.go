@@ -7,7 +7,9 @@ import (
 type blockMetadata struct {
 	blockNumber uint64
 	state       EngineBlockState
-	artifacts   []Artifact
+
+	// artifacts maybe removed - I see no use case yet
+	artifacts []Artifact
 }
 
 func (k blockMetadata) BlockNumber() uint64 {
