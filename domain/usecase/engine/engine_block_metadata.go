@@ -15,6 +15,7 @@ func (k blockMetadata) BlockNumber() uint64 {
 	if k.blockNumber == 0 {
 		panic("got blockNumber 0 from a serviceLogStateKey")
 	}
+
 	return k.blockNumber
 }
 

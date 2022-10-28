@@ -25,7 +25,7 @@ type MetadataTracker interface {
 type Tracker struct {
 	sync.RWMutex
 
-	// set maps blockNumber to blockMetadata
+	// field "set" maps blockNumber to blockMetadata
 	set   *sortedset.SortedSet
 	debug bool
 }

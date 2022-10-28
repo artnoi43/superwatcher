@@ -41,12 +41,16 @@ func (e *engine) handleLogs(ctx context.Context) error {
 			if err != nil {
 				return errors.Wrap(err, "e.serviceEngine.HandleReorgedBlockLogs failed")
 			}
+			for k, v := range artifacts {
+				e.debugMsg("got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
+			}
 
 			blockState.Fire(EngineBlockEventHandleReorg)
 
 			metadata.artifacts = artifacts
 			metadata.state = blockState
 
+			e.debugMsg("saving handleReorgedLogs metadata for block", zap.Any("metadata", metadata))
 			e.metadataTracker.SetBlockMetadata(block, metadata)
 		}
 
@@ -65,7 +69,7 @@ func (e *engine) handleLogs(ctx context.Context) error {
 				continue
 			}
 
-			artifacts, err := e.serviceEngine.HandleGoodLogs(block.Logs, metadata.artifacts)
+			artifacts, err := e.serviceEngine.HandleGoodLogs(block.Logs)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}
@@ -75,6 +79,7 @@ func (e *engine) handleLogs(ctx context.Context) error {
 			metadata.artifacts = artifacts
 			metadata.state = blockState
 
+			e.debugMsg("saving metadata for block", zap.Any("metadata", metadata))
 			e.metadataTracker.SetBlockMetadata(block, metadata)
 		}
 
@@ -84,7 +89,6 @@ func (e *engine) handleLogs(ctx context.Context) error {
 		)
 
 		e.stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
-
 		e.emitterClient.WatcherEmitterSync()
 	}
 }

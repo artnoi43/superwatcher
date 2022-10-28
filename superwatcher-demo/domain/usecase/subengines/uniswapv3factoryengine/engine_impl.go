@@ -10,19 +10,27 @@ import (
 	"github.com/artnoi43/superwatcher/domain/usecase/engine"
 	"github.com/artnoi43/superwatcher/lib/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 )
+
+// This sub-engine uses a hash map as engine.Artifact. Because it's a hash map,
+// only 1 instance of this struct is needed for all the lofs
+type PoolFactoryArtifact map[entity.Uniswapv3PoolCreated]uniswapv3PoolFactoryState
+
+// Implements demoengine.demoArtifact
+func (a PoolFactoryArtifact) ForSubEngine() subengines.SubEngineEnum {
+	return subengines.SubEngineUniswapv3Factory
+}
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	logs []*types.Log,
-	artifacts []engine.Artifact, // Ignore
 ) (
 	[]engine.Artifact,
 	error,
 ) {
-	logger.Debug("poolfactory.HandleGoodLog", zap.Any("input artifacts", artifacts))
-
-	var logArtifact poolFactoryArtifact
+	// New artifact is created for new logs
+	var logArtifact PoolFactoryArtifact
 	var err error
 	for _, log := range logs {
 		logArtifact, err = e.HandleGoodLog(log)
@@ -31,11 +39,12 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 		}
 	}
 
+	// poolArtifact is a map, use one instance returned from HandleGoodLog
 	return []engine.Artifact{logArtifact}, nil
 }
 
-func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryArtifact, error) {
-	artifact := make(poolFactoryArtifact)
+func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (PoolFactoryArtifact, error) {
+	artifact := make(PoolFactoryArtifact)
 	logEventKey := log.Topics[0]
 
 	for _, event := range e.poolFactoryContract.ContractEvents {
@@ -64,7 +73,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLog(log *types.Log) (poolFactoryA
 func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
 	logger.Debug("poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
-	var logArtifact poolFactoryArtifact
+	var logArtifact PoolFactoryArtifact
 	var err error
 	for _, log := range logs {
 		logArtifact, err = e.handleReorgedLog(log, artifacts)
@@ -76,15 +85,15 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifa
 	return []engine.Artifact{logArtifact}, nil
 }
 
-func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact) (poolFactoryArtifact, error) {
+func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact) (PoolFactoryArtifact, error) {
 
 	var returnArtifacts []engine.Artifact
 	logEventKey := log.Topics[0]
 
 	// Find poolFactory artifact here
-	var poolArtifact poolFactoryArtifact
+	var poolArtifact PoolFactoryArtifact
 	for _, a := range artifacts {
-		pa, ok := a.(poolFactoryArtifact)
+		pa, ok := a.(PoolFactoryArtifact)
 		if !ok {
 			logger.Debug("found non-pool artifact")
 			continue
@@ -118,9 +127,9 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 // Other service may need more elaborate HandleReorg.
 func (e *uniswapv3PoolFactoryEngine) handleReorgedPool(
 	pool *entity.Uniswapv3PoolCreated,
-	poolArtifact poolFactoryArtifact,
+	poolArtifact PoolFactoryArtifact,
 ) (
-	poolFactoryArtifact,
+	PoolFactoryArtifact,
 	error,
 ) {
 	poolState := poolArtifact[*pool]

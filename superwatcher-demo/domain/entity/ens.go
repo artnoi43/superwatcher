@@ -3,6 +3,7 @@ package entity
 import (
 	"fmt"
 
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -14,6 +15,10 @@ type ENS struct {
 	Owner common.Address
 
 	TTL uint64
+}
+
+func (e *ENS) ForSubEngine() subengines.SubEngineEnum {
+	return subengines.SubEngineENS
 }
 
 func (e *ENS) DomainString() string {

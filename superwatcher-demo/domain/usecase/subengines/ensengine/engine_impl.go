@@ -1,7 +1,5 @@
 package ensengine
 
-// TODO: Fix engine.Artifact
-
 import (
 	"fmt"
 
@@ -14,30 +12,34 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 )
 
+// The sub-engine uses entity.ENS as engine.Artifact
+
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *ensEngine) HandleGoodLogs(
 	logs []*types.Log,
-	artifacts []engine.Artifact, // Ignore
 ) (
 	[]engine.Artifact,
 	error,
 ) {
-	logger.Debug("poolfactory.HandleGoodLog", zap.Any("input artifacts", artifacts))
+	logger.Debug("poolfactory.HandleGoodLog: got logs")
 
-	var err error
+	var retArtifacts []engine.Artifact
 	for _, log := range logs {
-		_, err = e.HandleGoodLog(log)
+		resultArtifact, err := e.HandleGoodLog(log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
+
+		retArtifacts = append(retArtifacts, resultArtifact)
 	}
 
-	return nil, errors.New("not implemented")
+	return retArtifacts, nil
 }
 
-func (e *ensEngine) HandleGoodLog(log *types.Log) (any, error) {
+func (e *ensEngine) HandleGoodLog(log *types.Log) (engine.Artifact, error) {
 	logEventKey := log.Topics[0]
 
+	var output engine.Artifact
 	for _, event := range e.ensContract.ContractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
@@ -49,14 +51,13 @@ func (e *ensEngine) HandleGoodLog(log *types.Log) (any, error) {
 		}
 	}
 
-	return nil, errors.New("not implemented")
+	return output, errors.New("not implemented")
 }
 
 func (e *ensEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
 	logger.Debug("poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
 	var ensDomains []entity.ENS
-
 	for _, log := range logs {
 		ens, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {
@@ -66,6 +67,7 @@ func (e *ensEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Arti
 		ensDomains = append(ensDomains, ens)
 	}
 
+	// TODO: Fix engine.Artifact
 	return []engine.Artifact{ensDomains}, nil
 }
 

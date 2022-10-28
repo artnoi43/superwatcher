@@ -25,6 +25,7 @@ const (
 	SubEngineUniswapv3Factory
 	SubEngineUniswapv3Pool
 	SubEngineOneInchLimitOrder
+	SubEngineENS
 )
 
 func (se SubEngineEnum) String() string {
@@ -37,6 +38,8 @@ func (se SubEngineEnum) String() string {
 		return "SUBENGINE_UNISWAPV3POOl"
 	case SubEngineOneInchLimitOrder:
 		return "SUBENGINE_ONEINCHLIMITORDER"
+	case SubEngineENS:
+		return "SUBENGINE_ENS"
 	}
 
 	panic("unhandled demo usecase")
