@@ -36,7 +36,13 @@ func (e *ensEngine) HandleGoodLogs(
 	return []engine.Artifact{artifacts}, nil
 }
 
-func (e *ensEngine) HandleGoodLog(log *types.Log, artifacts []ENSArtifact) (ENSArtifact, error) {
+func (e *ensEngine) HandleGoodLog(
+	log *types.Log,
+	artifacts []ENSArtifact,
+) (
+	ENSArtifact,
+	error,
+) {
 	logEventKey := log.Topics[0]
 
 	artifact := ENSArtifact{BlockNumber: log.BlockNumber}
@@ -77,7 +83,13 @@ func (e *ensEngine) HandleGoodLog(log *types.Log, artifacts []ENSArtifact) (ENSA
 	return artifact, nil
 }
 
-func (e *ensEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Artifact) ([]engine.Artifact, error) {
+func (e *ensEngine) HandleReorgedLogs(
+	logs []*types.Log,
+	artifacts []engine.Artifact,
+) (
+	[]engine.Artifact,
+	error,
+) {
 	logger.Debug("poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
 	var outputArtifacts []engine.Artifact
@@ -94,7 +106,13 @@ func (e *ensEngine) HandleReorgedLogs(logs []*types.Log, artifacts []engine.Arti
 	return outputArtifacts, nil
 }
 
-func (e *ensEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact) (ENSArtifact, error) {
+func (e *ensEngine) handleReorgedLog(
+	log *types.Log,
+	artifacts []engine.Artifact,
+) (
+	ENSArtifact,
+	error,
+) {
 
 	var ensArtifacts []ENSArtifact
 	for _, a := range artifacts {

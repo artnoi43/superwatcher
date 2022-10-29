@@ -2,13 +2,21 @@ package ensengine
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher/domain/usecase/engine"
+	"github.com/artnoi43/superwatcher/lib/logger"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/demoengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/ens/enscontroller"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/ens/ensregistrar"
@@ -42,14 +50,49 @@ func TestHandleLogs(t *testing.T) {
 	}
 
 	// TODO: Assert
+	// https://etherscan.io/tx/0x07fff3cd11172e3878900dd22e8e905674651aa5f91f04ff35926150d2db9671#eventlog
+	expectedENS := entity.ENS{
+		ID:      "0x05768d5da4db7b041a733407418205278f29329dde9153be3247cac968509d14",
+		Name:    "onchainalpha",
+		Expires: time.Unix(1730090099, 0),
+		Owner:   common.HexToAddress("0x8AD703901c3FcDECD20D2B9349F8183d0d14FDDF"),
+	}
+
 	for _, artifact := range artifacts {
 		ensArtifacts, ok := artifact.([]ENSArtifact)
 		if !ok {
 			t.Fatal("artifact is not []ENSArtifact")
 		}
 		for i, ensArtifact := range ensArtifacts {
-			t.Log(i, ensArtifact)
+			if ensArtifact.LastEvent != Registered {
+				t.Fatal("invalid last event")
+			}
+			// The last one should map
+			if i == 1 {
+				if !reflect.DeepEqual(ensArtifact.ENS, expectedENS) {
+					logger.Debug("expected", zap.Any("ens", expectedENS))
+					logger.Debug("actual", zap.Any("ens", ensArtifact.ENS))
+					t.Fatal("unexpected ENS result")
+				}
+			}
 		}
+	}
+
+	demoSubEngines := map[common.Address]subengines.SubEngineEnum{
+		registrarContract.Address:  subengines.SubEngineENS,
+		controllerContract.Address: subengines.SubEngineENS,
+	}
+	demoServices := map[subengines.SubEngineEnum]engine.ServiceEngine{
+		subengines.SubEngineENS: ensEngine,
+	}
+	demoEngine := demoengine.New(demoSubEngines, demoServices)
+
+	artifacts, err = demoEngine.HandleGoodLogs(logs)
+	if err != nil {
+		t.Fatalf("demoEngine.HandleGoodLogs failed: %s\n", err.Error())
+	}
+	for i, artifact := range artifacts {
+		t.Logf("%d %s %+v\n", i, reflect.TypeOf(artifact), artifact)
 	}
 }
 
