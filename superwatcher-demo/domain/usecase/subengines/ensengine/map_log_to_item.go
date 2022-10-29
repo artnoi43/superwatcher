@@ -45,7 +45,7 @@ func (e *ensEngine) handleNameRegisteredRegistrar(
 
 	return &ENSArtifact{
 		BlockNumber: log.BlockNumber,
-		LastEvent:   Registered,
+		LastEvent:   RegisteredRegistrar,
 		ENS:         name,
 	}, nil
 }
@@ -97,7 +97,7 @@ func (e *ensEngine) handleNameRegisteredController(
 
 	return &ENSArtifact{
 		BlockNumber: log.BlockNumber,
-		LastEvent:   Registered,
+		LastEvent:   RegisteredController,
 		ENS:         *name,
 	}, nil
 }

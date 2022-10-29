@@ -8,9 +8,10 @@ import (
 type ENSLastEvent string
 
 const (
-	Null        ENSLastEvent = "NULL"
-	Registered  ENSLastEvent = "Registered"
-	Transferred ENSLastEvent = "Transferred"
+	Null                 ENSLastEvent = "NULL"
+	RegisteredRegistrar  ENSLastEvent = "RegisteredRegistrar"
+	RegisteredController ENSLastEvent = "RegisteredController"
+	Transferred          ENSLastEvent = "Transferred"
 )
 
 type ENSArtifact struct {

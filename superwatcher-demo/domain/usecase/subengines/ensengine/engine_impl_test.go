@@ -64,15 +64,19 @@ func TestHandleLogs(t *testing.T) {
 			t.Fatal("artifact is not []ENSArtifact")
 		}
 		for i, ensArtifact := range ensArtifacts {
-			if ensArtifact.LastEvent != Registered {
-				t.Fatal("invalid last event")
-			}
-			// The last one should map
-			if i == 1 {
+			switch i {
+			case 0:
+				if ensArtifact.LastEvent != RegisteredRegistrar {
+					t.Fatalf("unexpected last event from log %d\n", i)
+				}
+			case 1:
+				if ensArtifact.LastEvent != RegisteredController {
+					t.Fatalf("unexpected last event from log %d\n", i)
+				}
 				if !reflect.DeepEqual(ensArtifact.ENS, expectedENS) {
 					logger.Debug("expected", zap.Any("ens", expectedENS))
 					logger.Debug("actual", zap.Any("ens", ensArtifact.ENS))
-					t.Fatal("unexpected ENS result")
+					t.Fatal("unexpected ENS result\n")
 				}
 			}
 		}
