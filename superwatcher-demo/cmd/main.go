@@ -78,6 +78,7 @@ func main() {
 		switch contractName {
 		case hardcode.Uniswapv3Factory:
 			poolFactoryEngine := uniswapv3factoryengine.NewUniswapV3Engine(
+				contractAddr,
 				contractABIs[contractAddr],
 				contractsEvents[contractAddr],
 			)

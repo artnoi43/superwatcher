@@ -2,10 +2,12 @@ package contracts
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 )
 
 type BasicContract struct {
+	Address        common.Address
 	ContractABI    abi.ABI
 	ContractEvents []abi.Event
 }

@@ -23,9 +23,9 @@ func (e *ensEngine) HandleGoodLogs(
 ) {
 	logger.Debug("poolfactory.HandleGoodLog: got logs")
 
-	var retArtifacts []engine.Artifact
+	var retArtifacts []ENSArtifact
 	for _, log := range logs {
-		resultArtifact, err := e.HandleGoodLog(log)
+		resultArtifact, err := e.HandleGoodLog(log, retArtifacts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
@@ -33,25 +33,43 @@ func (e *ensEngine) HandleGoodLogs(
 		retArtifacts = append(retArtifacts, resultArtifact)
 	}
 
-	return retArtifacts, nil
+	return []engine.Artifact{retArtifacts}, nil
 }
 
-func (e *ensEngine) HandleGoodLog(log *types.Log) (ENSArtifact, error) {
+func (e *ensEngine) HandleGoodLog(log *types.Log, artifacts []ENSArtifact) (ENSArtifact, error) {
 	logEventKey := log.Topics[0]
 
 	artifact := ENSArtifact{BlockNumber: log.BlockNumber}
-	for _, event := range e.ensRegistrar.ContractEvents {
-		// This engine is supposed to handle more than 1 event,
-		// but it's not yet finished now.
-		if logEventKey == event.ID {
-			switch event.Name {
-			case "NameRegistered": // New domain registered
-				newEns, err := e.newName(log, event.Name)
-				if err != nil {
-					return artifact, errors.Wrap(err, "failed to create new name from log")
+
+	switch log.Address {
+	case e.ensRegistrar.Address:
+		for _, event := range e.ensRegistrar.ContractEvents {
+			// This engine is supposed to handle more than 1 event,
+			// but it's not yet finished now.
+			if logEventKey == event.ID {
+				switch event.Name {
+				// New domain registered from both contracts
+				case "NameRegistered":
+					var err error
+					resultArtifact, err := e.handleNameRegisteredRegistrar(log, event.Name, artifacts)
+					if err != nil {
+						return artifact, errors.Wrap(err, "failed to create new name from log (registrar)")
+					}
+					artifact = *resultArtifact
 				}
-				artifact.ENS = *newEns
-			case "NewOwner", "Transfer": // Logged when the owner of a node transfers ownership to a new account.
+			}
+		}
+	case e.ensController.Address:
+		for _, event := range e.ensController.ContractEvents {
+			if logEventKey == event.ID {
+				switch event.Name {
+				case "NameRegistered":
+					resultArtifact, err := e.handleNameRegisteredController(log, event.Name, artifacts)
+					if err != nil {
+						return artifact, errors.Wrap(err, "failed to create new name from log (controller)")
+					}
+					artifact = *resultArtifact
+				}
 			}
 		}
 	}
@@ -98,15 +116,14 @@ func (e *ensEngine) handleReorgedLog(log *types.Log, artifacts []engine.Artifact
 		if logEventKey == event.ID {
 			switch event.Name {
 			case "NameRegistered":
-				newEns, err := e.newName(log, event.Name)
+				logArtifact, err := e.handleNameRegisteredRegistrar(log, event.Name, ensArtifacts)
 				if err != nil {
 					return artifact, errors.Wrap(err, "failed to create new name from log")
 				}
-				artifact.ENS = *newEns
+				artifact = *logArtifact
 				return artifact, nil
 			}
 		}
-
 	}
 
 	return artifact, fmt.Errorf("event topic %s not found", logEventKey)

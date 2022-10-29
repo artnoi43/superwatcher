@@ -8,15 +8,15 @@ import (
 type ENSLastEvent string
 
 const (
-	Null        ENSLastEvent = ""
+	Null        ENSLastEvent = "NULL"
 	Registered  ENSLastEvent = "Registered"
 	Transferred ENSLastEvent = "Transferred"
 )
 
 type ENSArtifact struct {
-	BlockNumber uint64     `json:"blockNumber"`
-	LastEvent   string     `json:"lastEvent"`
-	ENS         entity.ENS `json:"ens"`
+	BlockNumber uint64       `json:"blockNumber"`
+	LastEvent   ENSLastEvent `json:"lastEvent"`
+	ENS         entity.ENS   `json:"ens"`
 }
 
 func (e *ENSArtifact) ForSubEngine() subengines.SubEngineEnum {
