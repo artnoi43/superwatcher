@@ -10,6 +10,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/wangjia184/sortedset v0.0.0-20220209072355-af6d6d227aa7
 	go.uber.org/zap v1.23.0
+	golang.org/x/net v0.1.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

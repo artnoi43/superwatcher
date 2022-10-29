@@ -23,17 +23,17 @@ func (e *ensEngine) HandleGoodLogs(
 ) {
 	logger.Debug("poolfactory.HandleGoodLog: got logs")
 
-	var retArtifacts []ENSArtifact
+	var artifacts []ENSArtifact
 	for _, log := range logs {
-		resultArtifact, err := e.HandleGoodLog(log, retArtifacts)
+		resultArtifact, err := e.HandleGoodLog(log, artifacts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
 
-		retArtifacts = append(retArtifacts, resultArtifact)
+		artifacts = append(artifacts, resultArtifact)
 	}
 
-	return []engine.Artifact{retArtifacts}, nil
+	return []engine.Artifact{artifacts}, nil
 }
 
 func (e *ensEngine) HandleGoodLog(log *types.Log, artifacts []ENSArtifact) (ENSArtifact, error) {

@@ -10,13 +10,13 @@ import (
 // ENS represents the Ethereum domain names.
 // For example, domain "foo.eth" has Name "foo" and TLD "eth"
 type ENS struct {
-	ID    string
-	Name  string
-	TLD   common.Address
-	Owner common.Address
+	ID    string         `json:"id"`
+	Name  string         `json:"name"`
+	TLD   common.Address `json:"tld"`
+	Owner common.Address `json:"owner"`
 
-	TTL    uint64
-	Expire time.Time
+	TTL     uint64    `json:"ttl"`
+	Expires time.Time `json:"expires"`
 }
 
 func (e *ENS) DomainString() string {

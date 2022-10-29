@@ -1,4 +1,5 @@
 domain/reorg
-config/config.yaml
+*/config/*.yaml
+scripts/*/*.yaml
 
 tmp

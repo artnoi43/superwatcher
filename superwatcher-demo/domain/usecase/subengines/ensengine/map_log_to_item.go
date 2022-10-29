@@ -1,6 +1,7 @@
 package ensengine
 
 import (
+	"errors"
 	"math/big"
 	"time"
 
@@ -57,45 +58,46 @@ func (e *ensEngine) handleNameRegisteredController(
 	*ENSArtifact,
 	error,
 ) {
-	if len(log.Topics) < 3 {
-		panic("bad log with < 3 topics")
-	}
+	var name *entity.ENS
 
-	var name entity.ENS
-	// We'll only get ENS Name ID from contract Registrar
 	switch logEvent {
 	case "NameRegistered":
-		owner := common.HexToAddress(log.Topics[2].Hex())
+		if len(log.Topics) < 3 {
+			panic("bad log with < 3 topics - should not happen")
+		}
 
-		// Find targetENS from
-		var targetENS entity.ENS
+		owner := common.HexToAddress(log.Topics[2].Hex())
+		// Find name from
 		for _, artifact := range artifacts {
 			ens := artifact.ENS
 			if ens.Owner == owner {
-				targetENS = ens
+				name = &ens
 			}
+		}
+		if name == nil {
+			return nil, errors.New("could not find ENS artifact from Registrar (controller NameRegistered)")
 		}
 
 		unpacked, err := logutils.UnpackLogDataIntoMap(e.ensController.ContractABI, logEvent, log.Data)
 		if err != nil {
 			return nil, err
 		}
-		name, err := logutils.ExtractFieldFromUnpacked[string](unpacked, "name")
+		domainName, err := logutils.ExtractFieldFromUnpacked[string](unpacked, "name")
 		if err != nil {
 			return nil, err
 		}
-		expire, err := logutils.ExtractFieldFromUnpacked[*big.Int](unpacked, "expire")
+		expire, err := logutils.ExtractFieldFromUnpacked[*big.Int](unpacked, "expires")
 		if err != nil {
 			return nil, err
 		}
 
-		targetENS.Name = name
-		targetENS.Expire = time.Unix(expire.Int64(), 0)
+		name.Name = domainName
+		name.Expires = time.Unix(expire.Int64(), 0)
 	}
 
 	return &ENSArtifact{
 		BlockNumber: log.BlockNumber,
 		LastEvent:   Registered,
-		ENS:         name,
+		ENS:         *name,
 	}, nil
 }
