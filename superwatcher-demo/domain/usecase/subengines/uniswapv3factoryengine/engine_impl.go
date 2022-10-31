@@ -25,6 +25,7 @@ func (a PoolFactoryArtifact) ForSubEngine() subengines.SubEngineEnum {
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	logs []*types.Log,
+	artifacts []engine.Artifact,
 ) (
 	[]engine.Artifact,
 	error,

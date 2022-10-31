@@ -1,13 +1,14 @@
 package ensengine
 
 import (
-	"errors"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/logutils"
 )
@@ -21,83 +22,57 @@ func extractTTLFromUnpacked(unpacked map[string]interface{}) (uint64, error) {
 	return logutils.ExtractFieldFromUnpacked[uint64](unpacked, "ttl")
 }
 
-// TODO: this is broken. To create a new ENS name, we need logs from 2 contracts,
-// but 1 log can only come from 1 contract
-func (e *ensEngine) handleNameRegisteredRegistrar(
-	log *types.Log,
+// unmarshalLogToENS populates ens with data from log
+func (e *ensEngine) unmarshalLogToENS(
 	logEvent string,
-	artifacts []ENSArtifact,
-) (
-	*ENSArtifact,
-	error,
-) {
-	if len(log.Topics) < 2 {
-		panic("bad log with < 2 topics")
-	}
-
-	var name entity.ENS
-	// We'll only get ENS Name ID from contract Registrar
-	switch logEvent {
-	case "NameRegistered":
-		name.ID = common.HexToHash(log.Topics[1].Hex()).String()
-		name.Owner = common.HexToAddress(log.Topics[2].Hex())
-	}
-
-	return &ENSArtifact{
-		BlockNumber: log.BlockNumber,
-		LastEvent:   RegisteredRegistrar,
-		ENS:         name,
-	}, nil
-}
-
-func (e *ensEngine) handleNameRegisteredController(
 	log *types.Log,
-	logEvent string,
-	artifacts []ENSArtifact,
-) (
-	*ENSArtifact,
-	error,
-) {
-	var name *entity.ENS
-
-	switch logEvent {
-	case "NameRegistered":
-		if len(log.Topics) < 3 {
-			panic("bad log with < 3 topics - should not happen")
-		}
-
-		owner := common.HexToAddress(log.Topics[2].Hex())
-		// Find name from
-		for _, artifact := range artifacts {
-			ens := artifact.ENS
-			if ens.Owner == owner {
-				name = &ens
+	ens *entity.ENS,
+) error {
+	switch log.Address {
+	case e.ensRegistrar.Address:
+		switch logEvent {
+		case nameRegistered:
+			if len(log.Topics) < 3 {
+				return errors.Wrap(ErrLogLen, "log topics len < 3")
 			}
-		}
-		if name == nil {
-			return nil, errors.New("could not find ENS artifact from Registrar (controller NameRegistered)")
+			unpacked, err := logutils.UnpackLogDataIntoMap(e.ensRegistrar.ContractABI, logEvent, log.Data)
+			if err != nil {
+				return errors.Wrap(err, ErrMapENS.Error())
+			}
+			// Extract data from Registrar contract log
+			expire, err := logutils.ExtractFieldFromUnpacked[*big.Int](unpacked, "expires")
+			if err != nil {
+				return errors.Wrap(err, ErrMapENS.Error())
+			}
+
+			ens.ID = gslutils.ToLower(log.Topics[1].String())
+			ens.Owner = common.HexToAddress(log.Topics[2].Hex())
+			ens.Expires = time.Unix(expire.Int64(), 0)
 		}
 
-		unpacked, err := logutils.UnpackLogDataIntoMap(e.ensController.ContractABI, logEvent, log.Data)
-		if err != nil {
-			return nil, err
-		}
-		domainName, err := logutils.ExtractFieldFromUnpacked[string](unpacked, "name")
-		if err != nil {
-			return nil, err
-		}
-		expire, err := logutils.ExtractFieldFromUnpacked[*big.Int](unpacked, "expires")
-		if err != nil {
-			return nil, err
-		}
+	case e.ensController.Address:
+		switch logEvent {
+		case nameRegistered:
+			// Extract data from Controller contract log yopics and data
+			var err error
+			unpacked, err := logutils.UnpackLogDataIntoMap(e.ensController.ContractABI, logEvent, log.Data)
+			if err != nil {
+				return errors.Wrap(err, ErrMapENS.Error())
+			}
+			name, err := logutils.ExtractFieldFromUnpacked[string](unpacked, "name")
+			if err != nil {
+				return errors.Wrap(err, ErrMapENS.Error())
+			}
+			expire, err := logutils.ExtractFieldFromUnpacked[*big.Int](unpacked, "expires")
+			if err != nil {
+				return errors.Wrap(err, ErrMapENS.Error())
+			}
 
-		name.Name = domainName
-		name.Expires = time.Unix(expire.Int64(), 0)
+			ens.Name = gslutils.ToLower(name)
+			ens.Owner = common.HexToAddress(log.Topics[2].Hex())
+			ens.Expires = time.Unix(expire.Int64(), 0)
+		}
 	}
 
-	return &ENSArtifact{
-		BlockNumber: log.BlockNumber,
-		LastEvent:   RegisteredController,
-		ENS:         *name,
-	}, nil
+	return nil
 }

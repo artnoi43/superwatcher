@@ -69,7 +69,7 @@ func (e *engine) handleLogs(ctx context.Context) error {
 				continue
 			}
 
-			artifacts, err := e.serviceEngine.HandleGoodLogs(block.Logs)
+			artifacts, err := e.serviceEngine.HandleGoodLogs(block.Logs, metadata.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}

@@ -9,7 +9,7 @@ type Artifact any
 
 type ServiceEngine interface {
 	// Handle a block's logs
-	HandleGoodLogs([]*types.Log) ([]Artifact, error)
+	HandleGoodLogs([]*types.Log, []Artifact) ([]Artifact, error)
 	// Handle a block's reorged logs
 	HandleReorgedLogs([]*types.Log, []Artifact) ([]Artifact, error)
 	// Handle emitter error

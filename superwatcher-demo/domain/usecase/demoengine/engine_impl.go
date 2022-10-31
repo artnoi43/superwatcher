@@ -12,6 +12,7 @@ import (
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *demoEngine) HandleGoodLogs(
 	logs []*types.Log,
+	artifacts []engine.Artifact,
 ) (
 	[]engine.Artifact,
 	error,
@@ -25,12 +26,11 @@ func (e *demoEngine) HandleGoodLogs(
 			return nil, errors.Wrapf(errNoService, "subengine: %s", subEngine.String())
 		}
 
-		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs)
+		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs, artifacts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "subengine %s HandleGoodBlock failed", subEngine.String())
 		}
-
-		retArtifacts = append(retArtifacts, resultArtifacts)
+		retArtifacts = append(retArtifacts, resultArtifacts...)
 	}
 
 	return retArtifacts, nil
@@ -52,14 +52,14 @@ func (e *demoEngine) HandleReorgedLogs(
 		}
 
 		// Aggregate subEngine-specific artifacts
-		var artifactsForSubEngine []engine.Artifact
+		var subEngineArtifacts []engine.Artifact
 		for _, artifact := range artifacts {
 			if artifactIsFor(artifact, subEngine) {
-				artifactsForSubEngine = append(artifactsForSubEngine, artifact)
+				subEngineArtifacts = append(subEngineArtifacts, artifact)
 			}
 		}
 
-		outputArtifacts, err := serviceEngine.HandleReorgedLogs(logs, artifacts)
+		outputArtifacts, err := serviceEngine.HandleReorgedLogs(logs, subEngineArtifacts)
 		if err != nil {
 			return nil, errors.Wrapf(err, "subengine %s HandleReorgedBlock failed", subEngine.String())
 		}

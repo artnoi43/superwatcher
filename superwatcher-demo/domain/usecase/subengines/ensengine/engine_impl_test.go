@@ -22,12 +22,13 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/lib/contracts/ens/ensregistrar"
 )
 
-func TestHandleLogs(t *testing.T) {
-	var logs []*types.Log
-	if err := json.Unmarshal([]byte(logsJson), &logs); err != nil {
-		t.Errorf("error unmarshaling json logs: %s", err.Error())
-	}
+type ensTestEngineBundle struct {
+	engine         engine.ServiceEngine // *ensEngine
+	demoSubEngines map[common.Address]subengines.SubEngineEnum
+	demoServices   map[subengines.SubEngineEnum]engine.ServiceEngine
+}
 
+func newTestEnsEngine() *ensTestEngineBundle {
 	registrarContract := newContract(
 		ensregistrar.EnsRegistrarABI,
 		"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85",
@@ -38,13 +39,34 @@ func TestHandleLogs(t *testing.T) {
 		"0x283af0b28c62c092c9727f1ee09c02ca627eb7f5",
 		nameRegistered,
 	)
-
 	ensEngine := &ensEngine{
 		ensRegistrar:  registrarContract,
 		ensController: controllerContract,
 	}
 
-	artifacts, err := ensEngine.HandleGoodLogs(logs)
+	return &ensTestEngineBundle{
+		engine: ensEngine,
+		demoSubEngines: map[common.Address]subengines.SubEngineEnum{
+			registrarContract.Address:  subengines.SubEngineENS,
+			controllerContract.Address: subengines.SubEngineENS,
+		},
+		demoServices: map[subengines.SubEngineEnum]engine.ServiceEngine{
+			subengines.SubEngineENS: ensEngine,
+		},
+	}
+}
+
+func TestHandleLogs(t *testing.T) {
+	var logs []*types.Log
+	if err := json.Unmarshal([]byte(logsJson), &logs); err != nil {
+		t.Errorf("error unmarshaling json logs: %s", err.Error())
+	}
+
+	bundle := newTestEnsEngine()
+	ensEngine := bundle.engine
+
+	var artifacts []engine.Artifact
+	artifacts, err := ensEngine.HandleGoodLogs(logs, artifacts)
 	if err != nil {
 		t.Errorf("HandleGoodLogs error: %s", err.Error())
 	}
@@ -58,45 +80,58 @@ func TestHandleLogs(t *testing.T) {
 		Owner:   common.HexToAddress("0x8AD703901c3FcDECD20D2B9349F8183d0d14FDDF"),
 	}
 
-	for _, artifact := range artifacts {
-		ensArtifacts, ok := artifact.([]ENSArtifact)
+	for i, artifact := range artifacts {
+		ensArtifact, ok := artifact.(ENSArtifact)
 		if !ok {
-			t.Fatal("artifact is not []ENSArtifact")
+			t.Fatalf("artifact is not ENSArtifact")
 		}
-		for i, ensArtifact := range ensArtifacts {
-			switch i {
-			case 0:
-				if ensArtifact.LastEvent != RegisteredRegistrar {
-					t.Fatalf("unexpected last event from log %d\n", i)
-				}
-			case 1:
-				if ensArtifact.LastEvent != RegisteredController {
-					t.Fatalf("unexpected last event from log %d\n", i)
-				}
-				if !reflect.DeepEqual(ensArtifact.ENS, expectedENS) {
-					logger.Debug("expected", zap.Any("ens", expectedENS))
-					logger.Debug("actual", zap.Any("ens", ensArtifact.ENS))
-					t.Fatal("unexpected ENS result\n")
-				}
+
+		switch i {
+		case 0:
+			if ensArtifact.LastEvent != RegisteredRegistrar {
+				t.Fatalf("unexpected last event from log %d\n", i)
+			}
+		case 1:
+			if ensArtifact.LastEvent != RegisteredController {
+				t.Fatalf("unexpected last event from log %d\n", i)
+			}
+			if !reflect.DeepEqual(ensArtifact.ENS, expectedENS) {
+				logger.Debug("expected", zap.Any("ens", expectedENS))
+				logger.Debug("actual", zap.Any("ens", ensArtifact.ENS))
+				t.Fatal("unexpected ENS result\n")
 			}
 		}
 	}
 
-	demoSubEngines := map[common.Address]subengines.SubEngineEnum{
-		registrarContract.Address:  subengines.SubEngineENS,
-		controllerContract.Address: subengines.SubEngineENS,
-	}
-	demoServices := map[subengines.SubEngineEnum]engine.ServiceEngine{
-		subengines.SubEngineENS: ensEngine,
-	}
-	demoEngine := demoengine.New(demoSubEngines, demoServices)
-
-	artifacts, err = demoEngine.HandleGoodLogs(logs)
+	// Test ensEngine embedded in demoEngine
+	demoEngine := demoengine.New(bundle.demoSubEngines, bundle.demoServices)
+	artifacts = nil
+	artifacts, err = demoEngine.HandleGoodLogs(logs, artifacts)
 	if err != nil {
 		t.Fatalf("demoEngine.HandleGoodLogs failed: %s\n", err.Error())
 	}
+	t.Logf("demoEngine.HandleLogs artifacts: %d %+v\n", len(artifacts), reflect.TypeOf(artifacts).String())
 	for i, artifact := range artifacts {
-		t.Logf("%d %s %+v\n", i, reflect.TypeOf(artifact), artifact)
+		ensArtifact, ok := artifact.(ENSArtifact)
+		if !ok {
+			t.Fatalf("artifact is not ENSArtifact")
+		}
+
+		switch i {
+		case 0:
+			if ensArtifact.LastEvent != RegisteredRegistrar {
+				t.Fatalf("unexpected last event from log %d\n", i)
+			}
+		case 1:
+			if ensArtifact.LastEvent != RegisteredController {
+				t.Fatalf("unexpected last event from log %d\n", i)
+			}
+			if !reflect.DeepEqual(ensArtifact.ENS, expectedENS) {
+				logger.Debug("expected", zap.Any("ens", expectedENS))
+				logger.Debug("actual", zap.Any("ens", ensArtifact.ENS))
+				t.Fatal("unexpected ENS result\n")
+			}
+		}
 	}
 }
 
@@ -128,7 +163,6 @@ func accrueEvents(contractABI abi.ABI, eventKeys ...string) []abi.Event {
 	return events
 }
 
-const nameRegistered = "NameRegistered"
 const logsJson = `[{
   "address": "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85",
   "topics": [

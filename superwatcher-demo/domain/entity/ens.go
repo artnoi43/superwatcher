@@ -15,7 +15,6 @@ type ENS struct {
 	TLD   common.Address `json:"tld"`
 	Owner common.Address `json:"owner"`
 
-	TTL     uint64    `json:"ttl"`
 	Expires time.Time `json:"expires"`
 }
 
