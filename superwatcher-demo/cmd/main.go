@@ -12,16 +12,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/data/watcherstate"
-	"github.com/artnoi43/superwatcher/domain/usecase/emitter"
-	"github.com/artnoi43/superwatcher/domain/usecase/engine"
-	"github.com/artnoi43/superwatcher/domain/usecase/superwatcher"
-	"github.com/artnoi43/superwatcher/lib/enums"
-	"github.com/artnoi43/superwatcher/lib/logger"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/demoengine"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/domain/usecase/subengines/uniswapv3factoryengine"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/hardcode"
+	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
+	"github.com/artnoi43/superwatcher/pkg/enums"
+	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
+	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/artnoi43/superwatcher/pkg/superwatcher"
+
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/demoengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/uniswapv3factoryengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
 )
 
 func main() {
@@ -61,7 +61,7 @@ func main() {
 		syscall.SIGTERM,
 	)
 
-	filterResultChan := make(chan *emitter.FilterResult)
+	filterResultChan := make(chan *superwatcher.FilterResult)
 	errChan := make(chan error)
 
 	// Hard-coded values for testing
@@ -69,7 +69,7 @@ func main() {
 
 	// Demo sub-engines
 	demoUseCases := make(map[common.Address]subengines.SubEngineEnum)
-	demoServices := make(map[subengines.SubEngineEnum]engine.ServiceEngine)
+	demoServices := make(map[subengines.SubEngineEnum]superwatcher.ServiceEngine)
 
 	// All addresses to be filtered by emitter
 	var watcherAddresses []common.Address
@@ -97,7 +97,7 @@ func main() {
 		demoServices,
 	)
 
-	watcherEmitter, watcherEngine := superwatcher.New(
+	watcherEmitter, watcherEngine := initsuperwatcher.New(
 		conf,
 		ethClient,
 		stateDataGateway,
