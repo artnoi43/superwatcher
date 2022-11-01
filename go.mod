@@ -3,7 +3,6 @@ module github.com/artnoi43/superwatcher
 go 1.19
 
 require (
-	github.com/alexflint/go-arg v1.4.3
 	github.com/artnoi43/gsl v0.0.0-20221101130134-351fcfc32d40
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/ethereum/go-ethereum v1.10.25
@@ -11,12 +10,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/wangjia184/sortedset v0.0.0-20220209072355-af6d6d227aa7
 	go.uber.org/zap v1.23.0
-	golang.org/x/net v0.1.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
