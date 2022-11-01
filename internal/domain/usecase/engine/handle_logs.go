@@ -89,7 +89,10 @@ func (e *engine) handleLogs(ctx context.Context) error {
 			result.LastGoodBlock - (emitterConfig.LookBackBlocks * emitterConfig.LookBackRetries),
 		)
 
-		e.stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
+		if err := e.stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock); err != nil {
+			return errors.Wrapf(err, "failed to save lastRecordedBlock %d", result.LastGoodBlock)
+		}
+
 		e.emitterClient.WatcherEmitterSync()
 	}
 }
