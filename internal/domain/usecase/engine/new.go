@@ -9,7 +9,7 @@ import (
 
 // newWatcherEngine returns default implementation of WatcherEngine
 func newWatcherEngine(
-	client emitterclient.Client,
+	client superwatcher.EmitterClient,
 	serviceEngine superwatcher.ServiceEngine,
 	statDataGateway watcherstate.StateDataGateway,
 	debug bool,

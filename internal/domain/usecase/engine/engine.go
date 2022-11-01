@@ -5,14 +5,13 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/internal/domain/usecase/emitterclient"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/logger/debug"
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
 type engine struct {
-	emitterClient    emitterclient.Client          // Interfaces with emitter
+	emitterClient    superwatcher.EmitterClient    // Interfaces with emitter
 	stateDataGateway watcherstate.StateDataGateway // Saves lastRecordedBlock to Redis
 	metadataTracker  MetadataTracker               // Engine internal state machine
 

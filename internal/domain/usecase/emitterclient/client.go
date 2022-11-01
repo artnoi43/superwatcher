@@ -8,16 +8,6 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
-// Client interfaces with emitter.WatcherEmitter via these methods
-type Client interface {
-	WatcherResult() *superwatcher.FilterResult
-	WatcherEmitterSync()
-	WatcherError() error
-	WatcherConfig() *config.Config
-
-	Shutdown()
-}
-
 // emitterClient is the actual implementation of Client.
 // It uses channels to communicate with emitter.
 type emitterClient struct {
@@ -35,7 +25,7 @@ func NewEmitterClient(
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,
 	debug bool,
-) Client {
+) superwatcher.EmitterClient {
 	return &emitterClient{
 		emitterConfig:    emitterConfig,
 		filterResultChan: filterResultChan,
