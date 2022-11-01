@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/logutils"
 )

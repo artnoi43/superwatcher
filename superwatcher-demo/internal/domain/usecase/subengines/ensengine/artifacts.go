@@ -3,10 +3,11 @@ package ensengine
 import (
 	"errors"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 )
 
 type ENSEvent string
