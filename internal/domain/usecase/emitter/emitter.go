@@ -60,7 +60,7 @@ func (e *emitter) Loop(ctx context.Context) error {
 			return ctx.Err()
 		default:
 			if err := e.loopFilterLogs(ctx); err != nil {
-				e.errChan <- errors.Wrap(err, "error in loopFilterLogs")
+				e.emitError(errors.Wrap(err, "error in loopFilterLogs"))
 			}
 		}
 	}
