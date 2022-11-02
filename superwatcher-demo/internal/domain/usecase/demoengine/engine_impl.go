@@ -57,9 +57,7 @@ func (e *demoEngine) HandleGoodLogs(
 func (e *demoEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
-
 ) ([]superwatcher.Artifact, error) {
-
 	logsMap := e.mapLogsToSubEngine(logs)
 
 	var retArtifacts []superwatcher.Artifact // Artifacts to return
