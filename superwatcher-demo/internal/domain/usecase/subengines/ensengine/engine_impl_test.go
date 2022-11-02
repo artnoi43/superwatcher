@@ -3,11 +3,9 @@ package ensengine
 import (
 	"encoding/json"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -16,46 +14,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/demoengine"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/enscontroller"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/ensregistrar"
 )
-
-type ensTestEngineBundle struct {
-	engine         superwatcher.ServiceEngine // *ensEngine
-	demoSubEngines map[common.Address]subengines.SubEngineEnum
-	demoServices   map[subengines.SubEngineEnum]superwatcher.ServiceEngine
-}
-
-func newTestEnsEngine() *ensTestEngineBundle {
-	registrarContract := newContract(
-		ensregistrar.EnsRegistrarABI,
-		"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85",
-		nameRegistered,
-	)
-	controllerContract := newContract(
-		enscontroller.EnsControllerABI,
-		"0x283af0b28c62c092c9727f1ee09c02ca627eb7f5",
-		nameRegistered,
-	)
-	ensEngine := &ensEngine{
-		ensRegistrar:  registrarContract,
-		ensController: controllerContract,
-	}
-
-	return &ensTestEngineBundle{
-		engine: ensEngine,
-		demoSubEngines: map[common.Address]subengines.SubEngineEnum{
-			registrarContract.Address:  subengines.SubEngineENS,
-			controllerContract.Address: subengines.SubEngineENS,
-		},
-		demoServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
-			subengines.SubEngineENS: ensEngine,
-		},
-	}
-}
 
 func TestHandleLogs(t *testing.T) {
 	var logs []*types.Log
@@ -63,13 +22,16 @@ func TestHandleLogs(t *testing.T) {
 		t.Errorf("error unmarshaling json logs: %s", err.Error())
 	}
 
-	bundle := newTestEnsEngine()
-	ensEngine := bundle.engine
+	bundle := NewEnsSubEngine()
+	ensEngine := bundle.Engine
 
 	var artifacts []superwatcher.Artifact
 	artifacts, err := ensEngine.HandleGoodLogs(logs, artifacts)
 	if err != nil {
 		t.Errorf("HandleGoodLogs error: %s", err.Error())
+	}
+	for _, a := range artifacts {
+		t.Log(a)
 	}
 
 	// TODO: Assert
@@ -84,7 +46,7 @@ func TestHandleLogs(t *testing.T) {
 	for i, artifact := range artifacts {
 		ensArtifact, ok := artifact.(ENSArtifact)
 		if !ok {
-			t.Fatalf("artifact is not ENSArtifact")
+			t.Fatalf("artifact is not ENSArtifact: %s", reflect.TypeOf(artifact).String())
 		}
 
 		switch i {
@@ -103,65 +65,6 @@ func TestHandleLogs(t *testing.T) {
 			}
 		}
 	}
-
-	// Test ensEngine embedded in demoEngine
-	demoEngine := demoengine.New(bundle.demoSubEngines, bundle.demoServices)
-	artifacts = nil
-	artifacts, err = demoEngine.HandleGoodLogs(logs, artifacts)
-	if err != nil {
-		t.Fatalf("demoEngine.HandleGoodLogs failed: %s\n", err.Error())
-	}
-	t.Logf("demoEngine.HandleLogs artifacts: %d %+v\n", len(artifacts), reflect.TypeOf(artifacts).String())
-	for i, artifact := range artifacts {
-		ensArtifact, ok := artifact.(ENSArtifact)
-		if !ok {
-			t.Fatalf("artifact is not ENSArtifact")
-		}
-
-		switch i {
-		case 0:
-			if ensArtifact.LastEvent != RegisteredRegistrar {
-				t.Fatalf("unexpected last event from log %d\n", i)
-			}
-		case 1:
-			if ensArtifact.LastEvent != RegisteredController {
-				t.Fatalf("unexpected last event from log %d\n", i)
-			}
-			if !reflect.DeepEqual(ensArtifact.ENS, expectedENS) {
-				logger.Debug("expected", zap.Any("ens", expectedENS))
-				logger.Debug("actual", zap.Any("ens", ensArtifact.ENS))
-				t.Fatal("unexpected ENS result\n")
-			}
-		}
-	}
-}
-
-func newContract(contractJsonABI string, addrString string, eventKeys ...string) contracts.BasicContract {
-	contractABI, err := abi.JSON(strings.NewReader(contractJsonABI))
-	if err != nil {
-		panic("invalid json abi")
-	}
-	contractTopics := accrueEvents(contractABI, eventKeys...)
-	basicContract := contracts.BasicContract{
-		Address:        common.HexToAddress(addrString),
-		ContractABI:    contractABI,
-		ContractEvents: contractTopics,
-	}
-
-	return basicContract
-}
-
-func accrueEvents(contractABI abi.ABI, eventKeys ...string) []abi.Event {
-	var events []abi.Event
-	for key, event := range contractABI.Events {
-		for _, eventKey := range eventKeys {
-			if key == eventKey {
-				events = append(events, event)
-			}
-		}
-	}
-
-	return events
 }
 
 const logsJson = `[{

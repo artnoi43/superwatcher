@@ -9,9 +9,10 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/artnoi43/superwatcher/pkg/logger/debug"
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal"
 )
 
 // The sub-engine uses entity.ENS as superwatcher.Artifact
@@ -28,13 +29,16 @@ func (e *ensEngine) HandleGoodLogs(
 
 	var outArtifacts []superwatcher.Artifact
 	for _, log := range logs {
-		resultArtifact, err := e.HandleGoodLog(log, artifacts)
+		logArtifact, err := e.HandleGoodLog(log, artifacts)
 		if err != nil {
+			if errors.Is(err, internal.ErrNoNeedHandle) {
+				continue
+			}
 			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
 
-		artifacts = append(artifacts, resultArtifact)
-		outArtifacts = append(outArtifacts, resultArtifact)
+		artifacts = append(artifacts, logArtifact)
+		outArtifacts = append(outArtifacts, logArtifact)
 	}
 
 	return outArtifacts, nil
@@ -50,6 +54,10 @@ func (e *ensEngine) HandleGoodLog(
 	// Artifact to return
 	artifact := ENSArtifact{RegisterBlockNumber: log.BlockNumber}
 
+	var handleFunc func(*types.Log, string, *ENSArtifact) (*ENSArtifact, error)
+	var eventName string
+	var prevArtifact *ENSArtifact
+
 	logEventKey := log.Topics[0]
 	switch log.Address {
 	case e.ensRegistrar.Address:
@@ -60,12 +68,8 @@ func (e *ensEngine) HandleGoodLog(
 				switch event.Name {
 				// New domain registered from both contracts
 				case nameRegistered:
-					var err error
-					resultArtifact, err := e.handleNameRegisteredRegistrar(log, event.Name, nil)
-					if err != nil {
-						return artifact, errors.Wrap(err, "failed to create new name from log (registrar)")
-					}
-					artifact = *resultArtifact
+					handleFunc = e.handleNameRegisteredRegistrar
+					eventName = nameRegistered
 				}
 			}
 		}
@@ -74,8 +78,9 @@ func (e *ensEngine) HandleGoodLog(
 			if logEventKey == event.ID {
 				switch event.Name {
 				case nameRegistered:
-					// Previous artifacts
-					var prevArtifact *ENSArtifact
+					handleFunc = e.handleNameRegisteredController
+					eventName = nameRegistered
+					// Get previous artifacts
 					for _, artifact := range artifacts {
 						a, ok := artifact.(ENSArtifact)
 						if !ok {
@@ -83,15 +88,23 @@ func (e *ensEngine) HandleGoodLog(
 						}
 						prevArtifact = &a
 					}
-					resultArtifact, err := e.handleNameRegisteredController(log, event.Name, prevArtifact)
-					if err != nil {
-						return artifact, errors.Wrap(err, "failed to create new name from log (controller)")
-					}
-					artifact = *resultArtifact
 				}
 			}
 		}
+	default:
+		panic("ensEngine.handleGoodLog: found unexpected contract address: " + log.Address.String())
 	}
+
+	if handleFunc == nil {
+		debug.DebugMsg(true, "ensEngine: handleFunc is nil, probably because uninteresting topics", zap.Any("artifact", artifacts))
+		return artifact, internal.ErrNoNeedHandle
+	}
+
+	resultArtifact, err := handleFunc(log, eventName, prevArtifact)
+	if err != nil {
+		return artifact, errors.Wrapf(err, "failed to create new name from log (event %s)", eventName)
+	}
+	artifact = *resultArtifact
 
 	return artifact, nil
 }
@@ -184,11 +197,5 @@ func (e *ensEngine) handleReorgedLog(
 // Unused by this service
 func (e *ensEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
-	return nil
-}
-
-func (e *ensEngine) createPool(pool *entity.Uniswapv3PoolCreated) error {
-	logger.Debug("createPool: got pool", zap.Any("pool", pool))
-
 	return nil
 }

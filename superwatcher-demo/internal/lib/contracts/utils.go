@@ -2,15 +2,8 @@ package contracts
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 )
-
-type BasicContract struct {
-	Address        common.Address
-	ContractABI    abi.ABI
-	ContractEvents []abi.Event
-}
 
 // ContractInfo reads abiStr and returns the Go ABI,
 // as well as all `abi.Event`s whose name matches eventKeys.
@@ -27,12 +20,15 @@ func ContractInfo(contractABI abi.ABI, eventKeys ...string) (abi.ABI, []abi.Even
 	return contractABI, events, nil
 }
 
-func Contains[T comparable](slice []T, item T) bool {
-	for _, v := range slice {
-		if v == item {
-			return true
+func accrueEvents(contractABI abi.ABI, eventKeys ...string) []abi.Event {
+	var events []abi.Event
+	for key, event := range contractABI.Events {
+		for _, eventKey := range eventKeys {
+			if key == eventKey {
+				events = append(events, event)
+			}
 		}
 	}
 
-	return false
+	return events
 }

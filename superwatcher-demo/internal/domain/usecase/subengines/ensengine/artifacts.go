@@ -34,7 +34,7 @@ type ENSArtifact struct {
 	ENS                 entity.ENS          `json:"ens"`
 }
 
-func (e *ENSArtifact) ForSubEngine() subengines.SubEngineEnum {
+func (e ENSArtifact) ForSubEngine() subengines.SubEngineEnum {
 	return subengines.SubEngineENS
 }
 

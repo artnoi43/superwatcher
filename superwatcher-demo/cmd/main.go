@@ -20,8 +20,10 @@ import (
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/demoengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/uniswapv3factoryengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 )
 
 func main() {
@@ -64,32 +66,45 @@ func main() {
 	filterResultChan := make(chan *superwatcher.FilterResult)
 	errChan := make(chan error)
 
-	// Hard-coded values for testing
-	contractAddresses, contractABIs, contractsEvents, topics := hardcode.DemoAddressesAndTopics(hardcode.Uniswapv3Factory)
-
 	// Demo sub-engines
 	demoUseCases := make(map[common.Address]subengines.SubEngineEnum)
 	demoServices := make(map[subengines.SubEngineEnum]superwatcher.ServiceEngine)
 
-	// All addresses to be filtered by emitter
-	var watcherAddresses []common.Address
+	// Hard-coded topic values for testing
+	demoContracts := hardcode.DemoContracts(
+		hardcode.Uniswapv3Factory,
+		hardcode.ENSRegistrar,
+		hardcode.ENSController,
+	)
 
-	for contractName, contractAddr := range contractAddresses {
+	// ENS sub-engine has 2 contracts
+	// so we can't init the engine in the for loop below
+	var ensRegistrar, ensController contracts.BasicContract
+
+	var watcherTopics []common.Hash
+	var watcherAddresses []common.Address
+	for contractName, demoContract := range demoContracts {
 		switch contractName {
 		case hardcode.Uniswapv3Factory:
-			poolFactoryEngine := uniswapv3factoryengine.NewUniswapV3Engine(
-				contractAddr,
-				contractABIs[contractAddr],
-				contractsEvents[contractAddr],
-			)
-			demoServices[subengines.SubEngineUniswapv3Factory] = poolFactoryEngine
-			demoUseCases[contractAddr] = subengines.SubEngineUniswapv3Factory
+			demoUseCases[demoContract.Address] = subengines.SubEngineUniswapv3Factory
+			demoServices[subengines.SubEngineUniswapv3Factory] = uniswapv3factoryengine.New(demoContract)
+		case hardcode.ENSRegistrar:
+			demoUseCases[demoContract.Address] = subengines.SubEngineENS
+			ensRegistrar = demoContract
+		case hardcode.ENSController:
+			demoUseCases[demoContract.Address] = subengines.SubEngineENS
+			ensController = demoContract
 		}
 
-		watcherAddresses = append(watcherAddresses, contractAddr)
+		for _, event := range demoContract.ContractEvents {
+			watcherTopics = append(watcherTopics, event.ID)
+		}
+		watcherAddresses = append(watcherAddresses, demoContract.Address)
 	}
 
-	// demoEngine only wraps uniswapv3PoolFactoryEngine for now.
+	ensEngine := ensengine.New(ensRegistrar, ensController)
+	demoServices[subengines.SubEngineENS] = ensEngine
+
 	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
 	// and like wise needs their FSMs too.
 	demoEngine := demoengine.New(
@@ -102,7 +117,7 @@ func main() {
 		ethClient,
 		stateDataGateway,
 		watcherAddresses,
-		topics,
+		[][]common.Hash{watcherTopics},
 		filterResultChan, // Only use blockChan, fuck logChan
 		errChan,
 		demoEngine,
