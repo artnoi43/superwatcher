@@ -1,7 +1,6 @@
 package ensengine
 
 import (
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
@@ -17,10 +16,10 @@ type ensEngine struct {
 	ensController contracts.BasicContract
 }
 
-type EnsTestEngineBundle struct {
-	Engine         superwatcher.ServiceEngine // *ensEngine
-	DemoSubEngines map[common.Address]subengines.SubEngineEnum
-	DemoServices   map[subengines.SubEngineEnum]superwatcher.ServiceEngine
+type EnsSubEngineSuite struct {
+	Engine       superwatcher.ServiceEngine // *ensEngine
+	DemoRoutes   map[subengines.SubEngineEnum][]common.Address
+	DemoServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
 func New(registrarContract, controllerContract contracts.BasicContract) superwatcher.ServiceEngine {
@@ -30,7 +29,8 @@ func New(registrarContract, controllerContract contracts.BasicContract) superwat
 	}
 }
 
-func NewEnsSubEngine() *EnsTestEngineBundle {
+// NewEnsSubEngineSuite returns a convenient struct for injecting into demoengine.demoEngine
+func NewEnsSubEngineSuite() *EnsSubEngineSuite {
 	registrarContract := contracts.NewBasicContract(
 		"ENSRegistrar",
 		ensregistrar.EnsRegistrarABI,
@@ -48,11 +48,13 @@ func NewEnsSubEngine() *EnsTestEngineBundle {
 		ensController: controllerContract,
 	}
 
-	return &EnsTestEngineBundle{
+	return &EnsSubEngineSuite{
 		Engine: ensEngine,
-		DemoSubEngines: map[common.Address]subengines.SubEngineEnum{
-			registrarContract.Address:  subengines.SubEngineENS,
-			controllerContract.Address: subengines.SubEngineENS,
+		DemoRoutes: map[subengines.SubEngineEnum][]common.Address{
+			subengines.SubEngineENS: {
+				registrarContract.Address,
+				controllerContract.Address,
+			},
 		},
 		DemoServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
 			subengines.SubEngineENS: ensEngine,
@@ -61,14 +63,11 @@ func NewEnsSubEngine() *EnsTestEngineBundle {
 }
 
 func NewEnsEngine(
-	contractABI abi.ABI,
-	contractEvents []abi.Event,
+	registrarContract contracts.BasicContract,
+	controllerContract contracts.BasicContract,
 ) superwatcher.ServiceEngine {
-	return nil
-	// return &limitOrderEngine{
-	// 	poolFactoryContract: contracts.BasicContract{
-	// 		ContractABI:    contractABI,
-	// 		ContractEvents: contractEvents,
-	// 	},
-	// }
+	return &ensEngine{
+		ensRegistrar:  registrarContract,
+		ensController: controllerContract,
+	}
 }

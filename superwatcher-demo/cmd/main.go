@@ -67,7 +67,7 @@ func main() {
 	errChan := make(chan error)
 
 	// Demo sub-engines
-	demoUseCases := make(map[common.Address]subengines.SubEngineEnum)
+	demoRoutes := make(map[subengines.SubEngineEnum][]common.Address)
 	demoServices := make(map[subengines.SubEngineEnum]superwatcher.ServiceEngine)
 
 	// Hard-coded topic values for testing
@@ -81,19 +81,25 @@ func main() {
 	// so we can't init the engine in the for loop below
 	var ensRegistrar, ensController contracts.BasicContract
 
+	// Topics and addresses to be used by watcher emitter
 	var watcherTopics []common.Hash
-	var watcherAddresses []common.Address
+	watcherAddresses := make([]common.Address, len(demoContracts))
+
 	for contractName, demoContract := range demoContracts {
 		switch contractName {
 		case hardcode.Uniswapv3Factory:
-			demoUseCases[demoContract.Address] = subengines.SubEngineUniswapv3Factory
+			subEngine := subengines.SubEngineUniswapv3Factory
+			demoRoutes[subEngine] = []common.Address{demoContract.Address}
 			demoServices[subengines.SubEngineUniswapv3Factory] = uniswapv3factoryengine.New(demoContract)
-		case hardcode.ENSRegistrar:
-			demoUseCases[demoContract.Address] = subengines.SubEngineENS
-			ensRegistrar = demoContract
-		case hardcode.ENSController:
-			demoUseCases[demoContract.Address] = subengines.SubEngineENS
-			ensController = demoContract
+
+		case hardcode.ENSRegistrar, hardcode.ENSController:
+			subEngine := subengines.SubEngineENS
+			demoRoutes[subEngine] = append(demoRoutes[subEngine], demoContract.Address)
+			if contractName == hardcode.ENSRegistrar {
+				ensRegistrar = demoContract
+			} else {
+				ensController = demoContract
+			}
 		}
 
 		for _, event := range demoContract.ContractEvents {
@@ -108,7 +114,7 @@ func main() {
 	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
 	// and like wise needs their FSMs too.
 	demoEngine := demoengine.New(
-		demoUseCases,
+		demoRoutes,
 		demoServices,
 	)
 

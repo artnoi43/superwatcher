@@ -22,7 +22,7 @@ func TestHandleLogs(t *testing.T) {
 		t.Errorf("error unmarshaling json logs: %s", err.Error())
 	}
 
-	bundle := NewEnsSubEngine()
+	bundle := NewEnsSubEngineSuite()
 	ensEngine := bundle.Engine
 
 	var artifacts []superwatcher.Artifact

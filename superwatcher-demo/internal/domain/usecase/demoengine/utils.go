@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 
@@ -25,12 +26,13 @@ func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEng
 }
 
 func (e *demoEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, bool) {
-	se, ok := e.usecases[log.Address]
-	if !ok {
-		return subengines.SubEngineInvalid, false
+	for subEngine, addresses := range e.routes {
+		if gslutils.Contains(addresses, log.Address) {
+			return subEngine, true
+		}
 	}
 
-	return se, true
+	return subengines.SubEngineInvalid, false
 }
 
 func (e *demoEngine) logToService(log *types.Log) superwatcher.ServiceEngine {

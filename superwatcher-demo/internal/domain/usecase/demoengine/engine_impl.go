@@ -21,7 +21,8 @@ func (e *demoEngine) HandleGoodLogs(
 	[]superwatcher.Artifact,
 	error,
 ) {
-	var retArtifacts []superwatcher.Artifact // Artifacts to return
+	// Artifacts to return - we don't know its size
+	var retArtifacts []superwatcher.Artifact //nolint:prealloc
 
 	logsMap := e.mapLogsToSubEngine(logs)
 	for subEngine, logs := range logsMap {
@@ -60,7 +61,7 @@ func (e *demoEngine) HandleReorgedLogs(
 ) ([]superwatcher.Artifact, error) {
 	logsMap := e.mapLogsToSubEngine(logs)
 
-	var retArtifacts []superwatcher.Artifact // Artifacts to return
+	var retArtifacts []superwatcher.Artifact //nolint:all Artifacts to return - we dont know the size
 	for subEngine, logs := range logsMap {
 		serviceEngine, ok := e.services[subEngine]
 		if !ok {

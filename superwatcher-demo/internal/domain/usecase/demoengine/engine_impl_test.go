@@ -39,8 +39,8 @@ func TestSubEngineENS(t *testing.T) {
 		t.Errorf("failed to read ENS sample logs: %s", err.Error())
 	}
 
-	ensSubEngineBundle := ensengine.NewEnsSubEngine()
-	demoEngine := New(ensSubEngineBundle.DemoSubEngines, ensSubEngineBundle.DemoServices)
+	ensSubEngineSuite := ensengine.NewEnsSubEngineSuite()
+	demoEngine := New(ensSubEngineSuite.DemoRoutes, ensSubEngineSuite.DemoServices)
 
 	// Should have len == 1, since this is just a single call to HandleGoodLogs
 	// and the demoEngine only has 1 sub-engine.

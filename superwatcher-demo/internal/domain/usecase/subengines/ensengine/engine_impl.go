@@ -139,7 +139,6 @@ func (e *ensEngine) handleReorgedLog(
 	ENSArtifact,
 	error,
 ) {
-
 	// Previous artifacts
 	var prevArtifact *ENSArtifact
 	for _, artifact := range artifacts {
