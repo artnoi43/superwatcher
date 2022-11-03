@@ -2,7 +2,6 @@ package ensengine
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -81,12 +80,9 @@ func (e *ensEngine) HandleGoodLog(
 					handleFunc = e.handleNameRegisteredController
 					eventName = nameRegistered
 					// Get previous artifacts
-					for _, artifact := range artifacts {
-						a, ok := artifact.(ENSArtifact)
-						if !ok {
-							logger.Panic("found non-ENS artifact", zap.String("type", reflect.TypeOf(artifact).String()))
-						}
-						prevArtifact = &a
+					prevArtifact = spwArtifactsByTxHash(log, artifacts)
+					if prevArtifact == nil {
+						panic("nil prevArtifact")
 					}
 				}
 			}
@@ -140,15 +136,9 @@ func (e *ensEngine) handleReorgedLog(
 	error,
 ) {
 	// Previous artifacts
-	var prevArtifact *ENSArtifact
-	for _, artifact := range artifacts {
-		a, ok := artifact.(ENSArtifact)
-		if !ok {
-			logger.Panic("found non-ENS artifact", zap.String("type", reflect.TypeOf(artifact).String()))
-		}
-		if a.TxHash == log.TxHash {
-			prevArtifact = &a
-		}
+	prevArtifact := spwArtifactsByTxHash(log, artifacts)
+	if prevArtifact == nil {
+		panic("nil prevArtifact")
 	}
 
 	// Return artifact
