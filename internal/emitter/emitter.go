@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/internal/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/logger/debug"
@@ -22,7 +21,7 @@ type emitter struct {
 	// These fields are used for filtering event logs
 	config     *config.Config
 	client     superwatcher.EthClient
-	tracker    *reorg.Tracker
+	tracker    *blockTracker
 	startBlock uint64
 	addresses  []common.Address
 	topics     [][]common.Hash
@@ -57,7 +56,7 @@ func (e *emitter) Loop(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			e.Shutdown()
-			return ctx.Err()
+			return errors.Wrap(ctx.Err(), ErrEmitterShutdown.Error())
 		default:
 			if err := e.loopFilterLogs(ctx); err != nil {
 				e.emitError(errors.Wrap(err, "error in loopFilterLogs"))
@@ -69,6 +68,10 @@ func (e *emitter) Loop(ctx context.Context) error {
 func (e *emitter) Shutdown() {
 	close(e.filterResultChan)
 	close(e.errChan)
+}
+
+func (e *emitter) SyncsWithEngine() {
+	<-e.syncChan
 }
 
 func (e *emitter) debugMsg(msg string, fields ...zap.Field) {

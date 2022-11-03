@@ -88,7 +88,6 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifa
 }
 
 func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts []superwatcher.Artifact) (PoolFactoryArtifact, error) {
-
 	var returnArtifacts []superwatcher.Artifact
 	logEventKey := log.Topics[0]
 

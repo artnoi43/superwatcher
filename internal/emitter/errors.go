@@ -8,6 +8,8 @@ var (
 
 	errFetchHeader = errors.Wrap(errFetchError, "failed to get block header from ethclient")
 	errFetchLogs   = errors.Wrap(errFetchError, "failed to filter log from ethclient")
+
+	ErrEmitterShutdown = errors.New("emitter was told to shutdown - Loop context done")
 )
 
 // Usage: wrapBlockNumber(err, errFetchLogs, 69)

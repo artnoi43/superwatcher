@@ -1,4 +1,4 @@
-package reorg
+package emitter
 
 import (
 	"fmt"
@@ -11,25 +11,25 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
-// Tracker name needs revision!
-type Tracker struct {
+// blockTracker name needs revision!
+type blockTracker struct {
 	set *sortedset.SortedSet
 }
 
-func NewTracker() *Tracker {
-	return &Tracker{
+func newTracker() *blockTracker {
+	return &blockTracker{
 		set: sortedset.New(),
 	}
 }
 
 // AddBlockInfo add a new *BlockInfo to t
-func (t *Tracker) AddTrackerBlock(b *superwatcher.BlockInfo) {
+func (t *blockTracker) addTrackerBlock(b *superwatcher.BlockInfo) {
 	k := strconv.FormatInt(int64(b.Number), 10)
 	t.set.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }
 
-// ClearUntil removes items in t from left to right.
-func (t *Tracker) ClearUntil(blockNumber uint64) {
+// clearUntil removes items in t from left to right.
+func (t *blockTracker) clearUntil(blockNumber uint64) {
 	for {
 		oldest := t.set.PeekMin()
 		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
@@ -40,7 +40,7 @@ func (t *Tracker) ClearUntil(blockNumber uint64) {
 }
 
 // GetSavedBlockByBlockNumber returns *BlockInfo from t with key blockNumber
-func (t *Tracker) GetTrackerBlockInfo(blockNumber uint64) (*superwatcher.BlockInfo, bool) {
+func (t *blockTracker) getTrackerBlockInfo(blockNumber uint64) (*superwatcher.BlockInfo, bool) {
 	k := strconv.FormatUint(blockNumber, 10)
 	node := t.set.GetByKey(k)
 	if node == nil {
@@ -53,6 +53,6 @@ func (t *Tracker) GetTrackerBlockInfo(blockNumber uint64) (*superwatcher.BlockIn
 	return val, true
 }
 
-func (t *Tracker) Len() int {
+func (t *blockTracker) Len() int {
 	return t.set.GetCount()
 }

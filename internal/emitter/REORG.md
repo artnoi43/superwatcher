@@ -1,11 +1,6 @@
-# Package `reorg`
+# Chain reorganization detection
 
-This package defines struct [`BlockInfo`](./blockinfo.go) and [`tracker`](./tracker.go), which can be used to store information
-about Ethereum blocks that will be used to work with blockchain reorganization.
-
-## Chain reorganization handling
-
-> Handling of blockchain reorganization is in file [`process_reorg.go`](./process_reorg.go)
+> See [`process_reorg.go`](./process_reorg.go)
 
 After getting fresh logs and headers from Ethereum client, superwatcher-watcher uses
 block hashes and "look-back blocks" to deal with chain reorganization.
@@ -30,4 +25,5 @@ The result `processLogsByBlockNumber` will look like this map:
         70: [{block:70, hash:"0x70"}]
     }
 
-`*watcher.FilterLogs` will later lop through `processLogsByBlockNumber`, and, do its stuff (not finalized yet).
+`*watcher.FilterLogs` will later lop through `processLogsByBlockNumber`,
+and, do its stuff (not finalized yet).

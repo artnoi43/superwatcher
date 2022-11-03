@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/internal/domain/usecase/emitter/reorg"
 	"github.com/artnoi43/superwatcher/internal/lib/utils"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
@@ -37,7 +36,8 @@ func (e *emitter) filterLogs(
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
 		eventLogs, err = utils.RetryWithReturn(func() ([]types.Log, error) {
-			return e.client.FilterLogs(ctx, ethereum.FilterQuery{
+			// No error wrap because in retry mode
+			return e.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
 				FromBlock: big.NewInt(int64(fromBlock)),
 				ToBlock:   big.NewInt(int64(toBlock)),
 				Addresses: e.addresses,
@@ -54,7 +54,7 @@ func (e *emitter) filterLogs(
 	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
 		header, err := utils.RetryWithReturn(func() (*types.Header, error) {
-			return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
+			return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
 		})
 		if err != nil {
 			getErrChan <- wrapErrBlockNumber(err, errFetchHeader, blockNumber)
@@ -94,13 +94,13 @@ func (e *emitter) filterLogs(
 
 	// Clear all tracker's blocks before fromBlock - lookBackBlocks
 	e.debugMsg("clearing tracker", zap.Uint64("clearUntil", fromBlock-e.config.LookBackBlocks))
-	e.tracker.ClearUntil(fromBlock - e.config.LookBackBlocks)
+	e.tracker.clearUntil(fromBlock - e.config.LookBackBlocks)
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
-	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := reorg.PopulateInitialMaps(eventLogs, headersByBlockNumber)
+	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := PopulateInitialMaps(eventLogs, headersByBlockNumber)
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ
-	wasReorged := reorg.ProcessReorged(
+	wasReorged := ProcessReorged(
 		e.tracker,
 		fromBlock,
 		toBlock,
@@ -126,7 +126,7 @@ func (e *emitter) filterLogs(
 				zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()),
 			)
 
-			reorgedBlock, foundInTracker := e.tracker.GetTrackerBlockInfo(blockNumber)
+			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
 				logger.Panic(
 					"blockInfo marked as reorged but was not found in tracker",
@@ -149,7 +149,7 @@ func (e *emitter) filterLogs(
 			filterResult.GoodBlocks = append(filterResult.GoodBlocks, b)
 		}
 		// Add ONLY CANONICAL block into tracker
-		e.tracker.AddTrackerBlock(b)
+		e.tracker.addTrackerBlock(b)
 	}
 
 	// ToBlock will be the last good block (not reorged)
@@ -180,7 +180,6 @@ func (e *emitter) filterLogs(
 	)
 
 	// Waits until engine syncs
-	<-e.syncChan
 	e.debugMsg("engine and emitter synced")
 
 	return nil

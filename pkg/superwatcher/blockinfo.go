@@ -8,7 +8,7 @@ import (
 )
 
 // BlockInfo is saved to Tracker and is used
-// to store block information for determining if chain reorg occured.
+// to store block information for determining if chain reorg occurred.
 type BlockInfo struct {
 	Number uint64
 	Hash   common.Hash

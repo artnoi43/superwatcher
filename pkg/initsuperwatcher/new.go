@@ -5,8 +5,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/internal/domain/usecase/emitter"
-	"github.com/artnoi43/superwatcher/internal/domain/usecase/engine"
+	"github.com/artnoi43/superwatcher/internal/emitter"
+	"github.com/artnoi43/superwatcher/internal/engine"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )

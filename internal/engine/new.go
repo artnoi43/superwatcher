@@ -2,7 +2,7 @@ package engine
 
 import (
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/internal/domain/usecase/emitterclient"
+	"github.com/artnoi43/superwatcher/internal/emitterclient"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
@@ -33,7 +33,6 @@ func New(
 	errChan <-chan error,
 	debug bool,
 ) superwatcher.WatcherEngine {
-
 	// TODO: Do we still need EmitterClient?
 	emitterClient := emitterclient.NewEmitterClient(
 		emitterConfig,

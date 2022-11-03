@@ -120,7 +120,6 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 
 					logger.Warn("fromBlock reorged", zap.Any("filterLogStatus", status))
 					continue
-
 				} else if errors.Is(err, errFetchError) {
 					// TODO: decide this
 					// Continue if client failed to get headers/logs

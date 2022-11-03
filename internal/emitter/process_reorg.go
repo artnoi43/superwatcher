@@ -1,4 +1,4 @@
-package reorg
+package emitter
 
 import (
 	"bytes"
@@ -93,7 +93,7 @@ func PopulateInitialMaps(
 // ProcessReorged checks hash fresh-tracker equality, and appends reorged blocks to processLogsByBlockNumber.
 // Note: Go maps are passed by reference, so there's no need to return the map.
 func ProcessReorged(
-	tracker *Tracker,
+	tracker *blockTracker,
 	fromBlock, toBlock uint64,
 	freshHashesByBlockNumber map[uint64]common.Hash,
 	freshLogsByBlockNumber map[uint64][]*types.Log,
@@ -104,7 +104,7 @@ func ProcessReorged(
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
 		// which are not yet 'reorged' at the execution time.
-		trackerBlock, foundInTracker := tracker.GetTrackerBlockInfo(blockNumber)
+		trackerBlock, foundInTracker := tracker.getTrackerBlockInfo(blockNumber)
 		if !foundInTracker {
 			continue
 		}
