@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -74,9 +73,12 @@ func main() {
 		hardcode.ENSController,
 	)
 
+	// Init demo service instances and items with demoContracts
 	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts)
-	fmt.Println("demoRoutes", demoRoutes)
-	fmt.Println("demoServices", demoServices)
+	logger.Debug("init: addresses", zap.Any("emitterAddresses", emitterAddresses))
+	logger.Debug("init: topics", zap.Any("emitterTopics", emitterTopics))
+	logger.Debug("init: demoRoutes", zap.Any("demoRoutes", demoRoutes))
+	logger.Debug("init: demoServices", zap.Any("demoServices", demoServices))
 
 	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
 	// and like wise needs their FSMs too.
