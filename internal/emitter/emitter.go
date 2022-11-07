@@ -71,7 +71,9 @@ func (e *emitter) Shutdown() {
 }
 
 func (e *emitter) SyncsWithEngine() {
+	e.debugMsg("emitter: waiting for engine sync")
 	<-e.syncChan
+	e.debugMsg("emitter: synced with engine")
 }
 
 func (e *emitter) debugMsg(msg string, fields ...zap.Field) {

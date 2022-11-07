@@ -180,7 +180,7 @@ func (e *emitter) filterLogs(
 	)
 
 	// Waits until engine syncs
-	e.debugMsg("engine and emitter synced")
+	e.SyncsWithEngine()
 
 	return nil
 }
