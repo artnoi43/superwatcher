@@ -31,7 +31,7 @@ func (e *ensEngine) unmarshalLogToENS(
 	switch log.Address {
 	case e.ensRegistrar.Address:
 		switch logEvent {
-		case nameRegistered:
+		case eventNameRegistered:
 			if len(log.Topics) < 3 {
 				return errors.Wrap(ErrLogLen, "log topics len < 3")
 			}
@@ -52,7 +52,7 @@ func (e *ensEngine) unmarshalLogToENS(
 
 	case e.ensController.Address:
 		switch logEvent {
-		case nameRegistered:
+		case eventNameRegistered:
 			// Extract data from Controller contract log yopics and data
 			var err error
 			unpacked, err := logutils.UnpackLogDataIntoMap(e.ensController.ContractABI, logEvent, log.Data)

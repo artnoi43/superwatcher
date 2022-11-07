@@ -11,13 +11,13 @@ import (
 type (
 	// demoEngine wraps "subservices' engines"
 	demoEngine struct {
-		routes   map[subengines.SubEngineEnum][]common.Address
+		routes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
 		services map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 	}
 )
 
 func New(
-	routes map[subengines.SubEngineEnum][]common.Address,
+	routes map[subengines.SubEngineEnum]map[common.Address][]common.Hash,
 	services map[subengines.SubEngineEnum]superwatcher.ServiceEngine,
 ) superwatcher.ServiceEngine {
 	return &demoEngine{

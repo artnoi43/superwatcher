@@ -1,12 +1,14 @@
 package hardcode
 
 import (
+	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/enscontroller"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/ensregistrar"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/oneinchlimitorder"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/uniswapv3factory"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/uniswapv3pool"
+	"go.uber.org/zap"
 )
 
 // These are the hard-coded keys
@@ -51,10 +53,15 @@ var contractTopicsMap = map[string][]string{
 func DemoContracts(contractNames ...string) map[string]contracts.BasicContract {
 	basicContracts := make(map[string]contracts.BasicContract)
 
-	for contractName, contractABI := range contractABIsMap {
+	for _, contractName := range contractNames {
+		contractABI, ok := contractABIsMap[contractName]
+		if !ok {
+			logger.Debug("hardcoded contract not found", zap.String("contractName", contractName))
+			continue
+		}
+
 		topics := contractTopicsMap[contractName]
 		address := contractAddressesMap[contractName]
-
 		basicContracts[contractName] = contracts.NewBasicContract(
 			contractName,
 			contractABI,

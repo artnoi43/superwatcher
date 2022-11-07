@@ -22,7 +22,7 @@ func (e *ensEngine) handleNameRegisteredRegistrar(
 	var name entity.ENS
 	// We'll only get ENS Name ID from contract Registrar
 	switch logEvent {
-	case nameRegistered:
+	case eventNameRegistered:
 		if err := e.unmarshalLogToENS(logEvent, log, &name); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal ENS registrar log to entity.ENS")
 		}
@@ -54,9 +54,12 @@ func (e *ensEngine) handleNameRegisteredController(
 	if prevArtifact == nil {
 		panic("handleNameRegisteredController: got nil prevArtifact")
 	}
+	if prevArtifact.BlockEvents == nil {
+		prevArtifact.BlockEvents = make(map[ENSEvent]uint64)
+	}
 
 	switch logEvent {
-	case nameRegistered:
+	case eventNameRegistered:
 		if len(log.Topics) < 3 {
 			panic("bad log with < 3 topics - should not happen")
 		}

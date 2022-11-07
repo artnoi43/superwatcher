@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -66,10 +67,6 @@ func main() {
 	filterResultChan := make(chan *superwatcher.FilterResult)
 	errChan := make(chan error)
 
-	// Demo sub-engines
-	demoRoutes := make(map[subengines.SubEngineEnum][]common.Address)
-	demoServices := make(map[subengines.SubEngineEnum]superwatcher.ServiceEngine)
-
 	// Hard-coded topic values for testing
 	demoContracts := hardcode.DemoContracts(
 		hardcode.Uniswapv3Factory,
@@ -77,39 +74,9 @@ func main() {
 		hardcode.ENSController,
 	)
 
-	// ENS sub-engine has 2 contracts
-	// so we can't init the engine in the for loop below
-	var ensRegistrar, ensController contracts.BasicContract
-
-	// Topics and addresses to be used by watcher emitter
-	var watcherTopics []common.Hash
-	watcherAddresses := make([]common.Address, len(demoContracts))
-
-	for contractName, demoContract := range demoContracts {
-		switch contractName {
-		case hardcode.Uniswapv3Factory:
-			subEngine := subengines.SubEngineUniswapv3Factory
-			demoRoutes[subEngine] = []common.Address{demoContract.Address}
-			demoServices[subengines.SubEngineUniswapv3Factory] = uniswapv3factoryengine.New(demoContract)
-
-		case hardcode.ENSRegistrar, hardcode.ENSController:
-			subEngine := subengines.SubEngineENS
-			demoRoutes[subEngine] = append(demoRoutes[subEngine], demoContract.Address)
-			if contractName == hardcode.ENSRegistrar {
-				ensRegistrar = demoContract
-			} else {
-				ensController = demoContract
-			}
-		}
-
-		for _, event := range demoContract.ContractEvents {
-			watcherTopics = append(watcherTopics, event.ID)
-		}
-		watcherAddresses = append(watcherAddresses, demoContract.Address)
-	}
-
-	ensEngine := ensengine.New(ensRegistrar, ensController)
-	demoServices[subengines.SubEngineENS] = ensEngine
+	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts)
+	fmt.Println("demoRoutes", demoRoutes)
+	fmt.Println("demoServices", demoServices)
 
 	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
 	// and like wise needs their FSMs too.
@@ -122,8 +89,8 @@ func main() {
 		conf,
 		ethClient,
 		stateDataGateway,
-		watcherAddresses,
-		[][]common.Hash{watcherTopics},
+		emitterAddresses,
+		[][]common.Hash{emitterTopics},
 		filterResultChan, // Only use blockChan, fuck logChan
 		errChan,
 		demoEngine,
@@ -162,4 +129,61 @@ func main() {
 	}()
 
 	wg.Wait()
+}
+
+func contractsToServices(
+	demoContracts map[string]contracts.BasicContract,
+) (
+	[]common.Address,
+	[]common.Hash,
+	map[subengines.SubEngineEnum]map[common.Address][]common.Hash, // demoRoutes
+	map[subengines.SubEngineEnum]superwatcher.ServiceEngine, // demoServices
+) {
+	// Demo sub-engines
+	demoRoutes := make(map[subengines.SubEngineEnum]map[common.Address][]common.Hash)
+	demoServices := make(map[subengines.SubEngineEnum]superwatcher.ServiceEngine)
+
+	// ENS sub-engine has 2 contracts
+	// so we can't init the engine in the for loop below
+	var ensRegistrar, ensController contracts.BasicContract
+
+	// Topics and addresses to be used by watcher emitter
+	var emitterTopics []common.Hash
+	var emitterAddresses []common.Address
+
+	for contractName, demoContract := range demoContracts {
+		var contractTopics = make([]common.Hash, len(demoContract.ContractEvents))
+		var subEngine subengines.SubEngineEnum
+
+		switch contractName {
+		case hardcode.Uniswapv3Factory:
+			subEngine = subengines.SubEngineUniswapv3Factory
+			demoServices[subEngine] = uniswapv3factoryengine.New(demoContract)
+
+		case hardcode.ENSRegistrar, hardcode.ENSController:
+			// demoServices for ENS will be created outside of this for loop
+			subEngine = subengines.SubEngineENS
+			if contractName == hardcode.ENSRegistrar {
+				ensRegistrar = demoContract
+			} else {
+				ensController = demoContract
+			}
+		}
+
+		for i, event := range demoContract.ContractEvents {
+			contractTopics[i] = event.ID
+		}
+
+		if demoRoutes[subEngine] == nil {
+			demoRoutes[subEngine] = make(map[common.Address][]common.Hash)
+		}
+		demoRoutes[subEngine][demoContract.Address] = contractTopics
+		emitterAddresses = append(emitterAddresses, demoContract.Address)
+	}
+
+	// Initialize ensEngine
+	ensEngine := ensengine.New(ensRegistrar, ensController)
+	demoServices[subengines.SubEngineENS] = ensEngine
+
+	return emitterAddresses, emitterTopics, demoRoutes, demoServices
 }

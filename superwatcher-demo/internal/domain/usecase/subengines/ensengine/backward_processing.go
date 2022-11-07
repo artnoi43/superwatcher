@@ -33,7 +33,7 @@ func (e *ensEngine) revertNameRegisteredRegistrar(
 
 	// We'll only get ENS Name ID from contract Registrar
 	switch logEvent {
-	case nameRegistered:
+	case eventNameRegistered:
 		id := log.Topics[1].String()
 		if id != name.ID {
 			logger.Panic("prevArtifact ENS ID != log ENS ID", zap.String("prevArtifact ID", name.ID), zap.String("log ID", id))

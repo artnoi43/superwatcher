@@ -26,10 +26,15 @@ func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEng
 }
 
 func (e *demoEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, bool) {
-	for subEngine, addresses := range e.routes {
-		if gslutils.Contains(addresses, log.Address) {
-			return subEngine, true
+	for subEngine, addrTopics := range e.routes {
+		for address, topics := range addrTopics {
+			if address == log.Address {
+				if gslutils.Contains(topics, log.Topics[0]) {
+					return subEngine, true
+				}
+			}
 		}
+
 	}
 
 	return subengines.SubEngineInvalid, false

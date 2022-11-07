@@ -66,9 +66,9 @@ func (e *ensEngine) HandleGoodLog(
 			if logEventKey == event.ID {
 				switch event.Name {
 				// New domain registered from both contracts
-				case nameRegistered:
+				case eventNameRegistered:
 					handleFunc = e.handleNameRegisteredRegistrar
-					eventName = nameRegistered
+					eventName = eventNameRegistered
 				}
 			}
 		}
@@ -76,9 +76,9 @@ func (e *ensEngine) HandleGoodLog(
 		for _, event := range e.ensController.ContractEvents {
 			if logEventKey == event.ID {
 				switch event.Name {
-				case nameRegistered:
+				case eventNameRegistered:
 					handleFunc = e.handleNameRegisteredController
-					eventName = nameRegistered
+					eventName = eventNameRegistered
 					// Get previous artifacts
 					prevArtifact = spwArtifactsByTxHash(log, artifacts)
 					if prevArtifact == nil {
@@ -152,7 +152,7 @@ func (e *ensEngine) handleReorgedLog(
 			// but it's not yet finished now.
 			if logEventKey == event.ID {
 				switch event.Name {
-				case nameRegistered:
+				case eventNameRegistered:
 					reorgArtifact, err := e.revertNameRegisteredRegistrar(log, event.Name, prevArtifact)
 					if err != nil {
 						return artifact, errors.Wrap(err, "failed to create new name from log")
@@ -168,7 +168,7 @@ func (e *ensEngine) handleReorgedLog(
 			// but it's not yet finished now.
 			if logEventKey == event.ID {
 				switch event.Name {
-				case nameRegistered:
+				case eventNameRegistered:
 					reorgArtifact, err := e.revertNameRegisteredController(log, event.Name, prevArtifact)
 					if err != nil {
 						return artifact, errors.Wrap(err, "failed to create new name from log")

@@ -11,6 +11,12 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/ensregistrar"
 )
 
+const (
+	eventNameRegistered string = "NameRegistered"
+)
+
+var ensEngineEvents = []string{eventNameRegistered}
+
 type ensEngine struct {
 	ensRegistrar  contracts.BasicContract
 	ensController contracts.BasicContract
@@ -18,7 +24,7 @@ type ensEngine struct {
 
 type EnsSubEngineSuite struct {
 	Engine       superwatcher.ServiceEngine // *ensEngine
-	DemoRoutes   map[subengines.SubEngineEnum][]common.Address
+	DemoRoutes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
 	DemoServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
@@ -35,25 +41,35 @@ func NewEnsSubEngineSuite() *EnsSubEngineSuite {
 		"ENSRegistrar",
 		ensregistrar.EnsRegistrarABI,
 		"0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85",
-		nameRegistered,
+		ensEngineEvents...,
 	)
 	controllerContract := contracts.NewBasicContract(
 		"ENSController",
 		enscontroller.EnsControllerABI,
 		"0x283af0b28c62c092c9727f1ee09c02ca627eb7f5",
-		nameRegistered,
+		ensEngineEvents...,
 	)
 	ensEngine := &ensEngine{
 		ensRegistrar:  registrarContract,
 		ensController: controllerContract,
 	}
 
+	var registrarTopics = make([]common.Hash, len(registrarContract.ContractEvents))
+	for i, event := range registrarContract.ContractEvents {
+		registrarTopics[i] = event.ID
+	}
+
+	var controllerTopics = make([]common.Hash, len(controllerContract.ContractEvents))
+	for i, event := range controllerContract.ContractEvents {
+		controllerTopics[i] = event.ID
+	}
+
 	return &EnsSubEngineSuite{
 		Engine: ensEngine,
-		DemoRoutes: map[subengines.SubEngineEnum][]common.Address{
+		DemoRoutes: map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
 			subengines.SubEngineENS: {
-				registrarContract.Address,
-				controllerContract.Address,
+				registrarContract.Address:  registrarTopics,
+				controllerContract.Address: controllerTopics,
 			},
 		},
 		DemoServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{

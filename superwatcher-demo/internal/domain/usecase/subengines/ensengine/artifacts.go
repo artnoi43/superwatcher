@@ -22,8 +22,6 @@ const (
 	RevertRegisterController ENSEvent = Revert + RegisteredController
 	Transferred              ENSEvent = "Transferred"
 	RevertTransferred        ENSEvent = Revert + Transferred
-
-	nameRegistered string = "NameRegistered"
 )
 
 type ENSArtifact struct {
