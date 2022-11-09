@@ -2,9 +2,8 @@ package superwatcher
 
 import "context"
 
-// Code that imports watcher should only use this method.
 type WatcherEmitter interface {
-	Loop(context.Context) error
-	SyncsWithEngine()
-	Shutdown()
+	Loop(context.Context) error // Main emitter loop
+	SyncsWithEngine()           // Waits until engine is done processing the last batch
+	Shutdown()                  // Shutdown and closing Go channels
 }

@@ -2,12 +2,11 @@ package superwatcher
 
 import "github.com/artnoi43/superwatcher/config"
 
-// EmitterClient interfaces with emitter.WatcherEmitter via these methods
+// EmitterClient interfaces with WatcherEmitter
 type EmitterClient interface {
-	WatcherResult() *FilterResult
-	WatcherEmitterSync()
-	WatcherError() error
-	WatcherConfig() *config.Config
-
-	Shutdown()
+	WatcherResult() *FilterResult  // Returns result from WatherEmitter to caller
+	WatcherEmitterSync()           // Sends sync signal to WatcherEmitter so it can continue
+	WatcherError() error           // Returns error sent by WatcherEmitter
+	WatcherConfig() *config.Config // Returns config used to create its WatcherEmitter
+	Shutdown()                     // Closes WatcherEmitter comms channels
 }

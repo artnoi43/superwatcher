@@ -141,7 +141,7 @@ func (e *emitter) filterLogs(
 
 		// Populate blockInfo with fresh info
 		// Old, unreorged blocks will not be added to filterResult.GoodBlocks
-		b := superwatcher.NewBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
+		b := superwatcher.NewBlankBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
 		b.Logs = freshLogsByBlockNumber[blockNumber]
 
 		// Publish block with > 0 block

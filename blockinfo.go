@@ -7,15 +7,18 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// BlockInfo is saved to Tracker and is used
-// to store block information for determining if chain reorg occurred.
+// BlockInfo represents the bare minimum info needed for superwatcher.
+// It is used in WatcherEngine to detect chain reorgs, and is embedded
+// in FilterResult.
 type BlockInfo struct {
 	Number uint64
 	Hash   common.Hash
-	Logs   []*types.Log // will be removed?
+	Logs   []*types.Log
 }
 
-func NewBlockInfo(
+// NewBlankBlockInfo returns a new BlockInfo sans the event logs.
+// Callers will have to populate the logs themselves.
+func NewBlankBlockInfo(
 	blockNumber uint64,
 	blockHash common.Hash,
 ) *BlockInfo {

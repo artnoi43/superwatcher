@@ -30,6 +30,4 @@ func (e *emitter) emitError(err error) {
 	if err != nil {
 		e.errChan <- err
 	}
-
-	logger.Panic("nil error got sent to emitError")
 }
