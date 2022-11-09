@@ -2,37 +2,34 @@ package initsuperwatcher
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/internal/emitter"
-	"github.com/artnoi43/superwatcher/internal/engine"
+	"github.com/artnoi43/superwatcher/pkg/components/emitter"
+	"github.com/artnoi43/superwatcher/pkg/components/engine"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 )
 
-// New returns the default implementation of emitter.WatcherEmitter and emitter.WatcherEngine.
-// These two objects are paired, and this is the preferred way of initializting superwatcher.
+// New returns default implementations of WatcherEmitter and WatcherEngine.
+// The EmitterClient is initialized and embedded to the returned engine within this function.
+// This is the preferred way for initializing superwatcher components.
 func New(
 	conf *config.Config,
-	ethClient *ethclient.Client,
+	ethClient superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
-
-	// TODO: For prod, should we create chans inside this func instead?
-	filterResultChan chan *superwatcher.FilterResult,
-	errChan chan error,
 	serviceEngine superwatcher.ServiceEngine,
 	debug bool,
 ) (
 	superwatcher.WatcherEmitter,
 	superwatcher.WatcherEngine,
 ) {
-
 	syncChan := make(chan struct{})
+	filterResultChan := make(chan *superwatcher.FilterResult)
+	errChan := make(chan error)
 
-	emitter := emitter.New(
+	watcherEmitter := emitter.New(
 		conf,
 		ethClient,
 		stateDataGateway,
@@ -44,7 +41,7 @@ func New(
 		debug,
 	)
 
-	engine := engine.New(
+	watcherEngine := engine.NewWithClient(
 		conf,
 		serviceEngine,
 		stateDataGateway,
@@ -54,5 +51,5 @@ func New(
 		debug,
 	)
 
-	return emitter, engine
+	return watcherEmitter, watcherEngine
 }

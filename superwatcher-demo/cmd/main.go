@@ -49,7 +49,7 @@ func main() {
 		panic("nil redis")
 	}
 
-	stateDataGateway := watcherstate.NewWatcherStateRedisClient(
+	stateDataGateway := watcherstate.NewRedisStateDataGateway(
 		chain,
 		"superwatcher-demo",
 		rdb,
@@ -62,9 +62,6 @@ func main() {
 		syscall.SIGQUIT,
 		syscall.SIGTERM,
 	)
-
-	filterResultChan := make(chan *superwatcher.FilterResult)
-	errChan := make(chan error)
 
 	// Hard-coded topic values for testing
 	demoContracts := hardcode.DemoContracts(
@@ -93,8 +90,6 @@ func main() {
 		stateDataGateway,
 		emitterAddresses,
 		[][]common.Hash{emitterTopics},
-		filterResultChan, // Only use blockChan, fuck logChan
-		errChan,
 		demoEngine,
 		true,
 	)

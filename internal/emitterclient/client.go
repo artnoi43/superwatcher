@@ -19,22 +19,6 @@ type emitterClient struct {
 	debug bool
 }
 
-func NewEmitterClient(
-	emitterConfig *config.Config,
-	emitterSyncChan chan<- struct{},
-	filterResultChan <-chan *superwatcher.FilterResult,
-	errChan <-chan error,
-	debug bool,
-) superwatcher.EmitterClient {
-	return &emitterClient{
-		emitterConfig:    emitterConfig,
-		filterResultChan: filterResultChan,
-		emitterSyncChan:  emitterSyncChan,
-		errChan:          errChan,
-		debug:            debug,
-	}
-}
-
 func (c *emitterClient) Shutdown() {
 	c.debugMsg("emitterClient.Shutdown() called")
 	if c.emitterSyncChan != nil {
