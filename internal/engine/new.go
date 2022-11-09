@@ -1,10 +1,10 @@
 package engine
 
 import (
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitterclient"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
 // newWatcherEngine returns default implementation of WatcherEngine

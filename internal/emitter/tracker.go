@@ -7,8 +7,8 @@ import (
 
 	"github.com/wangjia184/sortedset"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
 // blockTracker name needs revision!

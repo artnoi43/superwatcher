@@ -11,12 +11,12 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/demoengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"

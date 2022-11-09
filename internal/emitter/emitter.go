@@ -7,11 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/logger/debug"
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
 // emitter implements Watcher, and other than Config,

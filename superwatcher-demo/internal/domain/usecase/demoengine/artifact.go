@@ -1,7 +1,7 @@
 package demoengine
 
 import (
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
+	"github.com/artnoi43/superwatcher"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 )

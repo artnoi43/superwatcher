@@ -3,9 +3,9 @@ package emitterclient
 import (
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/logger/debug"
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
 // emitterClient is the actual implementation of Client.

@@ -3,7 +3,7 @@ package ensengine
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
+	"github.com/artnoi43/superwatcher"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"

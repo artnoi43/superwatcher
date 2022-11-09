@@ -4,11 +4,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter"
 	"github.com/artnoi43/superwatcher/internal/engine"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
 )
 
 // New returns the default implementation of emitter.WatcherEmitter and emitter.WatcherEngine.

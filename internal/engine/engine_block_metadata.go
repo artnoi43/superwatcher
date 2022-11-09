@@ -3,7 +3,7 @@ package engine
 import (
 	"fmt"
 
-	"github.com/artnoi43/superwatcher/pkg/superwatcher"
+	"github.com/artnoi43/superwatcher"
 )
 
 type blockMetadata struct {
