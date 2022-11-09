@@ -6,17 +6,21 @@ with [chain reorganization](https://www.alchemy.com/overviews/what-is-a-reorg) h
 The code in this project is organized into the following packages:
 
 1. Top-level package `"github.com/artnoi43/superwatcher"` (public)
+
     This package exposes core interfaces to the superwatcher.
 
 2. `pkg` (public)
+
     This package defines extra (non-core) interfaces and some implementations
     deemed not central to the business logic of the services, e.g. enums, data gateway,
     and superwatcher components' initialization functions.
 
 3. `config` (public)
+
     This package defines basic superwatcher configuration.
 
 4. `internal` (private)
+
     This _private_ package defines the actual implementations of interfaces defined in
     the top-level package. User are _not_ expected to directly interact with the code here.
 
