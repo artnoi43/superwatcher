@@ -23,7 +23,7 @@ The code in this project is organized into the following packages:
 ## superwatcher components
 
 There are 3 main superwatcher components - (1) the emitter, (2) the emitter client,
-and (2) the engine. The flowchart below illustrates how the 3 components work together.
+and (3) the engine. The flowchart below illustrates how the 3 components work together.
 
                             Blockchain
                                 │
