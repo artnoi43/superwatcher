@@ -17,10 +17,10 @@ import (
 // emitter implements Watcher, and other than Config,
 // other fields of this structure are defined as ifaces,
 // to facil mock testing.
-type emitter[H superwatcher.EmitterBlockHeader] struct {
+type emitter struct {
 	// These fields are used for filtering event logs
 	config     *config.Config
-	client     superwatcher.EthClient[H]
+	client     superwatcher.EthClient
 	tracker    *blockTracker
 	startBlock uint64
 	addresses  []common.Address
@@ -50,7 +50,7 @@ type Config struct {
 
 // Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.
 // When ctx is camcled else where, Loop calls *emitter.shutdown and returns ctx.Err()
-func (e *emitter[H]) Loop(ctx context.Context) error {
+func (e *emitter) Loop(ctx context.Context) error {
 	for {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
@@ -65,17 +65,17 @@ func (e *emitter[H]) Loop(ctx context.Context) error {
 	}
 }
 
-func (e *emitter[H]) Shutdown() {
+func (e *emitter) Shutdown() {
 	close(e.filterResultChan)
 	close(e.errChan)
 }
 
-func (e *emitter[H]) SyncsWithEngine() {
+func (e *emitter) SyncsWithEngine() {
 	e.debugMsg("emitter: waiting for engine sync")
 	<-e.syncChan
 	e.debugMsg("emitter: synced with engine")
 }
 
-func (e *emitter[H]) debugMsg(msg string, fields ...zap.Field) {
+func (e *emitter) debugMsg(msg string, fields ...zap.Field) {
 	debug.DebugMsg(e.debug, msg, fields...)
 }

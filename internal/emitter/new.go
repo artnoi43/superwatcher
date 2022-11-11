@@ -11,9 +11,9 @@ import (
 )
 
 // NewEmitter initializes contract info from config
-func New[H superwatcher.EmitterBlockHeader](
+func New(
 	conf *config.Config,
-	client superwatcher.EthClient[H],
+	client superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
@@ -22,8 +22,11 @@ func New[H superwatcher.EmitterBlockHeader](
 	errChan chan<- error,
 	debug bool,
 ) superwatcher.WatcherEmitter {
-	logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
-	return &emitter[H]{
+	if debug {
+		logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
+	}
+
+	return &emitter{
 		config:           conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,

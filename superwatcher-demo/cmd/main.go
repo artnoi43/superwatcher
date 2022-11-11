@@ -16,6 +16,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/enums"
+	"github.com/artnoi43/superwatcher/pkg/ethclientwrapper"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
@@ -87,7 +88,8 @@ func main() {
 
 	watcherEmitter, watcherEngine := initsuperwatcher.New[*types.Header](
 		conf,
-		ethClient,
+		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
+		ethclientwrapper.WrapEthClient(ethClient),
 		stateDataGateway,
 		emitterAddresses,
 		[][]common.Hash{emitterTopics},

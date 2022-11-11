@@ -7,6 +7,8 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/artnoi43/superwatcher"
 )
 
 // chooseBlock returns a block at that |blockNumber| from
@@ -66,7 +68,7 @@ func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	return 20000000, nil
 }
 
-func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (block, error) {
+func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.EmitterBlockHeader, error) {
 	blockNumber := number.Uint64()
 	b := r.chooseBlock(blockNumber)
 

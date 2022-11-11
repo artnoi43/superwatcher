@@ -13,9 +13,15 @@ type EmitterBlockHeader interface {
 	Hash() common.Hash
 }
 
-// EthClient defines all *ethclient.Client methods used in superwatcher
-type EthClient[H EmitterBlockHeader] interface {
+// EthClient defines all *ethclient.Client methods used in superwatcher.
+// To use a normal *ethclient.Client with superwatcher, wrap it first
+// with ethclientwrapper.WrapEthClient.
+type EthClient interface {
 	BlockNumber(context.Context) (uint64, error)
 	FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error)
-	HeaderByNumber(ctx context.Context, number *big.Int) (H, error)
+
+	// HeaderByNumber returns EmitterBlockHeader so that we can easily mock
+	// a client without having to construct *types.Header ourselves.
+	// TODO: Perhaps returns the real *types.Header if we have time?
+	HeaderByNumber(ctx context.Context, number *big.Int) (EmitterBlockHeader, error)
 }

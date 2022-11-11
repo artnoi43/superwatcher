@@ -20,7 +20,7 @@ import (
 // and sends *types.Log and *lib.BlockInfo through w.logChan and w.reorgChan respectively.
 // If an error is encountered, filterLogs returns with error.
 // filterLogs should not be the one sending the error through w.errChan.
-func (e *emitter[H]) filterLogs(
+func (e *emitter) filterLogs(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
@@ -30,7 +30,7 @@ func (e *emitter[H]) filterLogs(
 	var eventLogs []types.Log
 	var err error
 
-	headersByBlockNumber := make(map[uint64]H)
+	headersByBlockNumber := make(map[uint64]superwatcher.EmitterBlockHeader)
 	getErrChan := make(chan error)
 
 	// getLogs calls FilterLogs from fromBlock to toBlock
@@ -53,7 +53,7 @@ func (e *emitter[H]) filterLogs(
 
 	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
-		header, err := utils.RetryWithReturn(func() (H, error) {
+		header, err := utils.RetryWithReturn(func() (superwatcher.EmitterBlockHeader, error) {
 			return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
 		})
 		if err != nil {

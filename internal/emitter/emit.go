@@ -7,7 +7,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-func (e *emitter[H]) emitFilterResult(result *superwatcher.FilterResult) {
+func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 	if e.filterResultChan == nil {
 		e.debugMsg("emitFilterResult", zap.String("debug", "filterResultChan is nil"))
 		return
@@ -22,7 +22,7 @@ func (e *emitter[H]) emitFilterResult(result *superwatcher.FilterResult) {
 	logger.Panic("nil filterResult got sent to emitFilterREsult")
 }
 
-func (e *emitter[H]) emitError(err error) {
+func (e *emitter) emitError(err error) {
 	if e.errChan == nil {
 		e.debugMsg("emitError", zap.String("debug", "errChan is nil"))
 	}

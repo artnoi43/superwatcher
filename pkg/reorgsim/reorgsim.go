@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/core/types"
+
+	"github.com/artnoi43/superwatcher"
 )
 
 // reorgSim implements superwatcher.EthClient[block],
@@ -21,7 +22,7 @@ type reorgSim struct {
 }
 
 // newReorgSim returns a new reorgSim with hard-coded good and reorged chains.
-func newReorgSim(lookBack, lastRecord, reorgedAt uint64) superwatcher.EthClient[block] {
+func newReorgSim(lookBack, lastRecord, reorgedAt uint64) superwatcher.EthClient {
 	mappedLogs := initLogs()
 	chain, reorgedChain := newBlockChain(mappedLogs, reorgedAt)
 

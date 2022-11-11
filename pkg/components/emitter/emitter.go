@@ -12,9 +12,9 @@ import (
 )
 
 // New returns a new, default superwatcher.WatcherEmitter.
-func New[H superwatcher.EmitterBlockHeader](
+func New(
 	conf *config.Config,
-	client superwatcher.EthClient[H],
+	client superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,

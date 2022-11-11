@@ -17,7 +17,7 @@ type filterLogStatus struct {
 	ToBlock    uint64 `json:"toBlock"`
 }
 
-func (e *emitter[H]) loopFilterLogs(ctx context.Context) error {
+func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	sleep := func() {
 		time.Sleep(time.Second * time.Duration(e.config.LoopInterval))
 	}

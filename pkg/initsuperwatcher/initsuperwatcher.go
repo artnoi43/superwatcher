@@ -15,7 +15,7 @@ import (
 // This is the preferred way for initializing superwatcher components.
 func New[H superwatcher.EmitterBlockHeader](
 	conf *config.Config,
-	ethClient superwatcher.EthClient[H],
+	ethClient superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
