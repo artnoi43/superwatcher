@@ -13,7 +13,7 @@ import (
 // New returns default implementations of WatcherEmitter and WatcherEngine.
 // The EmitterClient is initialized and embedded to the returned engine within this function.
 // This is the preferred way for initializing superwatcher components.
-func New[H superwatcher.EmitterBlockHeader](
+func New(
 	conf *config.Config,
 	ethClient superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,

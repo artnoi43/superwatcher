@@ -11,6 +11,8 @@ import (
 	"github.com/artnoi43/superwatcher"
 )
 
+// ethClientWrapper wraps method HeaderByNumber to implement superwatcher.EthClient.
+// This is done so that we can mock the blocks without having to mock *types.Header.
 type ethClientWrapper struct {
 	client *ethclient.Client
 }
@@ -29,6 +31,6 @@ func (w *ethClientWrapper) BlockNumber(ctx context.Context) (uint64, error) {
 	return w.client.BlockNumber(ctx)
 }
 
-func (w *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.EmitterBlockHeader, error) {
+func (w *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	return w.client.HeaderByNumber(ctx, number)
 }

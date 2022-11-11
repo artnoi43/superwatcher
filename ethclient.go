@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type EmitterBlockHeader interface {
+type BlockHeader interface {
 	Hash() common.Hash
 }
 
@@ -23,5 +23,5 @@ type EthClient interface {
 	// HeaderByNumber returns EmitterBlockHeader so that we can easily mock
 	// a client without having to construct *types.Header ourselves.
 	// TODO: Perhaps returns the real *types.Header if we have time?
-	HeaderByNumber(ctx context.Context, number *big.Int) (EmitterBlockHeader, error)
+	HeaderByNumber(ctx context.Context, number *big.Int) (BlockHeader, error)
 }

@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -86,7 +85,7 @@ func main() {
 		demoServices,
 	)
 
-	watcherEmitter, watcherEngine := initsuperwatcher.New[*types.Header](
+	watcherEmitter, watcherEngine := initsuperwatcher.New(
 		conf,
 		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
 		ethclientwrapper.WrapEthClient(ethClient),

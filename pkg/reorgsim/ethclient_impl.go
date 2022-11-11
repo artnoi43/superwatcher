@@ -68,7 +68,7 @@ func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	return 20000000, nil
 }
 
-func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.EmitterBlockHeader, error) {
+func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	blockNumber := number.Uint64()
 	b := r.chooseBlock(blockNumber)
 

@@ -12,9 +12,9 @@ import (
 )
 
 // PopulateInitialMaps collects **fresh** hashes and logs into 3 maps
-func PopulateInitialMaps[H superwatcher.EmitterBlockHeader](
+func PopulateInitialMaps(
 	freshLogs []types.Log,
-	freshHeaders map[uint64]H,
+	freshHeaders map[uint64]superwatcher.BlockHeader,
 ) (
 	freshHashesByBlockNumber map[uint64]common.Hash,
 	freshLogsByBlockNumber map[uint64][]*types.Log,

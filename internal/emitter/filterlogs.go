@@ -30,7 +30,7 @@ func (e *emitter) filterLogs(
 	var eventLogs []types.Log
 	var err error
 
-	headersByBlockNumber := make(map[uint64]superwatcher.EmitterBlockHeader)
+	headersByBlockNumber := make(map[uint64]superwatcher.BlockHeader)
 	getErrChan := make(chan error)
 
 	// getLogs calls FilterLogs from fromBlock to toBlock
@@ -53,7 +53,7 @@ func (e *emitter) filterLogs(
 
 	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
-		header, err := utils.RetryWithReturn(func() (superwatcher.EmitterBlockHeader, error) {
+		header, err := utils.RetryWithReturn(func() (superwatcher.BlockHeader, error) {
 			return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
 		})
 		if err != nil {
