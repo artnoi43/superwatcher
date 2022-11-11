@@ -10,9 +10,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func TestFoo(t *testing.T) {
+func initChains() (blockChain, blockChain) {
 	mappedLogs := initLogs()
-	chain, reorgedChain := newBlockChain(mappedLogs, 15944444)
+	return newBlockChain(mappedLogs, 15944444)
+}
+
+func TestFoo(t *testing.T) {
+	chain, reorgedChain := initChains()
 
 	fmt.Println("old chain")
 	prontBlockChain(chain)

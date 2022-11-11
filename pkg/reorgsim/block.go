@@ -27,13 +27,14 @@ func (b block) Hash() common.Hash {
 func (b *block) reorg() block {
 	// TODO: implement
 	newBlockHash := randomHash(b.blockNumber)
-	newTxHash := randomHash(b.blockNumber + 696969)
-	var logs []types.Log
+
+	logs := make([]types.Log, len(b.logs))
 	copy(logs, b.logs)
 
-	for _, log := range logs {
-		log.BlockHash = newBlockHash
-		log.TxHash = newTxHash
+	// Use index to access logs so that the internal array members change value too.
+	for i := range logs {
+		logs[i].BlockHash = newBlockHash
+		logs[i].TxHash = deterministicRandomHash(logs[i].TxHash.Big().Uint64() + 696969)
 	}
 
 	return block{

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/artnoi43/superwatcher"
@@ -52,6 +53,16 @@ func mapLogsToNumber(logs []types.Log) map[uint64][]types.Log {
 	}
 
 	return m
+}
+
+func mapLogsToTxHash(logs []types.Log) map[common.Hash][]types.Log {
+	m := make(map[common.Hash][]types.Log)
+	for _, log := range logs {
+		m[log.TxHash] = append(m[log.TxHash], log)
+	}
+
+	return m
+
 }
 
 func readJsonLogs(filename string) []types.Log {

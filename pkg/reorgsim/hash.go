@@ -19,3 +19,7 @@ func randomHash(i uint64) common.Hash {
 	}
 	return common.BigToHash(b)
 }
+
+func deterministicRandomHash(i uint64) common.Hash {
+	return common.BigToHash(big.NewInt(int64(i)))
+}

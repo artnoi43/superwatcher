@@ -38,6 +38,7 @@ func newBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 	reorgedChain := make(blockChain)
 	for blockNumber, oldBlock := range chain {
 		if blockNumber >= reorgedAt {
+			// Reorg this block and saves back to reorgedChain
 			reorgedBlock := oldBlock.reorg()
 			reorgedChain[blockNumber] = reorgedBlock
 		}
