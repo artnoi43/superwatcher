@@ -7,13 +7,14 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
 // PopulateInitialMaps collects **fresh** hashes and logs into 3 maps
-func PopulateInitialMaps(
+func PopulateInitialMaps[H superwatcher.EmitterBlockHeader](
 	freshLogs []types.Log,
-	freshHeaders map[uint64]*types.Header,
+	freshHeaders map[uint64]H,
 ) (
 	freshHashesByBlockNumber map[uint64]common.Hash,
 	freshLogsByBlockNumber map[uint64][]*types.Log,

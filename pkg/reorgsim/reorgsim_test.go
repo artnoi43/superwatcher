@@ -1,9 +1,12 @@
 package reorgsim
 
 import (
+	"context"
 	"fmt"
+	"math/big"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -16,6 +19,19 @@ func TestFoo(t *testing.T) {
 
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
+
+	sim := newReorgSim(5, 15944400, 15944444)
+	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
+		FromBlock: big.NewInt(15944401),
+		ToBlock:   big.NewInt(15944500),
+	})
+
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	filterLogsMapped := mapLogsToNumber(filterLogs)
+	fmt.Println("filterLogs")
+	prontMapLen(filterLogsMapped, "blockNumber", "len(logs)")
 }
 
 func prontMapLen[T comparable, U any](m map[T][]U, keyString, lenString string) {

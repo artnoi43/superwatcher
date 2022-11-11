@@ -1,20 +1,13 @@
 package reorgsim
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type block struct {
-	blockNumber uint64
-	hash        common.Hash
-	logs        []types.Log
-	reorgedHere bool
-	forked      bool
-}
-
 type blockChain map[uint64]block
 
+// newBlockChain returns a tuple of blockChain(s). It takes in |reorgedAt|,
+// and construct the chains based on that number.
 func newBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {
 	var found bool
 	for blockNumber := range mappedLogs {
@@ -27,6 +20,7 @@ func newBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 		panic("reorgedAt block not found in any logs")
 	}
 
+	// The "good old chain"
 	chain := make(blockChain)
 	for blockNumber, logs := range mappedLogs {
 		b := new(block)
@@ -40,36 +34,14 @@ func newBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 		chain[blockNumber] = *b
 	}
 
+	// The "reorged chain" will only contain blocks after |reorgedAt|
 	reorgedChain := make(blockChain)
 	for blockNumber, oldBlock := range chain {
 		if blockNumber >= reorgedAt {
-			b := reorgBlock(oldBlock)
-			reorgedChain[blockNumber] = b
+			reorgedBlock := oldBlock.reorg()
+			reorgedChain[blockNumber] = reorgedBlock
 		}
 	}
 
 	return chain, reorgedChain
-}
-
-// reorgBlock takes a block, and simulate chain reorg on that block
-// by changing the hash, and changing the logs' block hashes
-func reorgBlock(b block) block {
-	// TODO: implement
-	newBlockHash := randomHash(b.blockNumber)
-	newTxHash := randomHash(b.blockNumber + 696969)
-	var logs []types.Log
-	copy(logs, b.logs)
-
-	for _, log := range logs {
-		log.BlockHash = newBlockHash
-		log.TxHash = newTxHash
-	}
-
-	return block{
-		blockNumber: b.blockNumber,
-		hash:        newBlockHash,
-		logs:        logs,
-		reorgedHere: b.reorgedHere,
-		forked:      true,
-	}
 }
