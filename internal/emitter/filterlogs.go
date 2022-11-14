@@ -115,15 +115,15 @@ func (e *emitter) filterLogs(
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
-	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := populateInitialMaps(eventLogs, headersByBlockNumber)
+	mapFreshHashes, mapFreshLogs, mapProcessLogs := populateInitialMaps(eventLogs, headersByBlockNumber)
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ
 	wasReorged := processReorged(
 		e.tracker,
 		fromBlock,
 		toBlock,
-		freshHashesByBlockNumber,
-		freshLogsByBlockNumber,
-		processLogsByBlockNumber,
+		mapFreshHashes,
+		mapFreshLogs,
+		mapProcessLogs,
 	)
 
 	e.debugMsg("wasReorged", zap.Any("wasReorged", wasReorged))
@@ -140,7 +140,7 @@ func (e *emitter) filterLogs(
 			logger.Info(
 				"emitter: chain reorg detected",
 				zap.Uint64("blockNumber", blockNumber),
-				zap.String("freshHash", freshHashesByBlockNumber[blockNumber].String()),
+				zap.String("freshHash", mapFreshHashes[blockNumber].String()),
 			)
 
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
@@ -158,8 +158,8 @@ func (e *emitter) filterLogs(
 
 		// Populate blockInfo with fresh info
 		// Old, unreorged blocks will not be added to filterResult.GoodBlocks
-		b := superwatcher.NewBlankBlockInfo(blockNumber, freshHashesByBlockNumber[blockNumber])
-		b.Logs = freshLogsByBlockNumber[blockNumber]
+		b := superwatcher.NewBlankBlockInfo(blockNumber, mapFreshHashes[blockNumber])
+		b.Logs = mapFreshLogs[blockNumber]
 
 		// Publish block with > 0 block
 		if len(b.Logs) > 0 {
@@ -191,7 +191,7 @@ func (e *emitter) filterLogs(
 	e.debugMsg(
 		"number of logs published by filterLogs",
 		zap.Int("eventLogs (filtered)", lenLogs),
-		zap.Int("processLogs (all logs processed)", len(processLogsByBlockNumber)),
+		zap.Int("processLogs (all logs processed)", len(mapProcessLogs)),
 		zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
 		zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
 	)

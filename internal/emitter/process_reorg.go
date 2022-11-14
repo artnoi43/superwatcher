@@ -16,18 +16,18 @@ func populateInitialMaps(
 	freshLogs []types.Log,
 	freshHeaders map[uint64]superwatcher.BlockHeader,
 ) (
-	freshHashesByBlockNumber map[uint64]common.Hash,
-	freshLogsByBlockNumber map[uint64][]*types.Log,
-	processLogsByBlockNumber map[uint64][]*types.Log,
+	mapFreshHashes map[uint64]common.Hash,
+	mapFreshLogs map[uint64][]*types.Log,
+	mapProcessLogs map[uint64][]*types.Log,
 ) {
 	// freshHashesByBlockNumber maps blockNumber to fresh hash
-	freshHashesByBlockNumber = make(map[uint64]common.Hash)
+	mapFreshHashes = make(map[uint64]common.Hash)
 	// freshLogsByBlockNumber maps blockNumber to fresh logs
-	freshLogsByBlockNumber = make(map[uint64][]*types.Log)
+	mapFreshLogs = make(map[uint64][]*types.Log)
 	// processLogsByBlockNumber maps blockNumber to all logs to be processed.
 	// Since this function does not use data from tracker, processLogsByBlockNumber is not fully populated here.
 	// it should be later passed to
-	processLogsByBlockNumber = make(map[uint64][]*types.Log)
+	mapProcessLogs = make(map[uint64][]*types.Log)
 
 	for i := range freshLogs {
 		freshLog := freshLogs[i]
@@ -45,29 +45,29 @@ func populateInitialMaps(
 		}
 
 		// Check if we saw the block hash
-		if _, ok := freshHashesByBlockNumber[freshLogBlockNumber]; !ok {
+		if _, ok := mapFreshHashes[freshLogBlockNumber]; !ok {
 			// We've never seen this block hash before
-			freshHashesByBlockNumber[freshLogBlockNumber] = freshBlockHash
+			mapFreshHashes[freshLogBlockNumber] = freshBlockHash
 		} else {
-			if freshHashesByBlockNumber[freshLogBlockNumber] != freshBlockHash {
+			if mapFreshHashes[freshLogBlockNumber] != freshBlockHash {
 				// If we saw this log's block hash before from the fresh eventLogs
 				// from this loop's previous loop iteration(s), but the hashes are different:
 				// Fatal, should not happen
 				logger.Panic("fresh blockHash differs from tracker blockHash",
 					zap.String("tag", "filterLogs bug"),
 					zap.Uint64("freshBlockNumber", freshLogBlockNumber),
-					zap.Any("known tracker blockHash", freshHashesByBlockNumber[freshLogBlockNumber]),
+					zap.Any("known tracker blockHash", mapFreshHashes[freshLogBlockNumber]),
 					zap.Any("fresh blockHash", freshBlockHash))
 			}
 		}
 
 		// Collect this log fresh into freshLogs and processLogs
 		thisLog := &freshLogs[i]
-		freshLogsByBlockNumber[freshLogBlockNumber] = append(freshLogsByBlockNumber[freshLogBlockNumber], thisLog)
-		processLogsByBlockNumber[freshLogBlockNumber] = append(processLogsByBlockNumber[freshLogBlockNumber], thisLog)
+		mapFreshLogs[freshLogBlockNumber] = append(mapFreshLogs[freshLogBlockNumber], thisLog)
+		mapProcessLogs[freshLogBlockNumber] = append(mapProcessLogs[freshLogBlockNumber], thisLog)
 	}
 
-	return freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber
+	return mapFreshHashes, mapFreshLogs, mapProcessLogs
 }
 
 /*
@@ -96,9 +96,9 @@ func populateInitialMaps(
 func processReorged(
 	tracker *blockTracker,
 	fromBlock, toBlock uint64,
-	freshHashes map[uint64]common.Hash, // New hashes from *ethclient.Client.HeaderByNumber
-	freshLogs map[uint64][]*types.Log, // New logs from *ethclient.Client.FilterLogs
-	processLogs map[uint64][]*types.Log, // Concatenated logs from both old and reorged chains
+	mapFreshHashes map[uint64]common.Hash, // New hashes from *ethclient.Client.HeaderByNumber
+	mapFreshLogs map[uint64][]*types.Log, // New logs from *ethclient.Client.FilterLogs
+	mapProcessLogs map[uint64][]*types.Log, // Concatenated logs from both old and reorged chains
 ) map[uint64]bool {
 	// This map will be returned to caller. True means the block was reorged and had different hashes.
 	wasReorged := make(map[uint64]bool)
@@ -113,9 +113,9 @@ func processReorged(
 
 		// If tracker's is the same from recently filtered hash, i.e. no reorg
 		// logger.Info("found block in tracker, comparing hashes in tracker", zap.Uint64("blockNumber", blockNumber))
-		if h := freshHashes[blockNumber]; h == trackerBlock.Hash {
+		if h := mapFreshHashes[blockNumber]; h == trackerBlock.Hash {
 			// Mark blockNumber with identical hash (no reorg)
-			if len(freshLogs[blockNumber]) == len(trackerBlock.Logs) {
+			if len(mapFreshLogs[blockNumber]) == len(trackerBlock.Logs) {
 				continue
 			}
 		}
@@ -127,7 +127,7 @@ func processReorged(
 			oldLog.Removed = true
 		}
 		// Concat logs from the same block, old logs first, into freshLogs
-		processLogs[blockNumber] = append(trackerBlock.Logs, processLogs[blockNumber]...)
+		mapProcessLogs[blockNumber] = append(trackerBlock.Logs, mapProcessLogs[blockNumber]...)
 	}
 
 	return wasReorged

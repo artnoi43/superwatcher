@@ -3,9 +3,9 @@ package emitter
 import (
 	"testing"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
@@ -13,7 +13,11 @@ import (
 func TestProcessReorg(t *testing.T) {
 	tracker := newTracker()
 	hardcodedLogs := reorgsim.InitLogs()
+
+	fromBlock := uint64(15944400)
+	toBlock := uint64(15944500)
 	reorgedAt := uint64(15944444)
+
 	oldChain, reorgedChain := reorgsim.NewBlockChain(hardcodedLogs, reorgedAt)
 
 	// Add oldChain's blocks to tracker
@@ -21,12 +25,11 @@ func TestProcessReorg(t *testing.T) {
 		blockLogs := block.Logs()
 		logs := gslutils.CollectPointers(&blockLogs)
 
-		b := new(superwatcher.BlockInfo)
-		b.Logs = logs
-		b.Hash = block.Hash()
-		b.Number = blockNumber
-
-		tracker.addTrackerBlock(b)
+		tracker.addTrackerBlock(&superwatcher.BlockInfo{
+			Logs:   logs,
+			Hash:   block.Hash(),
+			Number: blockNumber,
+		})
 	}
 
 	var reorgedLogs []types.Log
@@ -42,8 +45,8 @@ func TestProcessReorg(t *testing.T) {
 
 	wasReorged := processReorged(
 		tracker,
-		15944444,
-		15950000,
+		fromBlock,
+		toBlock,
 		freshHashes,
 		freshLogs,
 		processLogs,
@@ -53,7 +56,14 @@ func TestProcessReorg(t *testing.T) {
 		if blockNumber >= reorgedAt {
 			if !reorged {
 				t.Fatalf(
-					"blockNumber %d was after reorg block at %d, but it was not tagged in wasReorged",
+					"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged",
+					blockNumber, reorgedAt,
+				)
+			}
+		} else {
+			if reorged {
+				t.Fatalf(
+					"blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged",
 					blockNumber, reorgedAt,
 				)
 			}
