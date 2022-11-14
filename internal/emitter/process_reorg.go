@@ -11,8 +11,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-// PopulateInitialMaps collects **fresh** hashes and logs into 3 maps
-func PopulateInitialMaps(
+// populateInitialMaps collects **fresh** hashes and logs into 3 maps
+func populateInitialMaps(
 	freshLogs []types.Log,
 	freshHeaders map[uint64]superwatcher.BlockHeader,
 ) (

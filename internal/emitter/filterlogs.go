@@ -115,7 +115,7 @@ func (e *emitter) filterLogs(
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
-	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := PopulateInitialMaps(eventLogs, headersByBlockNumber)
+	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := populateInitialMaps(eventLogs, headersByBlockNumber)
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ
 	wasReorged := processReorged(
 		e.tracker,

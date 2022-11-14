@@ -38,7 +38,7 @@ func TestProcessReorg(t *testing.T) {
 		reorgedHeader[blockNumber] = block
 	}
 
-	freshHashes, freshLogs, processLogs := PopulateInitialMaps(reorgedLogs, reorgedHeader)
+	freshHashes, freshLogs, processLogs := populateInitialMaps(reorgedLogs, reorgedHeader)
 
 	wasReorged := processReorged(
 		tracker,
@@ -49,5 +49,14 @@ func TestProcessReorg(t *testing.T) {
 		processLogs,
 	)
 
-	t.Log(wasReorged)
+	for blockNumber, reorged := range wasReorged {
+		if blockNumber >= reorgedAt {
+			if !reorged {
+				t.Fatalf(
+					"blockNumber %d was after reorg block at %d, but it was not tagged in wasReorged",
+					blockNumber, reorgedAt,
+				)
+			}
+		}
+	}
 }

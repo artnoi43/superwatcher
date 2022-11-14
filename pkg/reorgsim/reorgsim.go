@@ -37,8 +37,8 @@ func NewReorgSim(lookBack, lastRecord, reorgedAt uint64) superwatcher.EthClient 
 }
 
 func InitLogs() map[uint64][]types.Log {
-	poolFactoryLogs := readJsonLogs("./poolfactory_logs.json")
-	lpLogs := readJsonLogs("./lp_logs.json")
+	poolFactoryLogs := readJsonLogs("./assets/logs_poolfactory.json")
+	lpLogs := readJsonLogs("./assets/logs_lp.json")
 
 	hardcodedLogs := append(poolFactoryLogs, lpLogs...)
 	mappedLogs := mapLogsToNumber(hardcodedLogs)
