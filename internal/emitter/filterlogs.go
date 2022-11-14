@@ -2,17 +2,18 @@ package emitter
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 
 	"github.com/artnoi43/gsl/concurrent"
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/lib/utils"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
@@ -35,15 +36,23 @@ func (e *emitter) filterLogs(
 
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
-		eventLogs, err = utils.RetryWithReturn(func() ([]types.Log, error) {
-			// No error wrap because in retry mode
-			return e.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
-				FromBlock: big.NewInt(int64(fromBlock)),
-				ToBlock:   big.NewInt(int64(toBlock)),
-				Addresses: e.addresses,
-				Topics:    e.topics,
-			})
-		})
+		eventLogs, err = gslutils.RetryWithReturn(
+			fmt.Sprintf("getLogs from %d to %d", fromBlock, toBlock),
+
+			func() ([]types.Log, error) {
+				// No error wrap because in retry mode
+				return e.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
+					FromBlock: big.NewInt(int64(fromBlock)),
+					ToBlock:   big.NewInt(int64(toBlock)),
+					Addresses: e.addresses,
+					Topics:    e.topics,
+				})
+			},
+
+			gslutils.Attempts(10),
+			gslutils.Delay(4),
+			gslutils.LastErrorOnly(true),
+		)
 
 		if err != nil {
 			// TODO: what the actual fuck?
@@ -53,9 +62,17 @@ func (e *emitter) filterLogs(
 
 	// getHeader gets block header for a blockNumber
 	getHeader := func(blockNumber uint64) {
-		header, err := utils.RetryWithReturn(func() (superwatcher.BlockHeader, error) {
-			return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
-		})
+		header, err := gslutils.RetryWithReturn(
+			fmt.Sprintf("getHeader %d", blockNumber),
+
+			func() (superwatcher.BlockHeader, error) {
+				return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
+			},
+
+			gslutils.Attempts(10),
+			gslutils.Delay(4),
+			gslutils.LastErrorOnly(true),
+		)
 		if err != nil {
 			getErrChan <- wrapErrBlockNumber(err, errFetchHeader, blockNumber)
 		}
