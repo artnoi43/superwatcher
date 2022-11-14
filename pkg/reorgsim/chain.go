@@ -34,14 +34,15 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 		chain[blockNumber] = *b
 	}
 
-	// The "reorged chain" will only contain blocks after |reorgedAt|
 	reorgedChain := make(blockChain)
 	for blockNumber, oldBlock := range chain {
-		if blockNumber >= reorgedAt {
-			// Reorg this block and saves back to reorgedChain
-			reorgedBlock := oldBlock.reorg()
-			reorgedChain[blockNumber] = reorgedBlock
+		// Use old block for |reorgedChain| if |blockNumber| < |reorgedAt|
+		if blockNumber < reorgedAt {
+			reorgedChain[blockNumber] = oldBlock
+			continue
 		}
+
+		reorgedChain[blockNumber] = oldBlock.reorg()
 	}
 
 	return chain, reorgedChain
