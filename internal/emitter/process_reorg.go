@@ -91,17 +91,18 @@ func PopulateInitialMaps(
 	}
 */
 
-// ProcessReorged checks hash fresh-tracker equality, and appends reorged blocks to processLogsByBlockNumber.
+// processReorged compares fresh hashes and hashes saved in tracker, and appends reorged blocks to processLogsByBlockNumber.
 // Note: Go maps are passed by reference, so there's no need to return the map.
-func ProcessReorged(
+func processReorged(
 	tracker *blockTracker,
 	fromBlock, toBlock uint64,
-	freshHashesByBlockNumber map[uint64]common.Hash,
-	freshLogsByBlockNumber map[uint64][]*types.Log,
-	processLogsByBlockNumber map[uint64][]*types.Log,
+	freshHashes map[uint64]common.Hash, // New hashes from *ethclient.Client.HeaderByNumber
+	freshLogs map[uint64][]*types.Log, // New logs from *ethclient.Client.FilterLogs
+	processLogs map[uint64][]*types.Log, // Concatenated logs from both old and reorged chains
 ) map[uint64]bool {
+	// This map will be returned to caller. True means the block was reorged and had different hashes.
 	wasReorged := make(map[uint64]bool)
-	// Detect and stamp removed/reverted event logs using tracker
+
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
 		// which are not yet 'reorged' at the execution time.
@@ -112,9 +113,9 @@ func ProcessReorged(
 
 		// If tracker's is the same from recently filtered hash, i.e. no reorg
 		// logger.Info("found block in tracker, comparing hashes in tracker", zap.Uint64("blockNumber", blockNumber))
-		if h := freshHashesByBlockNumber[blockNumber]; h == trackerBlock.Hash {
+		if h := freshHashes[blockNumber]; h == trackerBlock.Hash {
 			// Mark blockNumber with identical hash (no reorg)
-			if len(freshLogsByBlockNumber[blockNumber]) == len(trackerBlock.Logs) {
+			if len(freshLogs[blockNumber]) == len(trackerBlock.Logs) {
 				continue
 			}
 		}
@@ -126,7 +127,7 @@ func ProcessReorged(
 			oldLog.Removed = true
 		}
 		// Concat logs from the same block, old logs first, into freshLogs
-		processLogsByBlockNumber[blockNumber] = append(trackerBlock.Logs, processLogsByBlockNumber[blockNumber]...)
+		processLogs[blockNumber] = append(trackerBlock.Logs, processLogs[blockNumber]...)
 	}
 
 	return wasReorged

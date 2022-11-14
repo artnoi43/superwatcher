@@ -11,8 +11,8 @@ import (
 )
 
 func initChains() (blockChain, blockChain) {
-	mappedLogs := initLogs()
-	return newBlockChain(mappedLogs, 15944444)
+	mappedLogs := InitLogs()
+	return NewBlockChain(mappedLogs, 15944444)
 }
 
 func TestFoo(t *testing.T) {
@@ -24,7 +24,7 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	sim := newReorgSim(5, 15944400, 15944444)
+	sim := NewReorgSim(5, 15944400, 15944444)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),

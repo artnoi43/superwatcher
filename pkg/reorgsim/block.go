@@ -22,6 +22,10 @@ func (b block) Hash() common.Hash {
 	return b.hash
 }
 
+func (b block) Logs() []types.Log {
+	return b.logs
+}
+
 // reorg takes a block, and simulates chain reorg on that block
 // by changing the hash, and changing the logs' block hashes.
 func (b *block) reorg() block {

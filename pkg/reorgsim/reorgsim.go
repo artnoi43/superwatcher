@@ -22,10 +22,10 @@ type reorgSim struct {
 	seen map[uint64]int
 }
 
-// newReorgSim returns a new reorgSim with hard-coded good and reorged chains.
-func newReorgSim(lookBack, lastRecord, reorgedAt uint64) superwatcher.EthClient {
-	mappedLogs := initLogs()
-	chain, reorgedChain := newBlockChain(mappedLogs, reorgedAt)
+// NewReorgSim returns a new reorgSim with hard-coded good and reorged chains.
+func NewReorgSim(lookBack, lastRecord, reorgedAt uint64) superwatcher.EthClient {
+	mappedLogs := InitLogs()
+	chain, reorgedChain := NewBlockChain(mappedLogs, reorgedAt)
 
 	return &reorgSim{
 		lastRecord:   lastRecord,
@@ -36,7 +36,7 @@ func newReorgSim(lookBack, lastRecord, reorgedAt uint64) superwatcher.EthClient 
 	}
 }
 
-func initLogs() map[uint64][]types.Log {
+func InitLogs() map[uint64][]types.Log {
 	poolFactoryLogs := readJsonLogs("./poolfactory_logs.json")
 	lpLogs := readJsonLogs("./lp_logs.json")
 

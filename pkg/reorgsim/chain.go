@@ -6,9 +6,9 @@ import (
 
 type blockChain map[uint64]block
 
-// newBlockChain returns a tuple of blockChain(s). It takes in |reorgedAt|,
+// NewBlockChain returns a tuple of blockChain(s). It takes in |reorgedAt|,
 // and construct the chains based on that number.
-func newBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {
+func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {
 	var found bool
 	for blockNumber := range mappedLogs {
 		if blockNumber == reorgedAt {

@@ -56,7 +56,7 @@ func (e *emitter) filterLogs(
 
 		if err != nil {
 			// TODO: what the actual fuck?
-			getErrChan <- wrapErrBlockNumber(err, errFetchLogs, (fromBlock+toBlock)/2)
+			getErrChan <- wrapErrBlockNumber(fromBlock, err, errFetchLogs)
 		}
 	}
 
@@ -74,7 +74,7 @@ func (e *emitter) filterLogs(
 			gslutils.LastErrorOnly(true),
 		)
 		if err != nil {
-			getErrChan <- wrapErrBlockNumber(err, errFetchHeader, blockNumber)
+			getErrChan <- wrapErrBlockNumber(blockNumber, err, errFetchHeader)
 		}
 
 		mut.Lock()
@@ -117,7 +117,7 @@ func (e *emitter) filterLogs(
 	// Use fresh hashes and fresh logs to populate these 3 maps
 	freshHashesByBlockNumber, freshLogsByBlockNumber, processLogsByBlockNumber := PopulateInitialMaps(eventLogs, headersByBlockNumber)
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ
-	wasReorged := ProcessReorged(
+	wasReorged := processReorged(
 		e.tracker,
 		fromBlock,
 		toBlock,

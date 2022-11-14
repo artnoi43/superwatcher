@@ -7,7 +7,7 @@ import (
 
 func TestReorg(t *testing.T) {
 	var blockNumber uint64 = 15944408
-	logs := initLogs()
+	logs := InitLogs()
 	blockLogs := logs[blockNumber]
 	oldLogsByTxHash := mapLogsToTxHash(blockLogs)
 	fmt.Println("oldLogs by TxHash")
