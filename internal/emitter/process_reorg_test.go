@@ -10,14 +10,19 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
+var (
+	fromBlock   uint64 = 15944400
+	toBlock     uint64 = 15944500
+	reorgedAt   uint64 = 15944444
+	defaultLogs        = []string{
+		"./assets/logs_poolfactory.json",
+		"./assets/logs_lp.json",
+	}
+)
+
 func TestProcessReorg(t *testing.T) {
 	tracker := newTracker()
-	hardcodedLogs := reorgsim.InitLogs()
-
-	fromBlock := uint64(15944400)
-	toBlock := uint64(15944500)
-	reorgedAt := uint64(15944444)
-
+	hardcodedLogs := reorgsim.InitLogs(defaultLogs)
 	oldChain, reorgedChain := reorgsim.NewBlockChain(hardcodedLogs, reorgedAt)
 
 	// Add oldChain's blocks to tracker
