@@ -5,8 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-
-	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
 func (e *engine) handleResults(ctx context.Context) error {
@@ -22,20 +20,21 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		for _, block := range result.ReorgedBlocks {
 			metadata := e.metadataTracker.GetBlockMetadata(block)
-
-			blockState := metadata.state
-			blockState.Fire(EngineBlockEventReorg)
-
-			if !blockState.IsValid() {
-				logger.Panic("invalid block state encountered", zap.Uint8("state", uint8(blockState)))
-			}
+			metadata.state.Fire(EventReorg)
 
 			// Only process block with Reorged state
-			if blockState != EngineBlockStateReorged {
+			if metadata.state != StateReorged {
+				e.debugMsg(
+					"skip bad reorged block logs",
+					zap.String("state", metadata.state.String()),
+					zap.Uint64("blockNumber", metadata.blockNumber),
+					zap.String("blockHash", metadata.blockHash),
+				)
+
 				continue
 			}
 
-			e.metadataTracker.SetBlockState(block, blockState)
+			e.metadataTracker.SetBlockState(block, metadata.state)
 
 			artifacts, err := e.serviceEngine.HandleReorgedLogs(block.Logs, metadata.artifacts)
 			if err != nil {
@@ -45,10 +44,8 @@ func (e *engine) handleResults(ctx context.Context) error {
 				e.debugMsg("got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
 			}
 
-			blockState.Fire(EngineBlockEventHandleReorg)
-
+			metadata.state.Fire(EventHandleReorg)
 			metadata.artifacts = artifacts
-			metadata.state = blockState
 
 			e.debugMsg("saving handleReorgedLogs metadata for block", zap.Any("metadata", metadata))
 			e.metadataTracker.SetBlockMetadata(block, metadata)
@@ -56,16 +53,13 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		for _, block := range result.GoodBlocks {
 			metadata := e.metadataTracker.GetBlockMetadata(block)
-
-			metadata.state.Fire(EngineBlockEventGotLog)
-			if !metadata.state.IsValid() {
-				logger.Panic("invalid block state encountered", zap.Uint8("state (uint8)", uint8(metadata.state)))
-			}
+			metadata.state.Fire(EventGotLog)
 
 			// Only process block with Seen state
-			if metadata.state != EngineBlockStateSeen {
+			if metadata.state != StateSeen {
 				e.debugMsg(
 					"skip seen good block logs",
+					zap.String("state", metadata.state.String()),
 					zap.Uint64("blockNumber", metadata.blockNumber),
 					zap.String("blockHash", metadata.blockHash),
 				)
@@ -78,7 +72,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}
 
-			metadata.state.Fire(EngineBlockEventProcess)
+			metadata.state.Fire(EventProcess)
 			metadata.artifacts = artifacts
 
 			e.debugMsg("saving metadata for block", zap.Any("metadata", metadata))

@@ -93,8 +93,11 @@ func (t *metadataTracker) SetBlockState(b *superwatcher.BlockInfo, state EngineB
 
 	metadata := t.GetBlockMetadata(b)
 	if metadata == nil {
-		// Create new metadata if null
-		metadata = &blockMetadata{}
+		logger.Panic(
+			"nil metadata - should not happen",
+			zap.Uint64("blockNumber", b.Number),
+			zap.String("blockHash", b.String()),
+		)
 	}
 
 	// Overwrite metadata.state
@@ -108,7 +111,7 @@ func (t *metadataTracker) GetBlockState(b *superwatcher.BlockInfo) EngineBlockSt
 
 	metadata := t.GetBlockMetadata(b)
 	if metadata == nil {
-		return EngineBlockStateNull
+		return StateNull
 	}
 
 	return metadata.state
