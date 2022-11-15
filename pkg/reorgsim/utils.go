@@ -10,11 +10,12 @@ import (
 
 // InitLogs returns unmarshaled hard-coded logs.
 // It is export for use in internal/emitter testing.
-func InitLogs() map[uint64][]types.Log {
-	poolFactoryLogs := readJsonLogs("./assets/logs_poolfactory.json")
-	lpLogs := readJsonLogs("./assets/logs_lp.json")
-
-	hardcodedLogs := append(poolFactoryLogs, lpLogs...)
+func InitLogs(filenames []string) map[uint64][]types.Log {
+	hardcodedLogs := []types.Log{}
+	for _, filename := range filenames {
+		logs := readJsonLogs(filename)
+		hardcodedLogs = append(hardcodedLogs, logs...)
+	}
 	mappedLogs := mapLogsToNumber(hardcodedLogs)
 
 	return mappedLogs
@@ -36,7 +37,6 @@ func mapLogsToTxHash(logs []types.Log) map[common.Hash][]types.Log {
 	}
 
 	return m
-
 }
 
 func readJsonLogs(filename string) []types.Log {

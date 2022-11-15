@@ -10,10 +10,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-var reorgedAt uint64 = 15944444
+var (
+	reorgedAt   uint64 = 15944444
+	defaultLogs        = []string{
+		"./assets/logs_poolfactory.json",
+		"./assets/logs_lp.json",
+	}
+)
 
 func initChains(reorgedAt uint64) (blockChain, blockChain) {
-	mappedLogs := InitLogs()
+	mappedLogs := InitLogs(defaultLogs)
 	return NewBlockChain(mappedLogs, reorgedAt)
 }
 
@@ -70,7 +76,7 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	sim := NewReorgSim(5, 15944400, reorgedAt)
+	sim := NewReorgSim(5, 15944400, reorgedAt, defaultLogs)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),
