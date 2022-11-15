@@ -1,6 +1,10 @@
 package emitter
 
-import "github.com/pkg/errors"
+import (
+	"fmt"
+
+	"github.com/pkg/errors"
+)
 
 var (
 	errFromBlockReorged = errors.New("fromBlock reorged")
@@ -20,4 +24,8 @@ func wrapErrBlockNumber(blockNumber uint64, err error, sentinelError error) erro
 	}
 
 	return errors.Wrapf(err, "blockNumber %d", blockNumber)
+}
+
+func Errorf(format string, a ...interface{}) error {
+	return errors.New(fmt.Sprintf(format, a...))
 }
