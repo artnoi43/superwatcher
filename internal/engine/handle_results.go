@@ -9,7 +9,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-func (e *engine) handleLogs(ctx context.Context) error {
+func (e *engine) handleResults(ctx context.Context) error {
 	// Get emitterConfig to clear tracker metadata based on lookBackBlocks
 	emitterConfig := e.emitterClient.WatcherConfig()
 
@@ -57,16 +57,19 @@ func (e *engine) handleLogs(ctx context.Context) error {
 		for _, block := range result.GoodBlocks {
 			metadata := e.metadataTracker.GetBlockMetadata(block)
 
-			blockState := metadata.state
-			blockState.Fire(EngineBlockEventGotLog)
-
-			if !blockState.IsValid() {
-				logger.Panic("invalid block state encountered", zap.Uint8("state", uint8(blockState)))
+			metadata.state.Fire(EngineBlockEventGotLog)
+			if !metadata.state.IsValid() {
+				logger.Panic("invalid block state encountered", zap.Uint8("state (uint8)", uint8(metadata.state)))
 			}
 
 			// Only process block with Seen state
-			if blockState != EngineBlockStateSeen {
-				e.debugMsg("skip good block logs", zap.Uint64("blockNumber", metadata.blockNumber))
+			if metadata.state != EngineBlockStateSeen {
+				e.debugMsg(
+					"skip seen good block logs",
+					zap.Uint64("blockNumber", metadata.blockNumber),
+					zap.String("blockHash", metadata.blockHash),
+				)
+
 				continue
 			}
 
@@ -75,10 +78,8 @@ func (e *engine) handleLogs(ctx context.Context) error {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}
 
-			blockState.Fire(EngineBlockEventProcess)
-
+			metadata.state.Fire(EngineBlockEventProcess)
 			metadata.artifacts = artifacts
-			metadata.state = blockState
 
 			e.debugMsg("saving metadata for block", zap.Any("metadata", metadata))
 			e.metadataTracker.SetBlockMetadata(block, metadata)

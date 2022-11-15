@@ -2,12 +2,14 @@ package engine
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/artnoi43/superwatcher"
 )
 
 type blockMetadata struct {
 	blockNumber uint64
+	blockHash   string // Must be all lowercase
 	state       EngineBlockState
 
 	// artifacts maybe removed - I see no use case yet
@@ -24,5 +26,5 @@ func (k blockMetadata) BlockNumber() uint64 {
 }
 
 func (k blockMetadata) String() string {
-	return fmt.Sprintf("%d", k.blockNumber)
+	return fmt.Sprintf("%d:%s", k.blockNumber, strings.ToLower(k.blockHash))
 }

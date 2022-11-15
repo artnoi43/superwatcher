@@ -21,55 +21,60 @@ type MetadataTracker interface {
 	GetBlockState(*superwatcher.BlockInfo) EngineBlockState
 }
 
-// Tracker name needs revision!
-type Tracker struct {
+// metadataTracker is an in-memory store for keeping engine internal states.
+// It is used to decide whether or not to pass the logs to service engine.
+type metadataTracker struct {
 	sync.RWMutex
 
-	// field "set" maps blockNumber to blockMetadata
-	set   *sortedset.SortedSet
-	debug bool
+	// Field `Tracker.sortedSet` maps txHash to blockMetadata.
+	// The score is blockNumber. This allow us to use ClearUntil.
+	sortedSet *sortedset.SortedSet
+	debug     bool
 }
 
-func NewTracker(debug bool) *Tracker {
-	return &Tracker{
-		set:   sortedset.New(),
-		debug: debug,
+func NewTracker(debug bool) *metadataTracker {
+	return &metadataTracker{
+		sortedSet: sortedset.New(),
+		debug:     debug,
 	}
 }
 
 // ClearUntil removes items in t from left to right.
 // TODO: Currently broken
-func (t *Tracker) ClearUntil(blockNumber uint64) {
+func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 	t.Lock()
 	defer t.Unlock()
 
 	debug.DebugMsg(t.debug, "clearing engine state tracker", zap.Uint64("until", blockNumber))
 
 	for {
-		oldest := t.set.PeekMin()
+		oldest := t.sortedSet.PeekMin()
 		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
 			break
 		}
 
-		t.set.PopMin()
+		t.sortedSet.PopMin()
 	}
 }
 
-func (t *Tracker) SetBlockMetadata(b *superwatcher.BlockInfo, metadata *blockMetadata) {
+func (t *metadataTracker) SetBlockMetadata(b *superwatcher.BlockInfo, metadata *blockMetadata) {
 	t.Lock()
 	defer t.Unlock()
 
-	t.set.AddOrUpdate(b.BlockNumberString(), sortedset.SCORE(b.Number), metadata)
+	t.sortedSet.AddOrUpdate(b.String(), sortedset.SCORE(b.Number), metadata)
 }
 
-func (t *Tracker) GetBlockMetadata(b *superwatcher.BlockInfo) *blockMetadata {
+func (t *metadataTracker) GetBlockMetadata(b *superwatcher.BlockInfo) *blockMetadata {
 	t.RLock()
 	defer t.RUnlock()
 
-	node := t.set.GetByKey(b.BlockNumberString())
+	node := t.sortedSet.GetByKey(b.String())
 	// Avoid panicking when assert type on nil value
 	if node == nil {
-		return &blockMetadata{blockNumber: b.Number}
+		return &blockMetadata{
+			blockNumber: b.Number,
+			blockHash:   b.String(),
+		}
 	}
 
 	metadata, ok := node.Value.(*blockMetadata)
@@ -82,7 +87,10 @@ func (t *Tracker) GetBlockMetadata(b *superwatcher.BlockInfo) *blockMetadata {
 	return metadata
 }
 
-func (t *Tracker) SetBlockState(b *superwatcher.BlockInfo, state EngineBlockState) {
+func (t *metadataTracker) SetBlockState(b *superwatcher.BlockInfo, state EngineBlockState) {
+	t.Lock()
+	defer t.Unlock()
+
 	metadata := t.GetBlockMetadata(b)
 	if metadata == nil {
 		// Create new metadata if null
@@ -94,7 +102,10 @@ func (t *Tracker) SetBlockState(b *superwatcher.BlockInfo, state EngineBlockStat
 	t.SetBlockMetadata(b, metadata)
 }
 
-func (t *Tracker) GetBlockState(b *superwatcher.BlockInfo) EngineBlockState {
+func (t *metadataTracker) GetBlockState(b *superwatcher.BlockInfo) EngineBlockState {
+	t.RLock()
+	defer t.RUnlock()
+
 	metadata := t.GetBlockMetadata(b)
 	if metadata == nil {
 		return EngineBlockStateNull
@@ -103,9 +114,9 @@ func (t *Tracker) GetBlockState(b *superwatcher.BlockInfo) EngineBlockState {
 	return metadata.state
 }
 
-func (t *Tracker) Len() int {
+func (t *metadataTracker) Len() int {
 	t.RLock()
 	defer t.RUnlock()
 
-	return t.set.GetCount()
+	return t.sortedSet.GetCount()
 }

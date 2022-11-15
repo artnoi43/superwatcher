@@ -22,7 +22,7 @@ type engine struct {
 
 func (e *engine) Loop(ctx context.Context) error {
 	go func() {
-		if err := e.handleLogs(ctx); err != nil {
+		if err := e.handleResults(ctx); err != nil {
 			e.debugMsg("*engine.run exited", zap.Error(err))
 		}
 

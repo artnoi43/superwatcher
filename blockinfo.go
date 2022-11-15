@@ -2,6 +2,7 @@ package superwatcher
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -28,9 +29,9 @@ func NewBlankBlockInfo(
 	}
 }
 
-// String returns the block hash with 0x prepended
+// String returns the block hash with 0x prepended in all lowercase string.
 func (b *BlockInfo) String() string {
-	return b.Hash.String()
+	return strings.ToLower(b.Hash.String())
 }
 
 func (b *BlockInfo) BlockNumberString() string {
