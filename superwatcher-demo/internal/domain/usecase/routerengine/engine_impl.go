@@ -1,4 +1,4 @@
-package demoengine
+package routerengine
 
 import (
 	"reflect"
@@ -14,7 +14,7 @@ import (
 )
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *demoEngine) HandleGoodLogs(
+func (e *routerEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact, // Ignored
 ) (
@@ -34,7 +34,7 @@ func (e *demoEngine) HandleGoodLogs(
 		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs, artifacts)
 		if err != nil {
 			if errors.Is(err, internal.ErrNoNeedHandle) {
-				debug.DebugMsg(true, "demoEngine: got ErrNoNeedHandle", zap.String("subEngine", subEngine.String()))
+				debug.DebugMsg(true, "routerEngine: got ErrNoNeedHandle", zap.String("subEngine", subEngine.String()))
 				continue
 			}
 			return nil, errors.Wrapf(err, "subengine %s HandleGoodBlock failed", subEngine.String())
@@ -55,7 +55,7 @@ func (e *demoEngine) HandleGoodLogs(
 	return retArtifacts, nil
 }
 
-func (e *demoEngine) HandleReorgedLogs(
+func (e *routerEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) ([]superwatcher.Artifact, error) {
@@ -88,7 +88,7 @@ func (e *demoEngine) HandleReorgedLogs(
 }
 
 // Unused by this service
-func (e *demoEngine) HandleEmitterError(err error) error {
+func (e *routerEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
 
 	return nil

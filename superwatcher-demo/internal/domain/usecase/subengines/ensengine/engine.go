@@ -35,7 +35,7 @@ func New(registrarContract, controllerContract contracts.BasicContract) superwat
 	}
 }
 
-// NewEnsSubEngineSuite returns a convenient struct for injecting into demoengine.demoEngine
+// NewEnsSubEngineSuite returns a convenient struct for injecting into routerengine.routerEngine
 func NewEnsSubEngineSuite() *EnsSubEngineSuite {
 	registrarContract := contracts.NewBasicContract(
 		"ENSRegistrar",

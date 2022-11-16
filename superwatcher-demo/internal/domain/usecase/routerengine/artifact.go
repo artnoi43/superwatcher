@@ -1,4 +1,4 @@
-package demoengine
+package routerengine
 
 import (
 	"github.com/artnoi43/superwatcher"
@@ -6,17 +6,17 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 )
 
-type subEngineArtifact interface {
+type routerArtifact interface {
 	ForSubEngine() subengines.SubEngineEnum
 }
 
 func artifactIsFor(artifact superwatcher.Artifact, subEngine subengines.SubEngineEnum) bool {
-	demoArtifact, ok := artifact.(subEngineArtifact)
+	routerArtifact, ok := artifact.(routerArtifact)
 	if !ok {
 		return false
 	}
 
-	return demoArtifact.ForSubEngine() == subEngine
+	return routerArtifact.ForSubEngine() == subEngine
 }
 
 // // TODO: maybe removed - not used yet

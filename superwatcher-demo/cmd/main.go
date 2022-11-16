@@ -19,7 +19,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/demoengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/routerengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/uniswapv3factoryengine"
@@ -80,7 +80,7 @@ func main() {
 
 	// It will later wraps uniswapv3PoolEngine and oneInchLimitOrderEngine
 	// and like wise needs their FSMs too.
-	demoEngine := demoengine.New(
+	demoEngine := routerengine.New(
 		demoRoutes,
 		demoServices,
 	)

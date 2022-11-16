@@ -1,4 +1,4 @@
-package demoengine
+package routerengine
 
 import (
 	"github.com/ethereum/go-ethereum/core/types"
@@ -11,7 +11,7 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 )
 
-func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEngineEnum][]*types.Log {
+func (e *routerEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEngineEnum][]*types.Log {
 	logsMap := make(map[subengines.SubEngineEnum][]*types.Log)
 
 	for _, log := range logs {
@@ -25,7 +25,7 @@ func (e *demoEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEng
 	return logsMap
 }
 
-func (e *demoEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, bool) {
+func (e *routerEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, bool) {
 	for subEngine, addrTopics := range e.routes {
 		for address, topics := range addrTopics {
 			if address == log.Address {
@@ -40,7 +40,7 @@ func (e *demoEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, b
 	return subengines.SubEngineInvalid, false
 }
 
-func (e *demoEngine) logToService(log *types.Log) superwatcher.ServiceEngine {
+func (e *routerEngine) logToService(log *types.Log) superwatcher.ServiceEngine {
 	subEngine, ok := e.logToSubEngine(log)
 	if !ok {
 		logger.Panic("log address not mapped to subengine - should not happen", zap.String("address", log.Address.String()))

@@ -1,4 +1,4 @@
-package demoengine
+package routerengine
 
 import (
 	"encoding/json"
@@ -40,11 +40,11 @@ func TestSubEngineENS(t *testing.T) {
 	}
 
 	ensSubEngineSuite := ensengine.NewEnsSubEngineSuite()
-	demoEngine := New(ensSubEngineSuite.DemoRoutes, ensSubEngineSuite.DemoServices)
+	routerEngine := New(ensSubEngineSuite.DemoRoutes, ensSubEngineSuite.DemoServices)
 
 	// Should have len == 1, since this is just a single call to HandleGoodLogs
 	// and the demoEngine only has 1 sub-engine.
-	artifacts, err := demoEngine.HandleGoodLogs(ensLogs, nil)
+	artifacts, err := routerEngine.HandleGoodLogs(ensLogs, nil)
 	if err != nil {
 		t.Errorf("error in demoEngine.HandleGoodLogs: %s", err.Error())
 	}

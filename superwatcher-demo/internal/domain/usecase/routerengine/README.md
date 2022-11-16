@@ -1,6 +1,6 @@
-# demoengine
+# routerengine
 
-Package `demoengine` defines main implementation of the
+Package `routerengine` defines main implementation of the
 `superwatcher.ServiceEngine` interface. It is what gets injected
 into the superwatcher engine.
 
