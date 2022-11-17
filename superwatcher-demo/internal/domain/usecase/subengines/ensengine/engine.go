@@ -23,9 +23,9 @@ type ensEngine struct {
 }
 
 type EnsSubEngineSuite struct {
-	Engine       superwatcher.ServiceEngine // *ensEngine
-	DemoRoutes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
-	DemoServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
+	Engine      superwatcher.ServiceEngine // *ensEngine
+	EnsRoutes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
+	EnsServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
 func New(registrarContract, controllerContract contracts.BasicContract) superwatcher.ServiceEngine {
@@ -54,25 +54,18 @@ func NewEnsSubEngineSuite() *EnsSubEngineSuite {
 		ensController: controllerContract,
 	}
 
-	var registrarTopics = make([]common.Hash, len(registrarContract.ContractEvents))
-	for i, event := range registrarContract.ContractEvents {
-		registrarTopics[i] = event.ID
-	}
-
-	var controllerTopics = make([]common.Hash, len(controllerContract.ContractEvents))
-	for i, event := range controllerContract.ContractEvents {
-		controllerTopics[i] = event.ID
-	}
+	registrarTopics := contracts.CollectEventHashes(registrarContract.ContractEvents)
+	controllerTopics := contracts.CollectEventHashes(controllerContract.ContractEvents)
 
 	return &EnsSubEngineSuite{
 		Engine: ensEngine,
-		DemoRoutes: map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
+		EnsRoutes: map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
 			subengines.SubEngineENS: {
 				registrarContract.Address:  registrarTopics,
 				controllerContract.Address: controllerTopics,
 			},
 		},
-		DemoServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
+		EnsServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
 			subengines.SubEngineENS: ensEngine,
 		},
 	}

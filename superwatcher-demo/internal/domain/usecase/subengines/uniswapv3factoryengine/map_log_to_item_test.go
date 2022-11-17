@@ -18,22 +18,23 @@ import (
 func TestMapLogToItem(t *testing.T) {
 	// The JSON was copied from this log:
 	// https://etherscan.io/tx/0x3431dc2e3b6fd996e9d7672b6cd71eaae33394f03539e285f599bf3275da61f2#eventlog
-	logJsonBytes, err := os.ReadFile("poolCreated.json")
+
+	logFile := "log_poolcreated.json"
+	logJsonBytes, err := os.ReadFile(logFile)
 	if err != nil {
 		t.Errorf("failed to read poolCreated.json: %s", err.Error())
 	}
 
-	var eventLog types.Log
-	if err := json.Unmarshal(logJsonBytes, &eventLog); err != nil {
-		t.Errorf("failed to unmarshal poolCreated.json: %s", err.Error())
+	var logs []*types.Log
+	if err := json.Unmarshal(logJsonBytes, &logs); err != nil {
+		t.Errorf("failed to unmarshal %s: %s", logFile, err.Error())
 	}
 
 	uniswapv3factoryABI, err := abi.JSON(strings.NewReader(uniswapv3factory.Uniswapv3FactoryABI))
 	if err != nil {
 		t.Errorf("failed to parse contract ABI: %s", err.Error())
 	}
-
-	poolCreated, err := mapLogToPoolCreated(uniswapv3factoryABI, "PoolCreated", &eventLog)
+	poolCreated, err := mapLogToPoolCreated(uniswapv3factoryABI, "PoolCreated", logs[0])
 	if err != nil {
 		t.Fatalf("mapLogToItem failed: %s", err.Error())
 	}
