@@ -8,7 +8,7 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
 )
 
 func (e *routerEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEngineEnum][]*types.Log {

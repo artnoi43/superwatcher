@@ -5,10 +5,10 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/enscontroller"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/ensregistrar"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
 )
 
 const (

@@ -19,12 +19,12 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/routerengine"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/ensengine"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines/uniswapv3factoryengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/routerengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
 )
 
 func main() {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
 )
 
 type ENSEvent string

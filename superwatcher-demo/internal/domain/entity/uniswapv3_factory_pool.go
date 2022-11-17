@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
 )
 
 type Uniswapv3PoolCreated struct {

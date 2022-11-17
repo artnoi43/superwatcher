@@ -11,7 +11,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/usecase/subengines"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
 )
 
 // This sub-engine uses a hash map as superwatcher.Artifact. Because it's a hash map,
