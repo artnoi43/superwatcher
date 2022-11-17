@@ -1,8 +1,6 @@
 package emitter
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -24,8 +22,4 @@ func wrapErrBlockNumber(blockNumber uint64, err error, sentinelError error) erro
 	}
 
 	return errors.Wrapf(err, "blockNumber %d", blockNumber)
-}
-
-func Errorf(format string, a ...interface{}) error {
-	return errors.New(fmt.Sprintf(format, a...))
 }

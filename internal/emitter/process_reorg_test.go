@@ -1,6 +1,7 @@
 package emitter
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -110,19 +111,23 @@ func testProcessReorg(c TestConfig) error {
 	)
 
 	for blockNumber, reorged := range wasReorged {
+		// Any blocks after c.reorgedAt should be reorged.
 		if blockNumber >= c.reorgedAt {
-			if !reorged {
-				return Errorf(
-					"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged",
-					blockNumber, c.reorgedAt,
-				)
-			}
-		} else {
 			if reorged {
-				return Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged",
-					blockNumber, c.reorgedAt,
-				)
+				continue
 			}
+
+			return fmt.Errorf(
+				"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged",
+				blockNumber, c.reorgedAt,
+			)
+		}
+
+		// And any block before c.reorgedAt should NOT be reorged.
+		if reorged {
+			return fmt.Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged",
+				blockNumber, c.reorgedAt,
+			)
 		}
 	}
 
