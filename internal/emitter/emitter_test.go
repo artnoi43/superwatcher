@@ -7,7 +7,6 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestEmitterCase1(t *testing.T) {
@@ -28,7 +27,8 @@ func TestEmitterCase1(t *testing.T) {
 		e.(*emitter).loopFilterLogs(ctx)
 	}()
 
-	results := make(map[uint64]common.Hash)
+	tracker := newTracker()
+
 	for {
 		result := <-filterResultChan
 		lastGoodBlock := result.LastGoodBlock
@@ -38,14 +38,14 @@ func TestEmitterCase1(t *testing.T) {
 			blockNumber := block.Number
 			hash := block.Hash
 
-			if val, exists := results[blockNumber]; exists {
-				if val == hash {
-					t.Fatalf("ReorgedBlocks[%d] is not reorg: hash=%v", i, val)
+			if b, exists := tracker.getTrackerBlockInfo(blockNumber); exists {
+				if b.Hash == hash {
+					t.Fatalf("ReorgedBlocks[%d] is not reorg: hash=%v", i, hash)
 				}
 			} else {
 				t.Fatalf("ReorgedBlocks[%d] didn't check before", i)
 			}
-			results[blockNumber] = hash
+			tracker.addTrackerBlock(block)
 
 			// check LastGoodBlock
 			if blockNumber < lastGoodBlock {
@@ -53,18 +53,17 @@ func TestEmitterCase1(t *testing.T) {
 			}
 		}
 
-
 		// check GoodBlocks
 		for i, block := range result.GoodBlocks {
 			blockNumber := block.Number
 			hash := block.Hash
 
-			if val, exists := results[blockNumber]; exists {
-				if val != hash {
-					t.Fatalf("GoodBlocks[%d] is reorg: hash(before)=%v hash(after)=%v", i, val, hash)
+			if b, exists := tracker.getTrackerBlockInfo(blockNumber); exists {
+				if b.Hash != hash {
+					t.Fatalf("GoodBlocks[%d] is reorg: hash(before)=%v hash(after)=%v", i, b.Hash, hash)
 				}
 			}
-			results[blockNumber] = hash
+			tracker.addTrackerBlock(block)
 		}
 
 		syncChan <- struct{}{}
