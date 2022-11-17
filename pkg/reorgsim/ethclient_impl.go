@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 )
 
@@ -51,13 +52,33 @@ func (r *reorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 
 	var logs []types.Log
 	for blockNumber := from; blockNumber <= to; blockNumber++ {
-		// Choose appropriate block
+		// Choose a block from an appropriate chain
 		b := r.chooseBlock(blockNumber)
 		if b == nil {
 			continue
 		}
 
-		logs = append(logs, b.logs...)
+		for _, log := range b.logs {
+			if query.Addresses == nil && query.Topics == nil {
+				logs = append(logs, log)
+				continue
+			}
+
+			if query.Addresses != nil {
+				if query.Topics != nil {
+					if gslutils.Contains(query.Topics[0], log.Topics[0]) {
+						logs = append(logs, log)
+						continue
+					}
+				}
+
+				if gslutils.Contains(query.Addresses, log.Address) {
+					logs = append(logs, log)
+					continue
+				}
+			}
+		}
+
 		r.seen[blockNumber]++
 	}
 
