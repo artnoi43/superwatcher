@@ -11,38 +11,30 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-// blockTracker name needs revision!
-type blockTracker struct {
-	set *sortedset.SortedSet
+// TODO: blockInfoTracker name needs revision!
+// blockInfoTracker stores the `superwatcher.BlockInfo` with blockNumber as key.
+// It is used by emitter to store `BlockInfo` from the last run of `emitter.filterLogs`
+// to see if a block's hash has changed.
+type blockInfoTracker struct {
+	sortedSet *sortedset.SortedSet
 }
 
-func newTracker() *blockTracker {
-	return &blockTracker{
-		set: sortedset.New(),
+func newTracker() *blockInfoTracker {
+	return &blockInfoTracker{
+		sortedSet: sortedset.New(),
 	}
 }
 
-// AddBlockInfo add a new *BlockInfo to t
-func (t *blockTracker) addTrackerBlock(b *superwatcher.BlockInfo) {
+// addTrackerBlockInfo adds `*BlockInfo` |b| to the store using |b.Number| as key
+func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
 	k := strconv.FormatInt(int64(b.Number), 10)
-	t.set.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
+	t.sortedSet.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }
 
-// clearUntil removes items in t from left to right.
-func (t *blockTracker) clearUntil(blockNumber uint64) {
-	for {
-		oldest := t.set.PeekMin()
-		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
-			break
-		}
-		t.set.PopMin()
-	}
-}
-
-// GetSavedBlockByBlockNumber returns *BlockInfo from t with key blockNumber
-func (t *blockTracker) getTrackerBlockInfo(blockNumber uint64) (*superwatcher.BlockInfo, bool) {
+// getTrackerBlockInfo returns `*BlockInfo` from t with key |blockNumber|
+func (t *blockInfoTracker) getTrackerBlockInfo(blockNumber uint64) (*superwatcher.BlockInfo, bool) {
 	k := strconv.FormatUint(blockNumber, 10)
-	node := t.set.GetByKey(k)
+	node := t.sortedSet.GetByKey(k)
 	if node == nil {
 		return nil, false
 	}
@@ -53,6 +45,18 @@ func (t *blockTracker) getTrackerBlockInfo(blockNumber uint64) (*superwatcher.Bl
 	return val, true
 }
 
-func (t *blockTracker) Len() int {
-	return t.set.GetCount()
+// clearUntil removes `*BlockInfo` in t from left to right.
+func (t *blockInfoTracker) clearUntil(blockNumber uint64) {
+	for {
+		oldest := t.sortedSet.PeekMin()
+		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
+			break
+		}
+
+		t.sortedSet.PopMin()
+	}
+}
+
+func (t *blockInfoTracker) Len() int {
+	return t.sortedSet.GetCount()
 }

@@ -83,7 +83,7 @@ func testProcessReorg(c TestConfig) error {
 		blockLogs := block.Logs()
 		logs := gslutils.CollectPointers(&blockLogs)
 
-		tracker.addTrackerBlock(&superwatcher.BlockInfo{
+		tracker.addTrackerBlockInfo(&superwatcher.BlockInfo{
 			Logs:   logs,
 			Hash:   block.Hash(),
 			Number: blockNumber,
@@ -99,7 +99,7 @@ func testProcessReorg(c TestConfig) error {
 		reorgedHeader[blockNumber] = block
 	}
 
-	freshHashes, freshLogs, processLogs := populateInitialMaps(reorgedLogs, reorgedHeader)
+	freshHashes, freshLogs, processLogs := mapFreshLogsByHashes(reorgedLogs, reorgedHeader)
 
 	wasReorged := processReorged(
 		tracker,

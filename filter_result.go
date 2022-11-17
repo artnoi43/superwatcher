@@ -4,6 +4,6 @@ package superwatcher
 type FilterResult struct {
 	FromBlock     uint64       // Emitter's `fromBlock`
 	LastGoodBlock uint64       // Block number of the last GoodBlocks
-	GoodBlocks    []*BlockInfo // Can be either (1) fresh blocks (2) blocks whose hashes had not changed yet.
-	ReorgedBlocks []*BlockInfo // Blocks that emitter noticed hash difference
+	GoodBlocks    []*BlockInfo // Can be either (1) fresh blocks, or (2) blocks whose hashes had not changed yet.
+	ReorgedBlocks []*BlockInfo // Blocks that emitter marked as removed. A service should undo/revert its action done on the blocks.
 }

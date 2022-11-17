@@ -115,7 +115,7 @@ func (e *emitter) filterLogs(
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
-	mapFreshHashes, mapFreshLogs, mapProcessLogs := populateInitialMaps(eventLogs, headersByBlockNumber)
+	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogsByHashes(eventLogs, headersByBlockNumber)
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ
 	wasReorged := processReorged(
 		e.tracker,
@@ -134,7 +134,7 @@ func (e *emitter) filterLogs(
 	}
 
 	filterResult := new(superwatcher.FilterResult)
-	// Publish log(s) and reorged block, and add canon block to tracker
+	// Publish log(s) and reorged block, and add canon block to tracker for the next loop.
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
 			logger.Info(
@@ -152,12 +152,15 @@ func (e *emitter) filterLogs(
 				)
 			}
 
+			// ReorgedBlocks field contains the seen, removed blocks from tracker.
+			// The new reroged blocks were added to |filterResult| as new GoodBlocks.
+			// This means that the engine should process ReorgedBlocks first to revert the TXs,
+			// before processing the new, reorged logs.
 			filterResult.ReorgedBlocks = append(filterResult.ReorgedBlocks, reorgedBlock)
 			continue
 		}
 
 		// Populate blockInfo with fresh info
-		// Old, unreorged blocks will not be added to filterResult.GoodBlocks
 		b := superwatcher.NewBlankBlockInfo(blockNumber, mapFreshHashes[blockNumber])
 		b.Logs = mapFreshLogs[blockNumber]
 
@@ -165,8 +168,8 @@ func (e *emitter) filterLogs(
 		if len(b.Logs) > 0 {
 			filterResult.GoodBlocks = append(filterResult.GoodBlocks, b)
 		}
-		// Add ONLY CANONICAL block into tracker
-		e.tracker.addTrackerBlock(b)
+		// Add only FRESH, CANONICAL block into tracker
+		e.tracker.addTrackerBlockInfo(b)
 	}
 
 	// ToBlock will be the last good block (not reorged)

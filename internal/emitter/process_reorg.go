@@ -11,8 +11,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-// populateInitialMaps collects **fresh** hashes and logs into 3 maps
-func populateInitialMaps(
+// mapFreshLogsByHashes collects **fresh** hashes and logs into 3 maps
+func mapFreshLogsByHashes(
 	freshLogs []types.Log,
 	freshHeaders map[uint64]superwatcher.BlockHeader,
 ) (
@@ -35,6 +35,8 @@ func populateInitialMaps(
 		freshLogBlockHash := freshLog.BlockHash
 		freshBlockHash := freshHeaders[freshLogBlockNumber].Hash()
 
+		// If the fresh block hash from client.HeaderByNumber differs from client.FilterLogs
+		// Fatal, should not happen
 		if !bytes.Equal(freshBlockHash[:], freshLogBlockHash[:]) {
 			// TODO: How to handle this?
 			logger.Panic(
@@ -46,8 +48,9 @@ func populateInitialMaps(
 
 		// Check if we saw the block hash
 		if _, ok := mapFreshHashes[freshLogBlockNumber]; !ok {
-			// We've never seen this block hash before
+			// If the blockNumber is not found, it means we've never seen this block hash before.
 			mapFreshHashes[freshLogBlockNumber] = freshBlockHash
+
 		} else {
 			if mapFreshHashes[freshLogBlockNumber] != freshBlockHash {
 				// If we saw this log's block hash before from the fresh eventLogs
@@ -61,10 +64,10 @@ func populateInitialMaps(
 			}
 		}
 
-		// Collect this log fresh into freshLogs and processLogs
-		thisLog := &freshLogs[i]
-		mapFreshLogs[freshLogBlockNumber] = append(mapFreshLogs[freshLogBlockNumber], thisLog)
-		mapProcessLogs[freshLogBlockNumber] = append(mapProcessLogs[freshLogBlockNumber], thisLog)
+		// Collect the (fresh) log into mapFreshLogs and mapProcessLogs
+		log := &freshLogs[i]
+		mapFreshLogs[freshLogBlockNumber] = append(mapFreshLogs[freshLogBlockNumber], log)
+		mapProcessLogs[freshLogBlockNumber] = append(mapProcessLogs[freshLogBlockNumber], log)
 	}
 
 	return mapFreshHashes, mapFreshLogs, mapProcessLogs
@@ -94,7 +97,7 @@ func populateInitialMaps(
 // processReorged compares fresh hashes and hashes saved in tracker, and appends reorged blocks to processLogsByBlockNumber.
 // Note: Go maps are passed by reference, so there's no need to return the map.
 func processReorged(
-	tracker *blockTracker,
+	tracker *blockInfoTracker,
 	fromBlock, toBlock uint64,
 	mapFreshHashes map[uint64]common.Hash, // New hashes from *ethclient.Client.HeaderByNumber
 	mapFreshLogs map[uint64][]*types.Log, // New logs from *ethclient.Client.FilterLogs

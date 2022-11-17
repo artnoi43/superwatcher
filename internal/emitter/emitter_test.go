@@ -45,7 +45,7 @@ func TestEmitterCase1(t *testing.T) {
 			} else {
 				t.Fatalf("ReorgedBlocks[%d] didn't check before", i)
 			}
-			tracker.addTrackerBlock(block)
+			tracker.addTrackerBlockInfo(block)
 
 			// check LastGoodBlock
 			if blockNumber < lastGoodBlock {
@@ -63,7 +63,7 @@ func TestEmitterCase1(t *testing.T) {
 					t.Fatalf("GoodBlocks[%d] is reorg: hash(before)=%v hash(after)=%v", i, b.Hash, hash)
 				}
 			}
-			tracker.addTrackerBlock(block)
+			tracker.addTrackerBlockInfo(block)
 		}
 
 		syncChan <- struct{}{}

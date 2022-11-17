@@ -21,7 +21,7 @@ type emitter struct {
 	// These fields are used for filtering event logs
 	config     *config.Config
 	client     superwatcher.EthClient
-	tracker    *blockTracker
+	tracker    *blockInfoTracker
 	startBlock uint64
 	addresses  []common.Address
 	topics     [][]common.Hash
