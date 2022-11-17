@@ -71,6 +71,11 @@ func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	blockNumber := number.Uint64()
 	b := r.chooseBlock(blockNumber)
+	if b != nil {
+		return *b, nil
+	}
 
-	return *b, nil
+	return &block{
+		hash: randomHash(blockNumber),
+	}, nil
 }
