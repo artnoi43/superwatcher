@@ -17,53 +17,53 @@ type TestConfig struct {
 	logs      []string
 }
 
-func TestProcessReorg(t *testing.T) {
-	testCases := []TestConfig{
-		{
-			fromBlock: 15944400,
-			toBlock:   15944500,
-			reorgedAt: 15944444,
-			logs: []string{
-				"./assets/logs_poolfactory.json",
-				"./assets/logs_lp.json",
-			},
+var testCases = []TestConfig{
+	{
+		fromBlock: 15944400,
+		toBlock:   15944500,
+		reorgedAt: 15944444,
+		logs: []string{
+			"./assets/logs_poolfactory.json",
+			"./assets/logs_lp.json",
 		},
-		{
-			fromBlock: 15965717,
-			toBlock:   15965748,
-			reorgedAt: 15965730,
-			logs: []string{
-				"./assets/logs_lp_2_1.json",
-				"./assets/logs_lp_2_2.json",
-			},
+	},
+	{
+		fromBlock: 15965717,
+		toBlock:   15965748,
+		reorgedAt: 15965730,
+		logs: []string{
+			"./assets/logs_lp_2_1.json",
+			"./assets/logs_lp_2_2.json",
 		},
-		{
-			fromBlock: 15965802,
-			toBlock:   15965835,
-			reorgedAt: 15965803,
-			logs: []string{
-				"./assets/logs_lp_3_1.json",
-				"./assets/logs_lp_3_2.json",
-			},
+	},
+	{
+		fromBlock: 15965802,
+		toBlock:   15965835,
+		reorgedAt: 15965803,
+		logs: []string{
+			"./assets/logs_lp_3_1.json",
+			"./assets/logs_lp_3_2.json",
 		},
-		{
-			fromBlock: 15966460,
-			toBlock:   15966479,
-			reorgedAt: 15966475,
-			logs: []string{
-				"./assets/logs_lp_4.json",
-			},
+	},
+	{
+		fromBlock: 15966460,
+		toBlock:   15966479,
+		reorgedAt: 15966475,
+		logs: []string{
+			"./assets/logs_lp_4.json",
 		},
-		{
-			fromBlock: 15966500,
-			toBlock:   15966536,
-			reorgedAt: 15966536,
-			logs: []string{
-				"./assets/logs_lp_5.json",
-			},
+	},
+	{
+		fromBlock: 15966500,
+		toBlock:   15966536,
+		reorgedAt: 15966536,
+		logs: []string{
+			"./assets/logs_lp_5.json",
 		},
-	}
+	},
+}
 
+func TestProcessReorg(t *testing.T) {
 	for i, tc := range testCases {
 		err := testProcessReorg(tc)
 		if err != nil {
