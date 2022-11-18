@@ -10,6 +10,7 @@ import (
 )
 
 func TestEmitter(t *testing.T) {
+	// to run test all cases a once, set timeout to ~1 min
 	t.Run("case testEmitterCase1", testEmitterCase1)
 	t.Run("case testEmitterCase2", testEmitterCase2)
 	t.Run("case testEmitterCase3", testEmitterCase3)
@@ -19,7 +20,7 @@ func TestEmitter(t *testing.T) {
 
 func testEmitterCase1(t *testing.T) {
 	tc := testCases[0]
-	
+
 	syncChan := make(chan struct{})
 	filterResultChan := make(chan *superwatcher.FilterResult)
 	errChan := make(chan error)
@@ -28,7 +29,7 @@ func testEmitterCase1(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock}
+	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock - 1}
 	sim := reorgsim.NewReorgSim(5, tc.fromBlock-1, tc.reorgedAt, tc.logs)
 	e := New(conf, sim, fakeDataGateway, nil, nil, syncChan, filterResultChan, errChan, true)
 
@@ -40,6 +41,9 @@ func testEmitterCase1(t *testing.T) {
 
 	for {
 		result := <-filterResultChan
+		if result.FromBlock > tc.toBlock {
+			break
+		}
 		lastGoodBlock := result.LastGoodBlock
 
 		// check ReorgedBlocks
@@ -75,6 +79,7 @@ func testEmitterCase1(t *testing.T) {
 			tracker.addTrackerBlockInfo(block)
 		}
 
+		e.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
@@ -90,7 +95,7 @@ func testEmitterCase2(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock}
+	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock - 1}
 	sim := reorgsim.NewReorgSim(5, tc.fromBlock-1, tc.reorgedAt, tc.logs)
 	e := New(conf, sim, fakeDataGateway, nil, nil, syncChan, filterResultChan, errChan, true)
 
@@ -102,6 +107,9 @@ func testEmitterCase2(t *testing.T) {
 
 	for {
 		result := <-filterResultChan
+		if result.FromBlock > tc.toBlock {
+			break
+		}
 		lastGoodBlock := result.LastGoodBlock
 
 		// check ReorgedBlocks
@@ -137,6 +145,7 @@ func testEmitterCase2(t *testing.T) {
 			tracker.addTrackerBlockInfo(block)
 		}
 
+		e.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
@@ -152,7 +161,7 @@ func testEmitterCase3(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock}
+	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock - 1}
 	sim := reorgsim.NewReorgSim(5, tc.fromBlock-1, tc.reorgedAt, tc.logs)
 	e := New(conf, sim, fakeDataGateway, nil, nil, syncChan, filterResultChan, errChan, true)
 
@@ -164,6 +173,9 @@ func testEmitterCase3(t *testing.T) {
 
 	for {
 		result := <-filterResultChan
+		if result.FromBlock > tc.toBlock {
+			break
+		}
 		lastGoodBlock := result.LastGoodBlock
 
 		// check ReorgedBlocks
@@ -199,6 +211,7 @@ func testEmitterCase3(t *testing.T) {
 			tracker.addTrackerBlockInfo(block)
 		}
 
+		e.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
@@ -214,7 +227,7 @@ func testEmitterCase4(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock}
+	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock - 1}
 	sim := reorgsim.NewReorgSim(5, tc.fromBlock-1, tc.reorgedAt, tc.logs)
 	e := New(conf, sim, fakeDataGateway, nil, nil, syncChan, filterResultChan, errChan, true)
 
@@ -226,6 +239,9 @@ func testEmitterCase4(t *testing.T) {
 
 	for {
 		result := <-filterResultChan
+		if result.FromBlock > tc.toBlock {
+			break
+		}
 		lastGoodBlock := result.LastGoodBlock
 
 		// check ReorgedBlocks
@@ -261,6 +277,7 @@ func testEmitterCase4(t *testing.T) {
 			tracker.addTrackerBlockInfo(block)
 		}
 
+		e.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
@@ -276,7 +293,7 @@ func testEmitterCase5(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock}
+	fakeDataGateway := &mockStateDataGateway{value: tc.fromBlock - 1}
 	sim := reorgsim.NewReorgSim(5, tc.fromBlock-1, tc.reorgedAt, tc.logs)
 	e := New(conf, sim, fakeDataGateway, nil, nil, syncChan, filterResultChan, errChan, true)
 
@@ -288,6 +305,9 @@ func testEmitterCase5(t *testing.T) {
 
 	for {
 		result := <-filterResultChan
+		if result.FromBlock > tc.toBlock {
+			break
+		}
 		lastGoodBlock := result.LastGoodBlock
 
 		// check ReorgedBlocks
@@ -323,6 +343,7 @@ func testEmitterCase5(t *testing.T) {
 			tracker.addTrackerBlockInfo(block)
 		}
 
+		e.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
