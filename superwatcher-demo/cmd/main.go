@@ -50,11 +50,14 @@ func main() {
 		panic("nil redis")
 	}
 
-	stateDataGateway := watcherstate.NewRedisStateDataGateway(
+	stateDataGateway, err := watcherstate.NewRedisStateDataGateway(
 		chain,
 		"superwatcher-demo",
 		rdb,
 	)
+	if err != nil {
+		panic("new stateDataGateway failed: " + err.Error())
+	}
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
