@@ -3,6 +3,8 @@ package emitter
 import (
 	"context"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -13,28 +15,49 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-func TestEmitter(t *testing.T) {
-	// to run test all cases a once, set timeout to ~1 min
-	t.Run("case testEmitterCase1", func(t *testing.T) {
-		emitterTestTemplate(t, testCases[0])
-	})
-	t.Run("case testEmitterCase2", func(t *testing.T) {
-		emitterTestTemplate(t, testCases[1])
-	})
-	t.Run("case testEmitterCase3", func(t *testing.T) {
-		emitterTestTemplate(t, testCases[2])
-	})
-	t.Run("case testEmitterCase4", func(t *testing.T) {
-		emitterTestTemplate(t, testCases[3])
-	})
-	t.Run("case testEmitterCase5", func(t *testing.T) {
-		emitterTestTemplate(t, testCases[4])
-	})
+func TestEmitterAllCases(t *testing.T) {
+	for i := range testCases {
+		testName := fmt.Sprintf("Case:%d", i+1)
+		t.Run(testName, func(t *testing.T) {
+			emitterTestTemplate(t, i+1)
+		})
+	}
 }
 
-func emitterTestTemplate(t *testing.T, tc testConfig) {
+// Run this from the root of the repo with:
+// go test -v ./internal/emitter -run TestEmitterByCase -case 69
+// Go test binary already called `flag.Parse`, so we just simply
+// need to name our flag so that the flag package knows to parse it too.
+var flagCase = flag.Int("case", -1, "Emitter test case")
+
+func TestEmitterByCase(t *testing.T) {
+	var caseNumber int = 1 // default case 1
+	if flagCase != nil {
+		caseNumber = *flagCase
+	}
+
+	if caseNumber < 0 {
+		TestEmitterAllCases(t)
+
+		return
+	}
+
+	if len(testCases) > caseNumber {
+		testName := fmt.Sprintf("Case:%d", caseNumber)
+		t.Run(testName, func(t *testing.T) {
+			emitterTestTemplate(t, caseNumber)
+		})
+
+		return
+	}
+
+	t.Skipf("no such test case: %d", caseNumber)
+}
+
+func emitterTestTemplate(t *testing.T, caseNumber int) {
+	tc := testCases[caseNumber-1]
 	b, _ := json.Marshal(tc)
-	t.Logf("testConfig: %s", b)
+	t.Logf("testConfig for case %d: %s", caseNumber, b)
 
 	syncChan := make(chan struct{})
 	filterResultChan := make(chan *superwatcher.FilterResult)
@@ -44,13 +67,13 @@ func emitterTestTemplate(t *testing.T, tc testConfig) {
 	// Override LoopInterval
 	conf.LoopInterval = 0
 
-	fakeDataGateway := &mockStateDataGateway{value: tc.FromBlock - 1}
+	fakeRedis := &mockStateDataGateway{value: tc.FromBlock - 1}
 	sim := reorgsim.NewReorgSim(conf.LookBackBlocks, tc.FromBlock-1, tc.ReorgedAt, tc.LogsFiles)
-	e := New(conf, sim, fakeDataGateway, nil, nil, syncChan, filterResultChan, errChan, false)
+	testEmitter := New(conf, sim, fakeRedis, nil, nil, syncChan, filterResultChan, errChan, false)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		e.(*emitter).loopFilterLogs(ctx)
+		testEmitter.(*emitter).loopFilterLogs(ctx)
 	}()
 
 	tracker := newTracker()
@@ -61,9 +84,9 @@ func emitterTestTemplate(t *testing.T, tc testConfig) {
 			cancel()
 			break
 		}
+
 		lastGoodBlock := result.LastGoodBlock
 
-		// check ReorgedBlocks
 		for i, block := range result.ReorgedBlocks {
 			blockNumber := block.Number
 			hash := block.Hash
@@ -78,9 +101,9 @@ func emitterTestTemplate(t *testing.T, tc testConfig) {
 
 			tracker.addTrackerBlockInfo(block)
 
-			// check LastGoodBlock
+			// Check LastGoodBlock
 			if blockNumber < lastGoodBlock {
-				t.Fatalf("LastGoodBlock is wrong: ReorgedBlocks[%d] blockNumber=%v, LastGoodBlock=%v", i, blockNumber, lastGoodBlock)
+				t.Fatalf("invalid LastGoodBlock: ReorgedBlocks[%d] blockNumber=%v, LastGoodBlock=%v", i, blockNumber, lastGoodBlock)
 			}
 
 			for _, log := range block.Logs {
@@ -93,14 +116,13 @@ func emitterTestTemplate(t *testing.T, tc testConfig) {
 			}
 		}
 
-		// check GoodBlocks
 		for i, block := range result.GoodBlocks {
 			blockNumber := block.Number
 			hash := block.Hash
 
 			if b, exists := tracker.getTrackerBlockInfo(blockNumber); exists {
 				if b.Hash != hash {
-					t.Fatalf("GoodBlocks[%d] is reorg: hash(before)=%v hash(after)=%v", i, b.Hash, hash)
+					t.Fatalf("GoodBlocks[%d] is reorged: hash(before)=%v hash(after)=%v", i, b.Hash, hash)
 				}
 			}
 			tracker.addTrackerBlockInfo(block)
@@ -110,7 +132,7 @@ func emitterTestTemplate(t *testing.T, tc testConfig) {
 			}
 		}
 
-		e.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
+		testEmitter.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
