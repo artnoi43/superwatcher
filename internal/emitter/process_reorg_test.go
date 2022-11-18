@@ -11,54 +11,54 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-type TestConfig struct {
-	fromBlock uint64
-	toBlock   uint64
-	reorgedAt uint64
-	logs      []string
+type testConfig struct {
+	FromBlock uint64   `json:"fromBlock"`
+	ToBlock   uint64   `json:"toBlock"`
+	ReorgedAt uint64   `json:"reorgedAt"`
+	LogsFiles []string `json:"logs"`
 }
 
-var testCases = []TestConfig{
+var testCases = []testConfig{
 	{
-		fromBlock: 15944400,
-		toBlock:   15944500,
-		reorgedAt: 15944444,
-		logs: []string{
+		FromBlock: 15944400,
+		ToBlock:   15944500,
+		ReorgedAt: 15944444,
+		LogsFiles: []string{
 			"./assets/logs_poolfactory.json",
 			"./assets/logs_lp.json",
 		},
 	},
 	{
-		fromBlock: 15965717,
-		toBlock:   15965748,
-		reorgedAt: 15965730,
-		logs: []string{
+		FromBlock: 15965717,
+		ToBlock:   15965748,
+		ReorgedAt: 15965730,
+		LogsFiles: []string{
 			"./assets/logs_lp_2_1.json",
 			"./assets/logs_lp_2_2.json",
 		},
 	},
 	{
-		fromBlock: 15965802,
-		toBlock:   15965835,
-		reorgedAt: 15965803,
-		logs: []string{
+		FromBlock: 15965802,
+		ToBlock:   15965835,
+		ReorgedAt: 15965803,
+		LogsFiles: []string{
 			"./assets/logs_lp_3_1.json",
 			"./assets/logs_lp_3_2.json",
 		},
 	},
 	{
-		fromBlock: 15966460,
-		toBlock:   15966479,
-		reorgedAt: 15966475,
-		logs: []string{
+		FromBlock: 15966460,
+		ToBlock:   15966479,
+		ReorgedAt: 15966475,
+		LogsFiles: []string{
 			"./assets/logs_lp_4.json",
 		},
 	},
 	{
-		fromBlock: 15966500,
-		toBlock:   15966536,
-		reorgedAt: 15966536,
-		logs: []string{
+		FromBlock: 15966500,
+		ToBlock:   15966536,
+		ReorgedAt: 15966536,
+		LogsFiles: []string{
 			"./assets/logs_lp_5.json",
 		},
 	},
@@ -73,10 +73,10 @@ func TestProcessReorg(t *testing.T) {
 	}
 }
 
-func testProcessReorg(c TestConfig) error {
+func testProcessReorg(c testConfig) error {
 	tracker := newTracker()
-	hardcodedLogs := reorgsim.InitLogs(c.logs)
-	oldChain, reorgedChain := reorgsim.NewBlockChain(hardcodedLogs, c.reorgedAt)
+	hardcodedLogs := reorgsim.InitLogs(c.LogsFiles)
+	oldChain, reorgedChain := reorgsim.NewBlockChain(hardcodedLogs, c.ReorgedAt)
 
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
@@ -103,8 +103,8 @@ func testProcessReorg(c TestConfig) error {
 
 	wasReorged := processReorged(
 		tracker,
-		c.fromBlock,
-		c.toBlock,
+		c.FromBlock,
+		c.ToBlock,
 		freshHashes,
 		freshLogs,
 		processLogs,
@@ -112,21 +112,21 @@ func testProcessReorg(c TestConfig) error {
 
 	for blockNumber, reorged := range wasReorged {
 		// Any blocks after c.reorgedAt should be reorged.
-		if blockNumber >= c.reorgedAt {
+		if blockNumber >= c.ReorgedAt {
 			if reorged {
 				continue
 			}
 
 			return fmt.Errorf(
 				"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged",
-				blockNumber, c.reorgedAt,
+				blockNumber, c.ReorgedAt,
 			)
 		}
 
 		// And any block before c.reorgedAt should NOT be reorged.
 		if reorged {
 			return fmt.Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged",
-				blockNumber, c.reorgedAt,
+				blockNumber, c.ReorgedAt,
 			)
 		}
 	}
