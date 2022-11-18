@@ -15,7 +15,10 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
+var ranAllCases bool
+
 func TestEmitterAllCases(t *testing.T) {
+	ranAllCases = true
 	for i := range testCases {
 		testName := fmt.Sprintf("Case:%d", i+1)
 		t.Run(testName, func(t *testing.T) {
@@ -31,6 +34,9 @@ func TestEmitterAllCases(t *testing.T) {
 var flagCase = flag.Int("case", -1, "Emitter test case")
 
 func TestEmitterByCase(t *testing.T) {
+	if ranAllCases {
+		t.Skip("all cases were tested before")
+	}
 	var caseNumber int = 1 // default case 1
 	if flagCase != nil {
 		caseNumber = *flagCase
@@ -80,6 +86,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 
 	for {
 		result := <-filterResultChan
+
 		if result.LastGoodBlock > tc.ToBlock {
 			cancel()
 			break
@@ -110,10 +117,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 			// Check that all the reorged logs were seen before in |seenLogs|
 			for _, log := range block.Logs {
 				if !gslutils.Contains(seenLogs, log) {
-					t.Fatalf(
-						"reorgedLog not seen before: blockHash %s, txHash %s, addr %s, topics[0] %s",
-						log.BlockHash.String(), log.TxHash.String(), log.Address.String(), log.Topics[0].String(),
-					)
+					fatalBadLog(t, "reorgedLog not seen before", log)
 				}
 			}
 
@@ -136,10 +140,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 				var ok bool
 				seenLogs, ok = appendUnique(seenLogs, log)
 				if !ok {
-					t.Fatalf(
-						"duplicate good logs seen: blockHash %s, txHash %s, addr %s, topics[0]: %s",
-						log.BlockHash.String(), log.TxHash.String(), log.Address.String(), log.Topics[0].String(),
-					)
+					fatalBadLog(t, "duplicate good log in seenLogs", log)
 				}
 			}
 
@@ -150,6 +151,13 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 		testEmitter.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
+}
+
+func fatalBadLog(t *testing.T, msg string, log *types.Log) {
+	t.Fatalf(
+		"%s: blockHash %s, txHash %s, addr %s, topics[0]: %s",
+		msg, log.BlockHash.String(), log.TxHash.String(), log.Address.String(), log.Topics[0].String(),
+	)
 }
 
 // appendUnique appends item to arr if arr does not contain item.
