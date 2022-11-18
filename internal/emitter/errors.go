@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	errNoNewBlock       = errors.New("no new block")
 	errFromBlockReorged = errors.New("fromBlock reorged")
 	errFetchError       = errors.New("fetch from ethclient failed")
 
