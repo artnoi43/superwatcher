@@ -38,7 +38,6 @@ func TestEmitterByCase(t *testing.T) {
 
 	if caseNumber < 0 {
 		TestEmitterAllCases(t)
-
 		return
 	}
 
@@ -78,6 +77,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 
 	tracker := newTracker()
 	var seenLogs []*types.Log
+
 	for {
 		result := <-filterResultChan
 		if result.LastGoodBlock > tc.ToBlock {
@@ -99,13 +99,15 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 				t.Fatalf("ReorgedBlocks[%d] didn't check before", i)
 			}
 
-			tracker.addTrackerBlockInfo(block)
-
 			// Check LastGoodBlock
-			if blockNumber < lastGoodBlock {
-				t.Fatalf("invalid LastGoodBlock: ReorgedBlocks[%d] blockNumber=%v, LastGoodBlock=%v", i, blockNumber, lastGoodBlock)
+			if lastGoodBlock > blockNumber {
+				t.Fatalf(
+					"invalid LastGoodBlock: ReorgedBlocks[%d] blockNumber=%v, LastGoodBlock=%v",
+					i, blockNumber, lastGoodBlock,
+				)
 			}
 
+			// Check that all the reorged logs were seen before in |seenLogs|
 			for _, log := range block.Logs {
 				if !gslutils.Contains(seenLogs, log) {
 					t.Fatalf(
@@ -114,6 +116,8 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 					)
 				}
 			}
+
+			tracker.addTrackerBlockInfo(block)
 		}
 
 		for i, block := range result.GoodBlocks {
@@ -122,27 +126,39 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 
 			if b, exists := tracker.getTrackerBlockInfo(blockNumber); exists {
 				if b.Hash != hash {
-					t.Fatalf("GoodBlocks[%d] is reorged: hash(before)=%v hash(after)=%v", i, b.Hash, hash)
+					t.Fatalf(
+						"GoodBlocks[%d] is reorged: hash(before)=%v hash(after)=%v",
+						i, b.Hash.String(), hash.String(),
+					)
 				}
 			}
-			tracker.addTrackerBlockInfo(block)
-
 			for _, log := range block.Logs {
-				appendUnique(seenLogs, log)
+				var ok bool
+				seenLogs, ok = appendUnique(seenLogs, log)
+				if !ok {
+					t.Fatalf(
+						"duplicate good logs seen: blockHash %s, txHash %s, addr %s, topics[0]: %s",
+						log.BlockHash.String(), log.TxHash.String(), log.Address.String(), log.Topics[0].String(),
+					)
+				}
 			}
+
+			tracker.addTrackerBlockInfo(block)
 		}
 
+		// Sets before syncs
 		testEmitter.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
 
-func appendUnique[T comparable](arr []T, item T) []T {
-	if gslutils.Contains(arr, item) {
-		return append(arr, item)
+// appendUnique appends item to arr if arr does not contain item.
+func appendUnique[T comparable](arr []T, item T) ([]T, bool) {
+	if !gslutils.Contains(arr, item) {
+		return append(arr, item), true
 	}
 
-	return arr
+	return arr, false
 }
 
 type mockStateDataGateway struct {
