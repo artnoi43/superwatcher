@@ -40,8 +40,12 @@ func (e *engine) handleResults(ctx context.Context) error {
 			if err != nil {
 				return errors.Wrap(err, "e.serviceEngine.HandleReorgedBlockLogs failed")
 			}
-			for k, v := range artifacts {
-				e.debugMsg("got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
+
+			// Check debug here so we dont have to iterate over all keys in map artifacts before checking in `e.debugMsg`
+			if e.debug {
+				for k, v := range artifacts {
+					e.debugMsg("got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
+				}
 			}
 
 			metadata.state.Fire(EventHandleReorg)
