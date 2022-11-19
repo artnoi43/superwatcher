@@ -15,15 +15,30 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
+// TODO: verbose does not work
+func getFlagValues() (caseNumber int, verbose bool) {
+	caseNumber = 1 // default case 1
+	if flagCase != nil {
+		caseNumber = *flagCase
+	}
+	if verboseFlag != nil {
+		verbose = *verboseFlag
+	}
+
+	return caseNumber, verbose
+}
+
 // allCasesAlreadyRun is used to skip TestEmitterByCase if TestEmitterAllCases were run.
 var allCasesAlreadyRun bool
 
 func TestEmitterAllCases(t *testing.T) {
 	allCasesAlreadyRun = true
+
+	_, verbose := getFlagValues()
 	for i := range testCases {
 		testName := fmt.Sprintf("Case:%d", i+1)
 		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplate(t, i+1)
+			emitterTestTemplate(t, i+1, verbose)
 		})
 	}
 }
@@ -33,17 +48,14 @@ func TestEmitterAllCases(t *testing.T) {
 // Go test binary already called `flag.Parse`, so we just simply
 // need to name our flag so that the flag package knows to parse it too.
 var flagCase = flag.Int("case", -1, "Emitter test case")
-var verboseFlag = flag.Bool("verbose", false, "Verbose emitter output")
+var verboseFlag = flag.Bool("v", false, "Verbose emitter output")
 
 func TestEmitterByCase(t *testing.T) {
 	if allCasesAlreadyRun {
-		t.Skip("all cases were tested before")
-	}
-	var caseNumber int = 1 // default case 1
-	if flagCase != nil {
-		caseNumber = *flagCase
+		t.Skip("all cases were tested before -- skipping")
 	}
 
+	caseNumber, verbose := getFlagValues()
 	if caseNumber < 0 {
 		TestEmitterAllCases(t)
 		return
@@ -52,7 +64,7 @@ func TestEmitterByCase(t *testing.T) {
 	if len(testCases) > caseNumber {
 		testName := fmt.Sprintf("Case:%d", caseNumber)
 		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplate(t, caseNumber)
+			emitterTestTemplate(t, caseNumber, verbose)
 		})
 
 		return
@@ -61,13 +73,7 @@ func TestEmitterByCase(t *testing.T) {
 	t.Skipf("no such test case: %d", caseNumber)
 }
 
-func emitterTestTemplate(t *testing.T, caseNumber int) {
-	var verbose bool
-	if verboseFlag != nil {
-		// verbose = *verbose // This does not work - not sure why
-		verbose = true
-	}
-
+func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	tc := testCases[caseNumber-1]
 	b, _ := json.Marshal(tc)
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
@@ -84,9 +90,10 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 	sim := reorgsim.NewReorgSim(conf.LookBackBlocks, tc.FromBlock-1, tc.ReorgedAt, tc.LogsFiles)
 	testEmitter := New(conf, sim, fakeRedis, nil, nil, syncChan, filterResultChan, errChan, verbose)
 
+	status := new(filterLogStatus)
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		testEmitter.(*emitter).loopFilterLogs(ctx)
+		testEmitter.(*emitter).loopFilterLogs(ctx, status)
 	}()
 
 	tracker := newTracker()
@@ -159,6 +166,9 @@ func emitterTestTemplate(t *testing.T, caseNumber int) {
 		testEmitter.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
+
+	b, _ = json.Marshal(status)
+	t.Logf("final status: %s", b)
 }
 
 func fatalBadLog(t *testing.T, msg string, log *types.Log) {

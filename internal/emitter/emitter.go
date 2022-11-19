@@ -51,14 +51,18 @@ type Config struct {
 // Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.
 // When ctx is camcled else where, Loop calls *emitter.shutdown and returns ctx.Err()
 func (e *emitter) Loop(ctx context.Context) error {
+	status := new(filterLogStatus)
 	for {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
 		case <-ctx.Done():
+			e.debugMsg("shutting down emitter", zap.Any("emitterStatus", status))
 			e.Shutdown()
 			return errors.Wrap(ctx.Err(), ErrEmitterShutdown.Error())
+
 		default:
-			if err := e.loopFilterLogs(ctx); err != nil {
+			if err := e.loopFilterLogs(ctx, status); err != nil {
+				e.debugMsg("loopFilterLogs returned", zap.Any("emitterStatus", status), zap.Error(err))
 				e.emitError(errors.Wrap(err, "error in loopFilterLogs"))
 			}
 		}

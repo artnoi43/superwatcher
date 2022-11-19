@@ -172,8 +172,10 @@ func (e *emitter) filterLogs(
 		e.tracker.addTrackerBlockInfo(b)
 	}
 
-	// ToBlock will be the last good block (not reorged)
 	filterResult.FromBlock = fromBlock
+	filterResult.ToBlock = toBlock
+
+	// Decide result.LastGoodBlock
 	if len(wasReorged) == 0 {
 		filterResult.LastGoodBlock = toBlock
 	} else {

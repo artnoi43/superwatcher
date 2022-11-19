@@ -22,7 +22,7 @@ type filterLogStatus struct {
 
 // loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
 // and will only returns if (some) errors happened.
-func (e *emitter) loopFilterLogs(ctx context.Context) error {
+func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) error {
 	sleep := func() {
 		time.Sleep(time.Second * time.Duration(e.config.LoopInterval))
 	}
@@ -31,7 +31,6 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 	lookBackFirstStart := true
 
 	// This will keep track of fromBlock/toBlock, as well as reorg status
-	status := new(filterLogStatus)
 	for {
 		// Don't sleep or log status on first loop
 		if !lookBackFirstStart {
@@ -43,6 +42,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 		// Graceful shutdown in main
 		case <-ctx.Done():
 			return ctx.Err()
+
 		default:
 			newStatus, err := e.computeFromBlockToBlock(
 				loopCtx,

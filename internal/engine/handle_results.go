@@ -18,7 +18,10 @@ func (e *engine) handleResults(ctx context.Context) error {
 			return nil
 		}
 
+		var reorged bool
 		for _, block := range result.ReorgedBlocks {
+			reorged = true
+
 			metadata := e.metadataTracker.GetBlockMetadata(block)
 			metadata.state.Fire(EventReorg)
 
@@ -88,8 +91,15 @@ func (e *engine) handleResults(ctx context.Context) error {
 			result.LastGoodBlock - (emitterConfig.LookBackBlocks * emitterConfig.LookBackRetries),
 		)
 
+		var lastRecordedBlock uint64
+		if reorged {
+			lastRecordedBlock = result.LastGoodBlock
+		} else {
+			lastRecordedBlock = result.ToBlock
+		}
+
 		if err := e.stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock); err != nil {
-			return errors.Wrapf(err, "failed to save lastRecordedBlock %d", result.LastGoodBlock)
+			return errors.Wrapf(err, "failed to save lastRecordedBlock %d", lastRecordedBlock)
 		}
 
 		e.emitterClient.WatcherEmitterSync()
