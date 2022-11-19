@@ -32,12 +32,18 @@ func TestFromBlockToBlock(t *testing.T) {
 	}
 	for input, expected := range tests {
 		from, to := fromBlockToBlock(input.current, input.lastRec, input.lookBack)
-		t.Logf("from: %v, to: %v, expectedFrom: %v,  expectedTo: %v\n", from, to, expected.fromBlock, expected.toBlock)
+		var failed bool
 		if expected.fromBlock != from {
 			t.Fatal("fromBlock not matched")
+			failed = true
 		}
 		if expected.toBlock != to {
 			t.Fatal("toBlock not matched")
+			failed = true
+		}
+
+		if failed {
+			t.Logf("from: %v, to: %v, expectedFrom: %v,  expectedTo: %v\n", from, to, expected.fromBlock, expected.toBlock)
 		}
 	}
 }

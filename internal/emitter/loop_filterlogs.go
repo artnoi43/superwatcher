@@ -7,16 +7,17 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/logger/debug"
 )
 
 type filterLogStatus struct {
-	IsReorging bool   `json:"isReorging"`
-	FromBlock  uint64 `json:"fromBlock"`
-	ToBlock    uint64 `json:"toBlock"`
+	IsReorging        bool   `json:"isReorging"`
+	CurrentBlock      uint64 `json:"currentBlock"`
+	LastRecordedBlock uint64 `json:"lastRecordedBlock"`
+	FromBlock         uint64 `json:"fromBlock"`
+	ToBlock           uint64 `json:"toBlock"`
 }
 
 // loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
@@ -43,7 +44,11 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			fromBlock, toBlock, err := e.computeFromBlockToBlock(loopCtx, &lookBackFirstStart, status)
+			newStatus, err := e.computeFromBlockToBlock(
+				loopCtx,
+				&lookBackFirstStart,
+				status,
+			)
 			if err != nil {
 				if errors.Is(errNoNewBlock, err) {
 					// Use zap.String because this is not actually an error
@@ -55,28 +60,25 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 			}
 
 			toggleStatusIsReorging := func(isReorging bool) {
+				status = newStatus
 				status.IsReorging = isReorging
-				status.FromBlock = fromBlock
-				status.ToBlock = toBlock
 			}
 
 			e.debugMsg(
 				"calling filterLogs",
-				zap.Uint64("fromBlock", fromBlock),
-				zap.Uint64("toBlock", toBlock),
-				zap.Any("current_status", status),
+				zap.Any("current_status", newStatus),
 			)
 
 			if err := e.filterLogs(
 				loopCtx,
-				fromBlock,
-				toBlock,
+				newStatus.FromBlock,
+				newStatus.ToBlock,
 			); err != nil {
 				if errors.Is(err, errFromBlockReorged) {
 					// Continue to filter from fromBlock
 					toggleStatusIsReorging(true)
 
-					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", status))
+					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", newStatus))
 					continue
 
 				} else if errors.Is(err, errFetchError) {
@@ -93,7 +95,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 
 			e.debugMsg(
 				"filterLogs returned successfully",
-				zap.Any("emitterStatus", status),
+				zap.Any("emitterStatus", newStatus),
 			)
 		}
 	}
@@ -102,21 +104,22 @@ func (e *emitter) loopFilterLogs(ctx context.Context) error {
 // computeFromBlockToBlock gets relevant block numbers using emitter's resources
 // such as |e.client| and |e.stateDataGateway| before calling the other (non-method) `computeFromBlockToBlock`,
 // which does not use emitter's resources.
+// It returns old status with updated values if there was an error, or new status if successful.
 func (e *emitter) computeFromBlockToBlock(
 	ctx context.Context,
 	lookBackFirstStart *bool,
 	status *filterLogStatus,
 ) (
-	fromBlock uint64,
-	toBlock uint64,
-	err error,
+	*filterLogStatus,
+	error,
 ) {
-	fromBlock, toBlock = status.FromBlock, status.ToBlock
 	// Get chain's tallest block number and compare it with lastRecordedBlock
+	var err error
 	currentBlock, err := e.client.BlockNumber(ctx)
 	if err != nil {
-		return status.FromBlock, status.ToBlock, errors.Wrap(err, "failed to get current block number from node")
+		return status, errors.Wrap(err, "failed to get current block number from node")
 	}
+	status.CurrentBlock = currentBlock
 
 	// lastRecordedBlock was saved by engine.
 	// The value to be saved should be superwatcher.FilterResult.LastGoodBlock
@@ -124,7 +127,7 @@ func (e *emitter) computeFromBlockToBlock(
 	if err != nil {
 		// Return error if not datagateway.ErrRecordNotFound
 		if !errors.Is(err, datagateway.ErrRecordNotFound) {
-			return fromBlock, toBlock, errors.Wrap(err, "failed to get last recorded block from Redis")
+			return status, errors.Wrap(err, "failed to get last recorded block from Redis")
 		}
 
 		// If no lastRecordedBlock => watcher has never been run on the host: there's no need to look back.
@@ -132,6 +135,7 @@ func (e *emitter) computeFromBlockToBlock(
 		// If no lastRecordedBlock, use startBlock (contract genesis block)
 		lastRecordedBlock = e.startBlock
 	}
+	status.LastRecordedBlock = lastRecordedBlock
 
 	e.debugMsg(
 		"recent blocks",
@@ -145,35 +149,61 @@ func (e *emitter) computeFromBlockToBlock(
 			"no new block, skipping",
 			zap.Uint64("currentBlock", currentBlock),
 		)
-		return fromBlock, toBlock, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
+		return status, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
 	}
 
-	fromBlock, toBlock = computeFromBlockToBlock(e.config, lastRecordedBlock, currentBlock, lookBackFirstStart, status, e.debug)
-	return fromBlock, toBlock, nil
+	fromBlock, toBlock := computeFromBlockToBlock(
+		currentBlock,
+		lastRecordedBlock,
+		e.config.LookBackBlocks,
+		e.config.LookBackRetries,
+		lookBackFirstStart,
+		status,
+		e.debug,
+	)
+
+	return &filterLogStatus{
+		FromBlock:         fromBlock,
+		ToBlock:           toBlock,
+		CurrentBlock:      currentBlock,
+		LastRecordedBlock: lastRecordedBlock,
+		IsReorging:        status.IsReorging,
+	}, nil
 }
 
 // computeFromBlockToBlock defines a more higher-level computation logic for getting fromBlock and toBlock.
 // It takes into account the emitter's config, the emitter status, chain status, etc.
 // TODO: Test this func
 func computeFromBlockToBlock(
-	conf *config.Config,
-	lastRecordedBlock, currentBlock uint64,
+	currentBlock uint64,
+	lastRecordedBlock uint64,
+	lookBackBlocks uint64,
+	lookBackRetries uint64,
 	lookBackFirstStart *bool,
 	status *filterLogStatus,
 	isDebug bool,
 ) (
-	fromBlock uint64,
-	toBlock uint64,
+	uint64,
+	uint64,
 ) {
+	var fromBlock, toBlock uint64
+
 	// Special case
 	if *lookBackFirstStart || status.IsReorging {
 		// Toggle
 		*lookBackFirstStart = false
 
 		// Start with going back lookBack * maxLookBack times if watcher was restarted
-		goBack := conf.LookBackBlocks * conf.LookBackRetries
-		fromBlock = lastRecordedBlock + 1 - goBack
-		toBlock = fromBlock + conf.LookBackBlocks
+		goBack := lookBackBlocks * lookBackRetries
+		base := lastRecordedBlock + 1
+
+		// Prevent overflow
+		if goBack > base {
+			fromBlock = 1
+		} else {
+			fromBlock = base - goBack
+		}
+		toBlock = fromBlock + lookBackBlocks
 
 		debug.DebugMsg(
 			isDebug,
@@ -184,8 +214,12 @@ func computeFromBlockToBlock(
 		)
 
 	} else {
-		fromBlock, toBlock = fromBlockToBlock(currentBlock, lastRecordedBlock, conf.LookBackBlocks)
+		fromBlock, toBlock = fromBlockToBlock(currentBlock, lastRecordedBlock, lookBackBlocks)
 	}
+
+	// Update status here too
+	status.FromBlock = fromBlock
+	status.ToBlock = toBlock
 
 	return fromBlock, toBlock
 }
