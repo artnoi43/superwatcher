@@ -13,7 +13,6 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal"
 )
 
-// MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *routerEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact, // Ignored

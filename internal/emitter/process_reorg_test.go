@@ -81,7 +81,7 @@ func testProcessReorg(c testConfig) error {
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
 		blockLogs := block.Logs()
-		logs := gslutils.CollectPointers(&blockLogs)
+		logs := gslutils.CollectPointers(blockLogs)
 
 		tracker.addTrackerBlockInfo(&superwatcher.BlockInfo{
 			Logs:   logs,

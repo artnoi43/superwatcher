@@ -2,7 +2,8 @@ package superwatcher
 
 import (
 	"fmt"
-	"strings"
+
+	"github.com/artnoi43/gsl/gslutils"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -31,7 +32,7 @@ func NewBlankBlockInfo(
 
 // String returns the block hash with 0x prepended in all lowercase string.
 func (b *BlockInfo) String() string {
-	return strings.ToLower(b.Hash.String())
+	return gslutils.StringerToLowerString(b.Hash)
 }
 
 func (b *BlockInfo) BlockNumberString() string {
