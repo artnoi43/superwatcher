@@ -1,8 +1,6 @@
 package routerengine
 
 import (
-	"reflect"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -37,11 +35,6 @@ func (e *routerEngine) HandleGoodLogs(
 				continue
 			}
 			return nil, errors.Wrapf(err, "subengine %s HandleGoodBlock failed", subEngine.String())
-		}
-
-		// TODO: remove
-		for i, resArtifact := range resultArtifacts {
-			debug.DebugMsg(true, "resArtifact", zap.Int("i", i), zap.String("type", reflect.TypeOf(resArtifact).String()))
 		}
 
 		// Only append non-nil subengine artifacts

@@ -87,7 +87,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	conf.LoopInterval = 0
 
 	fakeRedis := &mockStateDataGateway{value: tc.FromBlock - 1}
-	sim := reorgsim.NewReorgSim(conf.LookBackBlocks, tc.FromBlock-1, tc.ReorgedAt, tc.LogsFiles)
+	sim := reorgsim.NewReorgSim(conf.LookBackBlocks, tc.ReorgedAt, tc.LogsFiles)
 	testEmitter := New(conf, sim, fakeRedis, nil, nil, syncChan, filterResultChan, errChan, verbose)
 
 	status := new(filterLogStatus)

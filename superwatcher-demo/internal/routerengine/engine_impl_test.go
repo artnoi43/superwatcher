@@ -1,16 +1,14 @@
 package routerengine
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/pkg/errors"
 
+	"github.com/artnoi43/gsl/soyutils"
 	"github.com/artnoi43/superwatcher"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
@@ -27,11 +25,11 @@ const (
 )
 
 func TestHandleGoodLogs(t *testing.T) {
-	ensLogs, err := readSampleLogs(assetsPathENS + "/logs_multi_names.json")
+	ensLogs, err := soyutils.ReadFileJSON[[]*types.Log](assetsPathENS + "/logs_multi_names.json")
 	if err != nil {
 		t.Skip("bad or missing ENS logs file:", err.Error())
 	}
-	poolFactoryLogs, err := readSampleLogs(assetsPathPoolFactory + "/log_poolcreated.json")
+	poolFactoryLogs, err := soyutils.ReadFileJSON[[]*types.Log](assetsPathPoolFactory + "/log_poolcreated.json")
 	if err != nil {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
@@ -100,20 +98,6 @@ func testHandleGoodLogs(
 			}
 		}
 	}
-}
-
-func readSampleLogs(filename string) ([]*types.Log, error) {
-	fileBytes, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read log file %s", filename)
-	}
-
-	var logs []*types.Log
-	if err := json.Unmarshal(fileBytes, &logs); err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal log from file %s", filename)
-	}
-
-	return logs, nil
 }
 
 func assertType[T any](artifact superwatcher.Artifact) error {

@@ -8,7 +8,6 @@ import (
 // and will be used in place of the normal Ethereum client
 // to test the default emitter implementation.
 type reorgSim struct {
-	lastRecord   uint64
 	lookBack     uint64
 	chain        blockChain
 	reorgedChain blockChain
@@ -17,12 +16,11 @@ type reorgSim struct {
 }
 
 // NewReorgSim returns a new reorgSim with hard-coded good and reorged chains.
-func NewReorgSim(lookBack, lastRecord, reorgedAt uint64, logFiles []string) superwatcher.EthClient {
+func NewReorgSim(lookBack, reorgedAt uint64, logFiles []string) superwatcher.EthClient {
 	mappedLogs := InitLogs(logFiles)
 	chain, reorgedChain := NewBlockChain(mappedLogs, reorgedAt)
 
 	return &reorgSim{
-		lastRecord:   lastRecord,
 		lookBack:     lookBack,
 		chain:        chain,
 		reorgedChain: reorgedChain,

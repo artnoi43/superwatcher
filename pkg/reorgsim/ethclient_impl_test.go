@@ -9,7 +9,7 @@ import (
 )
 
 func TestFilterLogs(t *testing.T) {
-	sim := NewReorgSim(5, 15944400, reorgedAt, defaultLogs)
+	sim := NewReorgSim(5, reorgedAt, defaultLogs)
 	ctx := context.Background()
 	logs, err := sim.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: big.NewInt(69),

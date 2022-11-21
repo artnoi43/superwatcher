@@ -76,7 +76,7 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	sim := NewReorgSim(5, 15944400, reorgedAt, defaultLogs)
+	sim := NewReorgSim(5, reorgedAt, defaultLogs)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),
