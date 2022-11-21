@@ -23,11 +23,15 @@ func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 }
 
 func (e *emitter) emitError(err error) {
+	e.debugMsg("emitError called")
+
 	if e.errChan == nil {
 		e.debugMsg("emitError", zap.String("debug", "errChan is nil"))
+		return
 	}
 
 	if err != nil {
+		e.debugMsg("blocking in emitError")
 		e.errChan <- err
 	}
 }

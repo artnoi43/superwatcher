@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	assetsPath            = "../assets"
+	assetsPath            = "../../assets"
 	assetsPathENS         = assetsPath + "/ens"
 	assetsPathPoolFactory = assetsPath + "/poolfactory"
 )

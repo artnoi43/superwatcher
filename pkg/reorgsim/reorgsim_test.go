@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	startBlock  uint64 = 15900000
 	reorgedAt   uint64 = 15944444
 	defaultLogs        = []string{
 		"./assets/logs_poolfactory.json",
@@ -76,7 +77,14 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	sim := NewReorgSim(5, reorgedAt, defaultLogs)
+	param := ReorgParam{
+		StartBlock:    startBlock,
+		BlockProgress: 3,
+		ReorgedAt:     reorgedAt,
+		ExitBlock:     reorgedAt + 100,
+	}
+
+	sim := NewReorgSim(param, defaultLogs)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),

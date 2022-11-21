@@ -2,13 +2,13 @@ package reorgsim
 
 import (
 	"context"
-	"errors"
 	"math/big"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 )
 
@@ -86,11 +86,28 @@ func (r *reorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 }
 
 func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
-	return 20000000, nil
+	if r.ReorgParam.BlockProgress == 0 {
+		panic("0 BlockProgress")
+	}
+
+	if r.ReorgParam.currentBlock == 0 {
+		r.ReorgParam.currentBlock = r.ReorgParam.StartBlock
+		return r.currentBlock, nil
+	}
+
+	currentBlock := r.ReorgParam.currentBlock
+
+	if currentBlock >= r.ReorgParam.ExitBlock {
+		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.ReorgParam.ExitBlock)
+	}
+
+	r.ReorgParam.currentBlock = currentBlock + r.ReorgParam.BlockProgress
+	return currentBlock, nil
 }
 
 func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	blockNumber := number.Uint64()
+
 	b := r.chooseBlock(blockNumber)
 	if b != nil {
 		return *b, nil

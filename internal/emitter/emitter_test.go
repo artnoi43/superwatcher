@@ -9,9 +9,11 @@ import (
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
+	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
@@ -78,31 +80,53 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	b, _ := json.Marshal(tc)
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
 
-	syncChan := make(chan struct{})
-	filterResultChan := make(chan *superwatcher.FilterResult)
-	errChan := make(chan error)
-
 	conf, _ := config.ConfigYAML("../../config/config.yaml")
 	// Override LoopInterval
 	conf.LoopInterval = 0
 
-	fakeRedis := &mockStateDataGateway{value: tc.FromBlock - 1}
-	sim := reorgsim.NewReorgSim(conf.LookBackBlocks, tc.ReorgedAt, tc.LogsFiles)
+	fakeRedis := mockwatcherstate.New(tc.FromBlock - 1)
+
+	param := reorgsim.ReorgParam{
+		StartBlock:    tc.FromBlock,
+		BlockProgress: 20,
+		ReorgedAt:     tc.ReorgedAt,
+		ExitBlock:     tc.ToBlock + 200,
+	}
+
+	sim := reorgsim.NewReorgSim(param, tc.LogsFiles)
+
+	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
+	errChan := make(chan error, 5)
+	syncChan := make(chan struct{})
+	filterResultChan := make(chan *superwatcher.FilterResult)
+
 	testEmitter := New(conf, sim, fakeRedis, nil, nil, syncChan, filterResultChan, errChan, verbose)
 
-	status := new(filterLogStatus)
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		testEmitter.(*emitter).loopFilterLogs(ctx, status)
+		testEmitter.(*emitter).Loop(ctx)
 	}()
 
 	tracker := newTracker()
 	var seenLogs []*types.Log
 
+	go func() {
+		if err := <-errChan; err != nil {
+			if errors.Is(err, reorgsim.ErrExitBlockReached) {
+				// This triggers shutdown on testEmitter, causing result from channels to be nil
+				cancel()
+			}
+		}
+	}()
+
 	for {
 		result := <-filterResultChan
 
+		if result == nil {
+			break
+		}
 		if result.LastGoodBlock > tc.ToBlock {
+			t.Logf("finished case %d", caseNumber)
 			cancel()
 			break
 		}
@@ -166,9 +190,6 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		testEmitter.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
-
-	b, _ = json.Marshal(status)
-	t.Logf("final status: %s", b)
 }
 
 func fatalBadLog(t *testing.T, msg string, log *types.Log) {
@@ -185,21 +206,4 @@ func appendUnique[T comparable](arr []T, item T) ([]T, bool) {
 	}
 
 	return arr, false
-}
-
-type mockStateDataGateway struct {
-	value uint64
-}
-
-func (m *mockStateDataGateway) GetLastRecordedBlock(context.Context) (uint64, error) {
-	return m.value, nil
-}
-
-func (m *mockStateDataGateway) SetLastRecordedBlock(ctx context.Context, v uint64) error {
-	m.value = v
-	return nil
-}
-
-func (m *mockStateDataGateway) Shutdown() error {
-	return nil
 }

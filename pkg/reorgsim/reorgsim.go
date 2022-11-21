@@ -4,11 +4,20 @@ import (
 	"github.com/artnoi43/superwatcher"
 )
 
+type ReorgParam struct {
+	StartBlock    uint64
+	currentBlock  uint64 // currentBlock is hidden from outside for using exclusively in BlockByNumber
+	BlockProgress uint64
+	ReorgedAt     uint64
+	ExitBlock     uint64 // reorgSim.HeaderByNumber will return ErrExitBlockReached once its currentBlock reach this
+}
+
 // reorgSim implements superwatcher.EthClient[block],
 // and will be used in place of the normal Ethereum client
 // to test the default emitter implementation.
 type reorgSim struct {
-	lookBack     uint64
+	ReorgParam
+
 	chain        blockChain
 	reorgedChain blockChain
 
@@ -16,12 +25,12 @@ type reorgSim struct {
 }
 
 // NewReorgSim returns a new reorgSim with hard-coded good and reorged chains.
-func NewReorgSim(lookBack, reorgedAt uint64, logFiles []string) superwatcher.EthClient {
+func NewReorgSim(param ReorgParam, logFiles []string) superwatcher.EthClient {
 	mappedLogs := InitLogs(logFiles)
-	chain, reorgedChain := NewBlockChain(mappedLogs, reorgedAt)
+	chain, reorgedChain := NewBlockChain(mappedLogs, param.ReorgedAt)
 
 	return &reorgSim{
-		lookBack:     lookBack,
+		ReorgParam:   param,
 		chain:        chain,
 		reorgedChain: reorgedChain,
 		seen:         make(map[uint64]int),

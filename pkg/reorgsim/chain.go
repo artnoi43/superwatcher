@@ -1,6 +1,8 @@
 package reorgsim
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -17,7 +19,7 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 	}
 
 	if !found {
-		panic("reorgedAt block not found in any logs")
+		panic(fmt.Sprintf("reorgedAt block %d not found in any logs", reorgedAt))
 	}
 
 	// The "good old chain"

@@ -22,11 +22,11 @@ type engine struct {
 
 func (e *engine) Loop(ctx context.Context) error {
 	go func() {
+		defer e.shutdown()
+
 		if err := e.handleResults(ctx); err != nil {
 			e.debugMsg("*engine.run exited", zap.Error(err))
 		}
-
-		defer e.shutdown()
 	}()
 
 	return e.handleEmitterError()

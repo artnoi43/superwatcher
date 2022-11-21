@@ -12,52 +12,58 @@ import (
 )
 
 type testConfig struct {
-	FromBlock uint64   `json:"fromBlock"`
-	ToBlock   uint64   `json:"toBlock"`
-	ReorgedAt uint64   `json:"reorgedAt"`
-	LogsFiles []string `json:"logs"`
+	StartBlock uint64   `json:"startBlock"`
+	ReorgedAt  uint64   `json:"reorgedAt"`
+	FromBlock  uint64   `json:"fromBlock"`
+	ToBlock    uint64   `json:"toBlock"`
+	LogsFiles  []string `json:"logs"`
 }
 
 var testCases = []testConfig{
 	{
-		FromBlock: 15944400,
-		ToBlock:   15944500,
-		ReorgedAt: 15944444,
+		StartBlock: 15944390,
+		ReorgedAt:  15944444,
+		FromBlock:  15944400,
+		ToBlock:    15944500,
 		LogsFiles: []string{
 			"./assets/logs_poolfactory.json",
 			"./assets/logs_lp.json",
 		},
 	},
 	{
-		FromBlock: 15965717,
-		ToBlock:   15965748,
-		ReorgedAt: 15965730,
+		StartBlock: 15965710,
+		ReorgedAt:  15965730,
+		FromBlock:  15965717,
+		ToBlock:    15965748,
 		LogsFiles: []string{
 			"./assets/logs_lp_2_1.json",
 			"./assets/logs_lp_2_2.json",
 		},
 	},
 	{
-		FromBlock: 15965802,
-		ToBlock:   15965835,
-		ReorgedAt: 15965803,
+		StartBlock: 15965800,
+		ReorgedAt:  15965803,
+		FromBlock:  15965802,
+		ToBlock:    15965835,
 		LogsFiles: []string{
 			"./assets/logs_lp_3_1.json",
 			"./assets/logs_lp_3_2.json",
 		},
 	},
 	{
-		FromBlock: 15966460,
-		ToBlock:   15966479,
-		ReorgedAt: 15966475,
+		StartBlock: 15966455,
+		ReorgedAt:  15966475,
+		FromBlock:  15966460,
+		ToBlock:    15966479,
 		LogsFiles: []string{
 			"./assets/logs_lp_4.json",
 		},
 	},
 	{
-		FromBlock: 15966500,
-		ToBlock:   15966536,
-		ReorgedAt: 15966536,
+		StartBlock: 15966490,
+		ReorgedAt:  15966536,
+		FromBlock:  15966500,
+		ToBlock:    15966536,
 		LogsFiles: []string{
 			"./assets/logs_lp_5.json",
 		},

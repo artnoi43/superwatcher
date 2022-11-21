@@ -1,6 +1,6 @@
-chain: 'ethereum'
-node_url: 'https://localhost:8545'
-redis_conn_str: 'localhost:6379'
+chain: "ethereum"
+node_url: "https://eth-mainnet.g.alchemy.com/v2/Zr3jViEDj-raP2WYoLF1HlwiJIuc86Aq"
+redis_conn_str: "localhost:6379"
 loop_interval: 1
 start_block: 6000000000
 lookback_blocks: 5

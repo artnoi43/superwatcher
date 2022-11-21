@@ -14,10 +14,10 @@ type Config struct {
 
 	// Event log filtering config
 	Chain           string `yaml:"chain" json:"chain"`
-	LoopInterval    uint   `yaml:"loop_interval" json:"loop_interval"`
 	StartBlock      uint64 `yaml:"start_block" json:"startBlock"`
 	LookBackBlocks  uint64 `yaml:"lookback_blocks" json:"lookBackBlock"`
 	LookBackRetries uint64 `yaml:"lookback_retries" json:"lookBackRetries"`
+	LoopInterval    uint64 `yaml:"loop_interval" json:"loop_interval"`
 }
 
 func ConfigYAML(filename string) (*Config, error) {

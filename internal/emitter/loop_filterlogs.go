@@ -50,9 +50,13 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 				status,
 			)
 			if err != nil {
-				if errors.Is(errNoNewBlock, err) {
+				if errors.Is(err, errNoNewBlock) {
 					// Use zap.String because this is not actually an error
 					e.debugMsg("skipping", zap.String("reason", err.Error()))
+					continue
+				}
+				if errors.Is(err, errFetchError) {
+					e.debugMsg("fetch error", zap.Error(err))
 					continue
 				}
 
@@ -81,11 +85,6 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", newStatus))
 					continue
 
-				} else if errors.Is(err, errFetchError) {
-					// TODO: decide this
-					// Continue if client failed to get headers/logs
-					logger.Warn("client failed to fetch", zap.Error(err))
-					continue
 				}
 
 				return errors.Wrap(err, "unexpected filterLogs error")
