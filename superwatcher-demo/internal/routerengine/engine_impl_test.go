@@ -21,17 +21,17 @@ import (
 )
 
 const (
-	subenginesPath                    = "../subengines"
-	ensSubEnginePath                  = subenginesPath + "/ensengine"
-	uniswapv3PoolFactorySubEnginePath = subenginesPath + "/uniswapv3factoryengine"
+	assetsPath            = "../assets"
+	assetsPathENS         = assetsPath + "/ens"
+	assetsPathPoolFactory = assetsPath + "/poolfactory"
 )
 
 func TestHandleGoodLogs(t *testing.T) {
-	ensLogs, err := readSampleLogs(ensSubEnginePath + "/logs_multi_names.json")
+	ensLogs, err := readSampleLogs(assetsPathENS + "/logs_multi_names.json")
 	if err != nil {
 		t.Skip("bad or missing ENS logs file:", err.Error())
 	}
-	poolFactoryLogs, err := readSampleLogs(uniswapv3PoolFactorySubEnginePath + "/log_poolcreated.json")
+	poolFactoryLogs, err := readSampleLogs(assetsPathPoolFactory + "/log_poolcreated.json")
 	if err != nil {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
