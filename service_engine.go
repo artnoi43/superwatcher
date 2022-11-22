@@ -14,6 +14,6 @@ type ServiceEngine interface {
 	HandleGoodLogs([]*types.Log, []Artifact) ([]Artifact, error)
 	// Handle a block's reorged logs || Maybe changed to just logs, not a block's logs
 	HandleReorgedLogs([]*types.Log, []Artifact) ([]Artifact, error)
-	// Handle emitter error
+	// Handle emitter error. If the returned error is not nil, WatcherEngine.HandleEmitterError returns.
 	HandleEmitterError(error) error
 }

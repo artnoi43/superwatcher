@@ -9,7 +9,7 @@ func (e *engine) handleEmitterError() error {
 		if err != nil {
 			err = e.serviceEngine.HandleEmitterError(err)
 			if err != nil {
-				return errors.Wrap(err, "serviceEngine failed to handle error")
+				return errors.Wrap(err, "serviceEngine return non-nil error")
 			}
 
 			// Emitter error handled in service without error

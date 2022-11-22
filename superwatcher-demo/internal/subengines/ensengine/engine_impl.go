@@ -186,5 +186,5 @@ func (e *ensEngine) handleReorgedLog(
 // Unused by this service
 func (e *ensEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
-	return nil
+	return err
 }
