@@ -138,7 +138,7 @@ func (e *emitter) filterLogs(
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
 			logger.Info(
-				"emitter: chain reorg detected",
+				"chain reorg detected",
 				zap.Uint64("blockNumber", blockNumber),
 				zap.String("freshHash", mapFreshHashes[blockNumber].String()),
 			)

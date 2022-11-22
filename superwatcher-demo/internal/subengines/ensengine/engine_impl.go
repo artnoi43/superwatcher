@@ -112,7 +112,7 @@ func (e *ensEngine) HandleReorgedLogs(
 	[]superwatcher.Artifact,
 	error,
 ) {
-	logger.Debug("ensengine.HandleReorgedLogs: got logs", zap.Any("input artifacts", artifacts))
+	logger.Debug(fmt.Sprintf("got %d reorged logs", len(logs)), zap.Any("got artifacts", artifacts))
 
 	var outputArtifacts []superwatcher.Artifact
 	for _, log := range logs {

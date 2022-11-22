@@ -3,6 +3,7 @@ package servicetest
 import (
 	"context"
 	"errors"
+	"math/big"
 	"sync"
 	"testing"
 
@@ -12,13 +13,12 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
-
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type testCase struct {
 	conf          *config.Config
-	param         reorgsim.ReorgParam
 	client        superwatcher.EthClient
 	serviceEngine superwatcher.ServiceEngine
 }
@@ -40,38 +40,94 @@ func newCase(
 
 	return &testCase{
 		conf:          conf,
-		param:         param,
 		client:        reorgsim.NewReorgSim(param, logsFullPaths),
 		serviceEngine: serviceEngine,
 	}
 }
 
-func TestServiceEngineENS(t *testing.T) {
+func TestFoo(t *testing.T) {
 	conf := &config.Config{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		Chain:           string(enums.ChainEthereum),
-		StartBlock:      15847800,
+		StartBlock:      15944390,
 		LookBackBlocks:  10,
 		LookBackRetries: 2,
 		LoopInterval:    0,
 	}
 
-	logsPath := "../assets/ens"
-	ensLogs := []string{
-		logsPath + "/logs_multi_names.json",
-		logsPath + "/logs_single_name.json",
+	logsPath := "../../internal/emitter/assets"
+	logsPathFiles := []string{
+		logsPath + "/logs_lp.json",
+		logsPath + "/logs_poolfactory.json",
 	}
 
 	tc := newCase(
 		conf,
-		ensengine.NewEnsSubEngineSuite().Engine,
-		ensLogs,
+		// ensengine.NewEnsSubEngineSuite().Engine,
+		&engine{},
+		logsPathFiles,
 		conf.StartBlock,
-		15847894,
-		15847950,
+		15944415,
+		15944555,
 	)
 
-	testServiceEngine(t, tc)
+	sim := tc.client
+
+	filter := func() ([]types.Log, error) {
+		return sim.FilterLogs(nil, ethereum.FilterQuery{
+			FromBlock: big.NewInt(15944415),
+			ToBlock:   big.NewInt(15944415),
+		})
+	}
+
+	logs, err := filter()
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	_logs, err := filter()
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	for i, l := range logs {
+		_l := _logs[i]
+
+		if _l.BlockHash == l.BlockHash {
+			t.Fatalf("not reorged")
+		}
+	}
+}
+
+func TestServiceEngine(t *testing.T) {
+	conf := &config.Config{
+		// We use fakeRedis and fakeEthClient, so no need for token strings.
+		Chain:           string(enums.ChainEthereum),
+		StartBlock:      15944390,
+		LookBackBlocks:  10,
+		LookBackRetries: 2,
+		LoopInterval:    0,
+	}
+
+	logsPath := "../../internal/emitter/assets"
+	logsPathFiles := []string{
+		logsPath + "/logs_lp.json",
+		logsPath + "/logs_poolfactory.json",
+	}
+
+	tc := newCase(
+		conf,
+		// ensengine.NewEnsSubEngineSuite().Engine,
+		&engine{},
+		logsPathFiles,
+		conf.StartBlock,
+		15944415,
+		15944555,
+	)
+
+	if err := testServiceEngine(t, tc); err != nil {
+		t.Error(err.Error())
+	}
 }
 
 func testServiceEngine(t *testing.T, tc *testCase) error {

@@ -96,7 +96,6 @@ func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	}
 
 	currentBlock := r.ReorgParam.currentBlock
-
 	if currentBlock >= r.ReorgParam.ExitBlock {
 		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.ReorgParam.ExitBlock)
 	}
@@ -113,7 +112,10 @@ func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwa
 		return *b, nil
 	}
 
-	return &block{
+	block := &block{
+		// We only need hash here because caller will only call superwatcher.EthClient.Hash()
 		hash: randomHash(blockNumber),
-	}, nil
+	}
+
+	return block, nil
 }

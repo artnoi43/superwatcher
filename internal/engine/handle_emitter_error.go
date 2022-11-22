@@ -3,7 +3,7 @@ package engine
 import "github.com/pkg/errors"
 
 func (e *engine) handleEmitterError() error {
-	e.debugMsg("*engine.handleError started")
+	e.debugMsg("handleError started")
 	for {
 		err := e.emitterClient.WatcherError()
 		if err != nil {

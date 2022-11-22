@@ -14,7 +14,23 @@ func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 	}
 
 	if result != nil {
-		e.debugMsg("emitFilterResult", zap.Any("b", result))
+		// Only log if there's some logs
+		if len(result.GoodBlocks)+len(result.ReorgedBlocks) != 0 {
+			if e.debug {
+				var goodBlocks []uint64
+				for _, b := range result.GoodBlocks {
+					goodBlocks = append(goodBlocks, b.Number)
+				}
+
+				var reorgedBlocks []uint64
+				for _, b := range result.ReorgedBlocks {
+					reorgedBlocks = append(reorgedBlocks, b.Number)
+				}
+
+				e.debugMsg("emitFilterResult", zap.Uint64s("goodBlocks", goodBlocks), zap.Uint64s("reorgedBlocks", reorgedBlocks))
+			}
+		}
+
 		e.filterResultChan <- result
 		return
 	}

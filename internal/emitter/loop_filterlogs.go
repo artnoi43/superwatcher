@@ -49,6 +49,10 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 				&lookBackFirstStart,
 				status,
 			)
+			if lookBackFirstStart && errors.Is(err, errNoNewBlock) {
+				err = nil
+			}
+
 			if err != nil {
 				if errors.Is(err, errNoNewBlock) {
 					// Use zap.String because this is not actually an error
@@ -143,12 +147,10 @@ func (e *emitter) computeFromBlockToBlock(
 	)
 
 	// Continue if there's no new block yet
-	if lastRecordedBlock == currentBlock {
-		e.debugMsg(
-			"no new block, skipping",
-			zap.Uint64("currentBlock", currentBlock),
-		)
-		return status, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
+	if !*lookBackFirstStart {
+		if lastRecordedBlock == currentBlock {
+			return status, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
+		}
 	}
 
 	fromBlock, toBlock := computeFromBlockToBlock(
@@ -206,7 +208,7 @@ func computeFromBlockToBlock(
 
 		debug.DebugMsg(
 			isDebug,
-			"first watcher run, going back",
+			"first run, going back",
 			zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 			zap.Uint64("goBack", goBack),
 			zap.Uint64("fromBlock", fromBlock),

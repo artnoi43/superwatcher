@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"fmt"
 
 	"go.uber.org/zap"
 
@@ -40,5 +41,5 @@ func (e *engine) shutdown() {
 }
 
 func (e *engine) debugMsg(msg string, fields ...zap.Field) {
-	debug.DebugMsg(e.debug, msg, fields...)
+	debug.DebugMsg(e.debug, fmt.Sprintf("engine: %s", msg), fields...)
 }

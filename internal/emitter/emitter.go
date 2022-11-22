@@ -2,6 +2,7 @@ package emitter
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
@@ -82,5 +83,5 @@ func (e *emitter) SyncsWithEngine() {
 }
 
 func (e *emitter) debugMsg(msg string, fields ...zap.Field) {
-	debug.DebugMsg(e.debug, msg, fields...)
+	debug.DebugMsg(e.debug, fmt.Sprintf("emitter: %s", msg), fields...)
 }

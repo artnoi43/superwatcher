@@ -41,7 +41,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 			artifacts, err := e.serviceEngine.HandleReorgedLogs(block.Logs, metadata.artifacts)
 			if err != nil {
-				return errors.Wrap(err, "e.serviceEngine.HandleReorgedBlockLogs failed")
+				return errors.Wrap(err, "serviceEngine.HandleReorgedBlockLogs failed")
 			}
 
 			// Check debug here so we dont have to iterate over all keys in map artifacts before checking in `e.debugMsg`
@@ -65,7 +65,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 			// Only process block with Seen state
 			if metadata.state != StateSeen {
 				e.debugMsg(
-					"skip seen good block logs",
+					"skip processing block",
 					zap.String("state", metadata.state.String()),
 					zap.Uint64("blockNumber", metadata.blockNumber),
 					zap.String("blockHash", metadata.blockHash),
