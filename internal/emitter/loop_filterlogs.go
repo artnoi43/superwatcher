@@ -13,11 +13,11 @@ import (
 )
 
 type filterLogStatus struct {
+	FromBlock         uint64 `json:"fromBlock"`
+	ToBlock           uint64 `json:"toBlock"`
 	IsReorging        bool   `json:"isReorging"`
 	CurrentBlock      uint64 `json:"currentBlock"`
 	LastRecordedBlock uint64 `json:"lastRecordedBlock"`
-	FromBlock         uint64 `json:"fromBlock"`
-	ToBlock           uint64 `json:"toBlock"`
 }
 
 // loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
@@ -34,7 +34,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 	for {
 		// Don't sleep or log status on first loop
 		if !lookBackFirstStart {
-			e.debugMsg("new loopFilterLogs loop", zap.Any("emitterStatus", status))
+			e.debugMsg("new loopFilterLogs loop")
 			sleep()
 		}
 

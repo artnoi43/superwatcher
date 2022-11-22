@@ -69,6 +69,7 @@ func TestNewBlockChain(t *testing.T) {
 }
 
 func TestFoo(t *testing.T) {
+	reorgedAt := uint64(15944408)
 	chain, reorgedChain := initChains(reorgedAt)
 
 	fmt.Println("old chain")
@@ -106,7 +107,7 @@ func prontMapLen[T comparable, U any](m map[T][]U, keyString, lenString string) 
 
 func prontLogs(logs []types.Log) {
 	for _, log := range logs {
-		fmt.Println("blockNumber", log.BlockNumber, "addr", log.Address)
+		fmt.Println("blockNumber", log.BlockNumber, "blockHash", log.BlockHash.String(), "txHash", log.TxHash.String())
 	}
 }
 
@@ -117,7 +118,7 @@ func prontBlockChain(chain blockChain) {
 			"blockhash", b.Hash().String(),
 			"len(logs)", len(b.logs),
 			"forked", b.toBeForked,
-			"reorgedHere", b.reorgedHere,
 		)
+		prontLogs(b.logs)
 	}
 }

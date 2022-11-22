@@ -22,7 +22,7 @@ type testConfig struct {
 var testCases = []testConfig{
 	{
 		StartBlock: 15944390,
-		ReorgedAt:  15944444,
+		ReorgedAt:  15944411,
 		FromBlock:  15944400,
 		ToBlock:    15944500,
 		LogsFiles: []string{
@@ -42,7 +42,7 @@ var testCases = []testConfig{
 	},
 	{
 		StartBlock: 15965800,
-		ReorgedAt:  15965803,
+		ReorgedAt:  15965811,
 		FromBlock:  15965802,
 		ToBlock:    15965835,
 		LogsFiles: []string{

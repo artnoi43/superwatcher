@@ -34,6 +34,28 @@ func (e *emitter) filterLogs(
 	headersByBlockNumber := make(map[uint64]superwatcher.BlockHeader)
 	getErrChan := make(chan error)
 
+	// getHeader gets block header for a blockNumber
+	getHeader := func(blockNumber uint64) {
+		header, err := gslutils.RetryWithReturn(
+			fmt.Sprintf("getHeader %d", blockNumber),
+
+			func() (superwatcher.BlockHeader, error) {
+				return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
+			},
+
+			gslutils.Attempts(10),
+			gslutils.Delay(4),
+			gslutils.LastErrorOnly(true),
+		)
+		if err != nil {
+			getErrChan <- wrapErrBlockNumber(blockNumber, err, errFetchHeader)
+		}
+
+		mut.Lock()
+		headersByBlockNumber[blockNumber] = header
+		mut.Unlock()
+	}
+
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
 		eventLogs, err = gslutils.RetryWithReturn(
@@ -60,28 +82,6 @@ func (e *emitter) filterLogs(
 		}
 	}
 
-	// getHeader gets block header for a blockNumber
-	getHeader := func(blockNumber uint64) {
-		header, err := gslutils.RetryWithReturn(
-			fmt.Sprintf("getHeader %d", blockNumber),
-
-			func() (superwatcher.BlockHeader, error) {
-				return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
-			},
-
-			gslutils.Attempts(10),
-			gslutils.Delay(4),
-			gslutils.LastErrorOnly(true),
-		)
-		if err != nil {
-			getErrChan <- wrapErrBlockNumber(blockNumber, err, errFetchHeader)
-		}
-
-		mut.Lock()
-		headersByBlockNumber[blockNumber] = header
-		mut.Unlock()
-	}
-
 	// Get fresh logs, and block headers (fromBlock-toBlock)
 	// to compare the headers with that of w.tracker's to detect chain reorg
 
@@ -89,15 +89,15 @@ func (e *emitter) filterLogs(
 	go func() {
 		defer wg.Done()
 		getLogs()
-	}()
 
-	for i := fromBlock; i <= toBlock; i++ {
-		wg.Add(1)
-		go func(blockNumber uint64) {
-			defer wg.Done()
-			getHeader(blockNumber)
-		}(i)
-	}
+		for i := fromBlock; i <= toBlock; i++ {
+			wg.Add(1)
+			go func(blockNumber uint64) {
+				defer wg.Done()
+				getHeader(blockNumber)
+			}(i)
+		}
+	}()
 
 	// Wait here for logs and headers
 	if err := concurrent.WaitAndCollectErrors(&wg, getErrChan); err != nil {
@@ -106,11 +106,11 @@ func (e *emitter) filterLogs(
 	}
 
 	lenLogs := len(eventLogs)
-	e.debugMsg("got event logs", zap.Int("number of filtered logs", lenLogs))
-	e.debugMsg("got headers and logs", zap.Uint64("fromBlock", fromBlock), zap.Uint64("toBlock", toBlock))
+	e.debugMsg("got headers and logs", zap.Int("logs", lenLogs))
 
 	// Clear all tracker's blocks before fromBlock - lookBackBlocks
-	e.debugMsg("clearing tracker", zap.Uint64("clearUntil", fromBlock-e.config.LookBackBlocks))
+	until := fromBlock - e.config.LookBackBlocks
+	e.debugMsg("clearing tracker", zap.Uint64("untilBlock", until))
 	e.tracker.clearUntil(fromBlock - e.config.LookBackBlocks)
 
 	/* Use code from reorg package to manage/handle chain reorg */
@@ -126,8 +126,6 @@ func (e *emitter) filterLogs(
 		mapProcessLogs,
 	)
 
-	e.debugMsg("wasReorged", zap.Any("wasReorged", wasReorged))
-
 	// If fromBlock was reorged, then return to loopFilterLogs
 	if wasReorged[fromBlock] {
 		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
@@ -137,12 +135,6 @@ func (e *emitter) filterLogs(
 	// Publish log(s) and reorged block, and add canon block to tracker for the next loop.
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
-			logger.Info(
-				"chain reorg detected",
-				zap.Uint64("blockNumber", blockNumber),
-				zap.String("freshHash", mapFreshHashes[blockNumber].String()),
-			)
-
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
 				logger.Panic(
@@ -152,24 +144,30 @@ func (e *emitter) filterLogs(
 				)
 			}
 
+			logger.Info(
+				"chain reorg detected",
+				zap.Uint64("blockNumber", blockNumber),
+				zap.String("freshHash", mapFreshHashes[blockNumber].String()),
+				zap.String("trackerHash", reorgedBlock.String()),
+			)
+
 			// ReorgedBlocks field contains the seen, removed blocks from tracker.
 			// The new reroged blocks were added to |filterResult| as new GoodBlocks.
 			// This means that the engine should process ReorgedBlocks first to revert the TXs,
 			// before processing the new, reorged logs.
 			filterResult.ReorgedBlocks = append(filterResult.ReorgedBlocks, reorgedBlock)
-			continue
 		}
 
 		// Populate blockInfo with fresh info
 		b := superwatcher.NewBlankBlockInfo(blockNumber, mapFreshHashes[blockNumber])
 		b.Logs = mapFreshLogs[blockNumber]
+		// Add only FRESH, CANONICAL block into tracker
+		e.tracker.addTrackerBlockInfo(b)
 
 		// Publish block with > 0 block
 		if len(b.Logs) > 0 {
 			filterResult.GoodBlocks = append(filterResult.GoodBlocks, b)
 		}
-		// Add only FRESH, CANONICAL block into tracker
-		e.tracker.addTrackerBlockInfo(b)
 	}
 
 	filterResult.FromBlock = fromBlock
@@ -177,15 +175,24 @@ func (e *emitter) filterLogs(
 
 	// Decide result.LastGoodBlock
 	if len(wasReorged) == 0 {
+		// If no reorg, just use toBlock
 		filterResult.LastGoodBlock = toBlock
+
 	} else {
-		if l := len(filterResult.GoodBlocks); l == 0 {
-			// If there's no block with interesting log in this loop,
-			// then filter this whole range again in the next loop.
-			filterResult.LastGoodBlock = fromBlock
+		// If reorg (there should be goodBlocks too)
+		if l := len(filterResult.GoodBlocks); l != 0 {
+			// Use last good block's number as LastGoodBlock
+			lastGood := filterResult.GoodBlocks[l-1].Number
+			firstReorg := filterResult.ReorgedBlocks[0].Number
+
+			if lastGood > firstReorg {
+				lastGood = firstReorg - 1
+			}
+
+			filterResult.LastGoodBlock = lastGood
+
 		} else {
-			// Use last good block number as ToBlock
-			filterResult.LastGoodBlock = filterResult.GoodBlocks[l-1].Number
+			filterResult.LastGoodBlock = fromBlock
 		}
 	}
 
@@ -199,6 +206,7 @@ func (e *emitter) filterLogs(
 		zap.Int("processLogs (all logs processed)", len(mapProcessLogs)),
 		zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
 		zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
+		zap.Uint64("lastGoodBlock", filterResult.LastGoodBlock),
 	)
 
 	// Waits until engine syncs

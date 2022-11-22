@@ -25,16 +25,12 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 	// The "good old chain"
 	chain := make(blockChain)
 	for blockNumber, logs := range mappedLogs {
-		var reorgedHere bool
-		if blockNumber == reorgedAt {
-			reorgedHere = true
-		}
-
 		chain[blockNumber] = block{
 			blockNumber: blockNumber,
 			hash:        logs[0].BlockHash,
 			logs:        logs,
-			reorgedHere: reorgedHere,
+			reorgedHere: blockNumber == reorgedAt,
+			toBeForked:  blockNumber >= reorgedAt,
 		}
 	}
 

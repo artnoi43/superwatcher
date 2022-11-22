@@ -2,6 +2,7 @@ package reorgsim
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -12,10 +13,16 @@ import (
 	"github.com/artnoi43/superwatcher"
 )
 
+const (
+	filterLogs     = "filterLogs"
+	headerByNumber = "headerByNumber"
+)
+
 // chooseBlock returns a block at that |blockNumber| from
 // an appropriate chain. The "reorg" logic is defined here.
-func (r *reorgSim) chooseBlock(blockNumber uint64) *block {
-
+func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller string) *block {
+	r.Lock()
+	defer r.Unlock()
 	// If we see a "toBeForked" block more than once,
 	// return the reorged block from reorged chain.
 
@@ -24,18 +31,42 @@ func (r *reorgSim) chooseBlock(blockNumber uint64) *block {
 		return nil
 	}
 
+	fmt.Println("< chooseBlock:", blockNumber, caller, "toBeForked:", b.toBeForked, "seen:", r.seenFilterLogs[blockNumber])
+
 	// Use reorg block for this blockNumber
-	if b.toBeForked && r.seen[blockNumber] > 0 {
-		b, found = r.reorgedChain[blockNumber]
-		if !found {
-			return nil
+	if b.toBeForked {
+		var n int
+		switch caller {
+		case filterLogs:
+			n = 1
+		case headerByNumber:
+			n = 2
+		}
+
+		if r.seenFilterLogs[blockNumber] >= n {
+			b, found = r.reorgedChain[blockNumber]
+			if !found {
+				return nil
+			}
+
+			if !r.forked {
+				fmt.Println("REORG!", blockNumber)
+				r.chain = r.reorgedChain
+				r.forked = true
+			}
 		}
 	}
+
+	if caller == filterLogs && b.toBeForked {
+		r.seenFilterLogs[blockNumber]++
+	}
+
+	fmt.Println("> chooseBlock:", blockNumber, caller, "toBeForked:", b.toBeForked, "seen:", r.seenFilterLogs[blockNumber])
 
 	return &b
 }
 
-func (r *reorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
 	if query.FromBlock == nil {
 		return nil, errors.New("nil query.FromBlock")
 	}
@@ -53,7 +84,7 @@ func (r *reorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 	var logs []types.Log
 	for blockNumber := from; blockNumber <= to; blockNumber++ {
 		// Choose a block from an appropriate chain
-		b := r.chooseBlock(blockNumber)
+		b := r.chooseBlock(blockNumber, from, to, filterLogs)
 		if b == nil {
 			continue
 		}
@@ -79,13 +110,15 @@ func (r *reorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 			}
 		}
 
-		r.seen[blockNumber]++
 	}
 
 	return logs, nil
 }
 
-func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
+func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
+	r.Lock()
+	defer r.Unlock()
+
 	if r.ReorgParam.BlockProgress == 0 {
 		panic("0 BlockProgress")
 	}
@@ -104,17 +137,17 @@ func (r *reorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	return currentBlock, nil
 }
 
-func (r *reorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
+func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	blockNumber := number.Uint64()
 
-	b := r.chooseBlock(blockNumber)
+	b := r.chooseBlock(blockNumber, blockNumber, blockNumber, headerByNumber)
 	if b != nil {
 		return *b, nil
 	}
 
 	block := &block{
 		// We only need hash here because caller will only call superwatcher.EthClient.Hash()
-		hash: randomHash(blockNumber),
+		hash: deterministicRandomHash(blockNumber),
 	}
 
 	return block, nil

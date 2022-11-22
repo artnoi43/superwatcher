@@ -39,8 +39,9 @@ func mapFreshLogsByHashes(
 		// Fatal, should not happen
 		if !bytes.Equal(freshBlockHash[:], freshLogBlockHash[:]) {
 			// TODO: How to handle this?
-			logger.Panic(
+			logger.Info(
 				"freshBlockHash and freshBlockHashFromLog differ",
+				zap.Uint64("blockNumber", freshLogBlockNumber),
 				zap.String("freshBlockHash", freshBlockHash.String()),
 				zap.String("freshBlockHashFromLog", freshLogBlockHash.String()),
 			)
@@ -49,14 +50,14 @@ func mapFreshLogsByHashes(
 		// Check if we saw the block hash
 		if _, ok := mapFreshHashes[freshLogBlockNumber]; !ok {
 			// If the blockNumber is not found, it means we've never seen this block hash before.
-			mapFreshHashes[freshLogBlockNumber] = freshBlockHash
+			mapFreshHashes[freshLogBlockNumber] = freshLogBlockHash
 
 		} else {
-			if mapFreshHashes[freshLogBlockNumber] != freshBlockHash {
+			if mapFreshHashes[freshLogBlockNumber] != freshLogBlockHash {
 				// If we saw this log's block hash before from the fresh eventLogs
 				// from this loop's previous loop iteration(s), but the hashes are different:
 				// Fatal, should not happen
-				logger.Panic("fresh blockHash differs from tracker blockHash",
+				logger.Info("fresh blockHash differs from tracker blockHash",
 					zap.String("tag", "filterLogs bug"),
 					zap.Uint64("freshBlockNumber", freshLogBlockNumber),
 					zap.Any("known tracker blockHash", mapFreshHashes[freshLogBlockNumber]),
