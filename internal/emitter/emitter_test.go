@@ -75,6 +75,10 @@ func TestEmitterByCase(t *testing.T) {
 	t.Skipf("no such test case: %d", caseNumber)
 }
 
+// emitterTestTemplate is designed to test emitter's full `Loop` with reorgsim mocked chain.
+// The assumption test checks are only valid for logs filtered by reorgsim code,
+// i.e. this test is NOT a proper test for REAL ethclient,
+// as reorged logs may reappear on different block on a real chain.
 func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	tc := testCases[caseNumber-1]
 	b, _ := json.Marshal(tc)
@@ -117,7 +121,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 	var seenLogs []*types.Log
 	var latestGoodBlocks = make(map[uint64]*superwatcher.BlockInfo)
-	// tracker := newTracker("emitterTest")
+
 	for {
 		result := <-filterResultChan
 
@@ -151,27 +155,11 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 				t.Fatalf("reorged block hash not seen before - %d %s", block.Number, block.String())
 			}
 
-			// prevGoodBlock, ok := tracker.getTrackerBlockInfo(blockNumber)
-			// if !ok {
-			// 	t.Fatalf("reorged blockNumber was not even in tracker: %d", blockNumber)
-			// }
-
 			// Check that all the reorged logs were seen before in |seenLogs|
 			for _, log := range block.Logs {
 				if !gslutils.Contains(seenLogs, log) {
 					fatalBadLog(t, "reorgedLog not seen before", log)
 				}
-
-				// TODO: Fix reorgsim before enabling check below
-				// prevGoodLog := prevGoodBlock.Logs[i]
-				// if prevGoodLog.BlockHash == log.BlockHash {
-				// 	t.Log("log", log)
-				// 	t.Log("prevGoodLog", prevGoodLog)
-				// 	fatalBadLog(t, "reorgedLog blockHash matches", log)
-				// }
-				// if prevGoodLog.TxHash == log.TxHash {
-				// 	fatalBadLog(t, "reorgedLog txHash matches", log)
-				// }
 			}
 		}
 

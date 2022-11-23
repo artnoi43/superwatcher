@@ -27,7 +27,10 @@ func newCase(
 	start,
 	reorgAt,
 	exit uint64,
-) *testCase {
+) (
+	*testCase,
+	reorgsim.ReorgParam, // For logging
+) {
 	param := reorgsim.ReorgParam{
 		StartBlock:    start,
 		BlockProgress: 5,
@@ -39,7 +42,7 @@ func newCase(
 		conf:          conf,
 		client:        reorgsim.NewReorgSim(param, logsFullPaths),
 		serviceEngine: serviceEngine,
-	}
+	}, param
 }
 
 func TestServiceEngine(t *testing.T) {
@@ -58,23 +61,27 @@ func TestServiceEngine(t *testing.T) {
 		logsPath + "/logs_poolfactory.json",
 	}
 
-	tc := newCase(
+	reorgedAt := uint64(15944415)
+	tc, param := newCase(
 		conf,
-		// ensengine.NewEnsSubEngineSuite().Engine,
-		&engine{},
+		&engine{
+			reorgedAt:       reorgedAt,
+			emitterLookBack: conf.LookBackBlocks,
+		},
 		logsPathFiles,
 		conf.StartBlock,
-		15944415,
-		15944555,
+		reorgedAt,
+		reorgedAt+(conf.LookBackBlocks*conf.LookBackRetries),
 	)
 
-	if err := testServiceEngine(t, tc); err != nil {
+	if err := testServiceEngine(t, tc, param); err != nil {
 		t.Error(err.Error())
 	}
 }
 
-func testServiceEngine(t *testing.T, tc *testCase) error {
+func testServiceEngine(t *testing.T, tc *testCase, param reorgsim.ReorgParam) error {
 	// Use nil addresses and topics
+	t.Logf("testCase param: %+v", param)
 	emitter, engine := initsuperwatcher.New(
 		tc.conf,
 		tc.client,

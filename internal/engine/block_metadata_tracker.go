@@ -17,8 +17,6 @@ type MetadataTracker interface {
 	ClearUntil(blockNumber uint64)
 	SetBlockMetadata(*superwatcher.BlockInfo, *blockMetadata)
 	GetBlockMetadata(*superwatcher.BlockInfo) *blockMetadata
-	SetBlockState(*superwatcher.BlockInfo, EngineBlockState)
-	GetBlockState(*superwatcher.BlockInfo) EngineBlockState
 }
 
 // metadataTracker is an in-memory store for keeping engine internal states.
@@ -85,36 +83,6 @@ func (t *metadataTracker) GetBlockMetadata(b *superwatcher.BlockInfo) *blockMeta
 	}
 
 	return metadata
-}
-
-func (t *metadataTracker) SetBlockState(b *superwatcher.BlockInfo, state EngineBlockState) {
-	t.Lock()
-	defer t.Unlock()
-
-	metadata := t.GetBlockMetadata(b)
-	if metadata == nil {
-		logger.Panic(
-			"nil metadata - should not happen",
-			zap.Uint64("blockNumber", b.Number),
-			zap.String("blockHash", b.String()),
-		)
-	}
-
-	// Overwrite metadata.state
-	metadata.state = state
-	t.SetBlockMetadata(b, metadata)
-}
-
-func (t *metadataTracker) GetBlockState(b *superwatcher.BlockInfo) EngineBlockState {
-	t.RLock()
-	defer t.RUnlock()
-
-	metadata := t.GetBlockMetadata(b)
-	if metadata == nil {
-		return StateNull
-	}
-
-	return metadata.state
 }
 
 func (t *metadataTracker) Len() int {

@@ -12,6 +12,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 	emitterConfig := e.emitterClient.WatcherConfig()
 
 	for {
+		e.debugMsg("henlo")
 		result := e.emitterClient.WatcherResult()
 		if result == nil {
 			e.debugMsg("handleLogs got nil result, emitterClient was probably shutdown, returning..")
@@ -37,7 +38,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 				continue
 			}
 
-			e.metadataTracker.SetBlockState(block, metadata.state)
+			e.metadataTracker.SetBlockMetadata(block, metadata)
 
 			artifacts, err := e.serviceEngine.HandleReorgedLogs(block.Logs, metadata.artifacts)
 			if err != nil {

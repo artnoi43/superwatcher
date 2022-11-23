@@ -18,19 +18,19 @@ import (
 // to see if a block's hash has changed.
 type blockInfoTracker struct {
 	sortedSet *sortedset.SortedSet
-	caller    string
+	user      string
 }
 
-func newTracker(caller string) *blockInfoTracker {
+func newTracker(user string) *blockInfoTracker {
 	return &blockInfoTracker{
 		sortedSet: sortedset.New(),
-		caller:    caller,
+		user:      user,
 	}
 }
 
 // addTrackerBlockInfo adds `*BlockInfo` |b| to the store using |b.Number| as key
 func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
-	fmt.Println("- Adding block", t.caller, b.Number, b.String(), "lenLogs", len(b.Logs))
+	fmt.Println("emitter tracker: Adding block", t.user, b.Number, b.String(), "lenLogs", len(b.Logs))
 	k := strconv.FormatInt(int64(b.Number), 10)
 	t.sortedSet.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }
