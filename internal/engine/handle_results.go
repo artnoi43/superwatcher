@@ -12,10 +12,10 @@ func (e *engine) handleResults(ctx context.Context) error {
 	emitterConfig := e.emitterClient.WatcherConfig()
 
 	for {
-		e.debugMsg("henlo")
+		e.debugger.Debug("henlo")
 		result := e.emitterClient.WatcherResult()
 		if result == nil {
-			e.debugMsg("handleLogs got nil result, emitterClient was probably shutdown, returning..")
+			e.debugger.Debug("handleLogs got nil result, emitterClient was probably shutdown, returning..")
 			return nil
 		}
 
@@ -28,7 +28,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 			// Only process block with Reorged state
 			if metadata.state != StateReorged {
-				e.debugMsg(
+				e.debugger.Debug(
 					"skip bad reorged block logs",
 					zap.String("state", metadata.state.String()),
 					zap.Uint64("blockNumber", metadata.blockNumber),
@@ -48,14 +48,14 @@ func (e *engine) handleResults(ctx context.Context) error {
 			// Check debug here so we dont have to iterate over all keys in map artifacts before checking in `e.debugMsg`
 			if e.debug {
 				for k, v := range artifacts {
-					e.debugMsg("got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
+					e.debugger.Debug("got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
 				}
 			}
 
 			metadata.state.Fire(EventHandleReorg)
 			metadata.artifacts = artifacts
 
-			e.debugMsg("saving handleReorgedLogs metadata for block", zap.Any("metadata", metadata))
+			e.debugger.Debug("saving handleReorgedLogs metadata for block", zap.Any("metadata", metadata))
 			e.metadataTracker.SetBlockMetadata(block, metadata)
 		}
 
@@ -65,7 +65,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 			// Only process block with Seen state
 			if metadata.state != StateSeen {
-				e.debugMsg(
+				e.debugger.Debug(
 					"skip processing block",
 					zap.String("state", metadata.state.String()),
 					zap.Uint64("blockNumber", metadata.blockNumber),
@@ -83,7 +83,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 			metadata.state.Fire(EventProcess)
 			metadata.artifacts = artifacts
 
-			e.debugMsg("saving metadata for block", zap.Any("metadata", metadata))
+			e.debugger.Debug("saving metadata for block", zap.Any("metadata", metadata))
 			e.metadataTracker.SetBlockMetadata(block, metadata)
 		}
 

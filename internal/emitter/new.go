@@ -8,6 +8,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 // NewEmitter initializes contract info from config
@@ -30,7 +31,7 @@ func New(
 		config:           conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,
-		tracker:          newTracker("emitter"),
+		tracker:          newTracker("emitter", debug),
 		startBlock:       conf.StartBlock,
 		addresses:        addresses,
 		topics:           topics,
@@ -38,5 +39,9 @@ func New(
 		filterResultChan: filterResultChan,
 		errChan:          errChan,
 		debug:            debug,
+		debugger: &debugger.Debugger{
+			Key:         "emitter",
+			ShouldDebug: debug,
+		},
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/logger/debug"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal"
 )
@@ -92,7 +92,7 @@ func (e *ensEngine) HandleGoodLog(
 	}
 
 	if handleFunc == nil {
-		debug.DebugMsg(true, "ensEngine: handleFunc is nil, probably because uninteresting topics", zap.Any("artifact", artifacts))
+		debugger.Debug("ensEngine: handleFunc is nil, probably because uninteresting topics", zap.Any("artifact", artifacts))
 		return artifact, internal.ErrNoNeedHandle
 	}
 

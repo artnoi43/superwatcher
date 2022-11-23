@@ -3,7 +3,7 @@ package engine
 import "github.com/pkg/errors"
 
 func (e *engine) handleEmitterError() error {
-	e.debugMsg("handleError started")
+	e.debugger.Debug("handleError started")
 	for {
 		err := e.emitterClient.WatcherError()
 		if err != nil {
@@ -16,7 +16,7 @@ func (e *engine) handleEmitterError() error {
 			continue
 		}
 
-		e.debugMsg("got nil error from emitter - should not happen unless errChan was closed")
+		e.debugger.Debug("got nil error from emitter - should not happen unless errChan was closed")
 		break
 	}
 	return nil

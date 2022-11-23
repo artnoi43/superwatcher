@@ -9,7 +9,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/logger/debug"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 type filterLogStatus struct {
@@ -34,7 +34,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 	for {
 		// Don't sleep or log status on first loop
 		if !lookBackFirstStart {
-			e.debugMsg("new loopFilterLogs loop")
+			e.debugger.Debug("new loopFilterLogs loop")
 			sleep()
 		}
 
@@ -56,11 +56,11 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			if err != nil {
 				if errors.Is(err, errNoNewBlock) {
 					// Use zap.String because this is not actually an error
-					e.debugMsg("skipping", zap.String("reason", err.Error()))
+					e.debugger.Debug("skipping", zap.String("reason", err.Error()))
 					continue
 				}
 				if errors.Is(err, errFetchError) {
-					e.debugMsg("fetch error", zap.Error(err))
+					e.debugger.Debug("fetch error", zap.Error(err))
 					continue
 				}
 
@@ -72,7 +72,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 				status.IsReorging = isReorging
 			}
 
-			e.debugMsg(
+			e.debugger.Debug(
 				"calling filterLogs",
 				zap.Any("current_status", newStatus),
 			)
@@ -96,7 +96,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 
 			toggleStatusIsReorging(false)
 
-			e.debugMsg(
+			e.debugger.Debug(
 				"filterLogs returned successfully",
 				zap.Any("emitterStatus", newStatus),
 			)
@@ -140,7 +140,7 @@ func (e *emitter) computeFromBlockToBlock(
 	}
 	status.LastRecordedBlock = lastRecordedBlock
 
-	e.debugMsg(
+	e.debugger.Debug(
 		"recent blocks",
 		zap.Uint64("currentBlock", currentBlock),
 		zap.Uint64("lastRecordedBlock", lastRecordedBlock),
@@ -182,7 +182,7 @@ func computeFromBlockToBlock(
 	lookBackRetries uint64,
 	lookBackFirstStart *bool,
 	status *filterLogStatus,
-	isDebug bool,
+	debug bool,
 ) (
 	uint64,
 	uint64,
@@ -206,13 +206,14 @@ func computeFromBlockToBlock(
 		}
 		toBlock = fromBlock + lookBackBlocks
 
-		debug.DebugMsg(
-			isDebug,
-			"first run, going back",
-			zap.Uint64("lastRecordedBlock", lastRecordedBlock),
-			zap.Uint64("goBack", goBack),
-			zap.Uint64("fromBlock", fromBlock),
-		)
+		if debug {
+			debugger.Debug(
+				"emitter: first run, going back",
+				zap.Uint64("lastRecordedBlock", lastRecordedBlock),
+				zap.Uint64("goBack", goBack),
+				zap.Uint64("fromBlock", fromBlock),
+			)
+		}
 
 	} else {
 		fromBlock, toBlock = fromBlockToBlock(currentBlock, lastRecordedBlock, lookBackBlocks)

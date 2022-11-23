@@ -6,9 +6,11 @@ import (
 	"strconv"
 
 	"github.com/wangjia184/sortedset"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 // TODO: blockInfoTracker name needs revision!
@@ -19,18 +21,29 @@ import (
 type blockInfoTracker struct {
 	sortedSet *sortedset.SortedSet
 	user      string
+	debugger  *debugger.Debugger
 }
 
-func newTracker(user string) *blockInfoTracker {
+func newTracker(user string, debug bool) *blockInfoTracker {
 	return &blockInfoTracker{
 		sortedSet: sortedset.New(),
 		user:      user,
+		debugger: &debugger.Debugger{
+			Key:         fmt.Sprintf("blockInfoTracker for %s", user),
+			ShouldDebug: debug,
+		},
 	}
 }
 
 // addTrackerBlockInfo adds `*BlockInfo` |b| to the store using |b.Number| as key
 func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
-	fmt.Println("emitter tracker: Adding block", t.user, b.Number, b.String(), "lenLogs", len(b.Logs))
+	t.debugger.Debug(
+		"adding block",
+		zap.Uint64("blockNumber", b.Number),
+		zap.String("blockHash", b.String()),
+		zap.Int("lenLogs", len(b.Logs)),
+	)
+
 	k := strconv.FormatInt(int64(b.Number), 10)
 	t.sortedSet.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }

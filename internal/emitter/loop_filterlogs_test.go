@@ -156,7 +156,6 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 	}
 
 	for test, expected := range tests {
-
 		fromBlock, toBlock := computeFromBlockToBlock(
 			test.CurrentBlock,
 			test.LastRecordedBlocks,

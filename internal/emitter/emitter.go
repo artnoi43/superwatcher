@@ -2,7 +2,6 @@ package emitter
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
@@ -12,7 +11,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/enums"
-	"github.com/artnoi43/superwatcher/pkg/logger/debug"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 // emitter implements Watcher, and other than Config,
@@ -36,7 +35,8 @@ type emitter struct {
 	errChan          chan<- error
 	syncChan         <-chan struct{}
 
-	debug bool
+	debug    bool
+	debugger *debugger.Debugger
 }
 
 // Config represents the configuration structure for watcher
@@ -58,13 +58,13 @@ func (e *emitter) Loop(ctx context.Context) error {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
 		case <-ctx.Done():
-			e.debugMsg("shutting down emitter", zap.Any("emitterStatus", status))
+			e.debugger.Debug("shutting down emitter", zap.Any("emitterStatus", status))
 			e.Shutdown()
 			return errors.Wrap(ctx.Err(), ErrEmitterShutdown.Error())
 
 		default:
 			if err := e.loopFilterLogs(ctx, status); err != nil {
-				e.debugMsg("loopFilterLogs returned", zap.Any("status", status), zap.Error(err))
+				e.debugger.Debug("loopFilterLogs returned", zap.Any("status", status), zap.Error(err))
 				e.emitError(errors.Wrap(err, "error in loopFilterLogs"))
 			}
 		}
@@ -77,11 +77,9 @@ func (e *emitter) Shutdown() {
 }
 
 func (e *emitter) SyncsWithEngine() {
-	e.debugMsg("emitter: waiting for engine sync")
-	<-e.syncChan
-	e.debugMsg("emitter: synced with engine")
-}
+	e.debugger.Debug("waiting for engine sync")
 
-func (e *emitter) debugMsg(msg string, fields ...zap.Field) {
-	debug.DebugMsg(e.debug, fmt.Sprintf("emitter: %s", msg), fields...)
+	<-e.syncChan
+
+	e.debugger.Debug("synced with engine")
 }

@@ -10,7 +10,7 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/logger/debug"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 type MetadataTracker interface {
@@ -27,13 +27,16 @@ type metadataTracker struct {
 	// Field `Tracker.sortedSet` maps txHash to blockMetadata.
 	// The score is blockNumber. This allow us to use ClearUntil.
 	sortedSet *sortedset.SortedSet
-	debug     bool
+	debugger  *debugger.Debugger
 }
 
 func NewTracker(debug bool) *metadataTracker {
 	return &metadataTracker{
 		sortedSet: sortedset.New(),
-		debug:     debug,
+		debugger: &debugger.Debugger{
+			Key:         "metadataTracker",
+			ShouldDebug: debug,
+		},
 	}
 }
 
@@ -43,7 +46,7 @@ func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 	t.Lock()
 	defer t.Unlock()
 
-	debug.DebugMsg(t.debug, "clearing engine state tracker", zap.Uint64("until", blockNumber))
+	t.debugger.Debug("clearing engine state tracker", zap.Uint64("until", blockNumber))
 
 	for {
 		oldest := t.sortedSet.PeekMin()

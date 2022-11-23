@@ -9,7 +9,7 @@ import (
 
 func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 	if e.filterResultChan == nil {
-		e.debugMsg("emitFilterResult", zap.String("debug", "filterResultChan is nil"))
+		e.debugger.Debug("emitFilterResult", zap.String("debug", "filterResultChan is nil"))
 		return
 	}
 
@@ -27,7 +27,7 @@ func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 					reorgedBlocks = append(reorgedBlocks, b.Number)
 				}
 
-				e.debugMsg("emitFilterResult", zap.Uint64s("goodBlocks", goodBlocks), zap.Uint64s("reorgedBlocks", reorgedBlocks))
+				e.debugger.Debug("emitFilterResult", zap.Uint64s("goodBlocks", goodBlocks), zap.Uint64s("reorgedBlocks", reorgedBlocks))
 			}
 		}
 
@@ -39,15 +39,15 @@ func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 }
 
 func (e *emitter) emitError(err error) {
-	e.debugMsg("emitError called")
+	e.debugger.Debug("emitError called")
 
 	if e.errChan == nil {
-		e.debugMsg("emitError", zap.String("debug", "errChan is nil"))
+		e.debugger.Debug("emitError", zap.String("debug", "errChan is nil"))
 		return
 	}
 
 	if err != nil {
-		e.debugMsg("blocking in emitError")
+		e.debugger.Debug("blocking in emitError")
 		e.errChan <- err
 	}
 }

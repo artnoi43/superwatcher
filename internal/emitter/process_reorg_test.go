@@ -80,7 +80,7 @@ func TestProcessReorg(t *testing.T) {
 }
 
 func testProcessReorg(c testConfig) error {
-	tracker := newTracker("testProcessReorg")
+	tracker := newTracker("testProcessReorg", false)
 	hardcodedLogs := reorgsim.InitLogs(c.LogsFiles)
 	oldChain, reorgedChain := reorgsim.NewBlockChain(hardcodedLogs, c.ReorgedAt)
 

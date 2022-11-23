@@ -1,11 +1,9 @@
 package emitterclient
 
 import (
-	"go.uber.org/zap"
-
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/pkg/logger/debug"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 // emitterClient is the actual implementation of Client.
@@ -16,16 +14,37 @@ type emitterClient struct {
 	filterResultChan <-chan *superwatcher.FilterResult
 	errChan          <-chan error
 
-	debug bool
+	debugger *debugger.Debugger
+}
+
+func New(
+	emitterConfig *config.Config,
+	emitterSyncChan chan<- struct{},
+	filterResultChan <-chan *superwatcher.FilterResult,
+	errChan <-chan error,
+	debug bool,
+) superwatcher.EmitterClient {
+	return &emitterClient{
+		emitterConfig:    emitterConfig,
+		filterResultChan: filterResultChan,
+		emitterSyncChan:  emitterSyncChan,
+		errChan:          errChan,
+		debugger: &debugger.Debugger{
+			Key:         "emitter-client",
+			ShouldDebug: debug,
+		},
+	}
 }
 
 func (c *emitterClient) Shutdown() {
-	c.debugMsg("emitterClient.Shutdown() called")
+	c.debugger.Debug("emitterClient.Shutdown() called")
+
 	if c.emitterSyncChan != nil {
-		c.debugMsg("closing emitterClient.emitterSyncChan")
+		c.debugger.Debug("closing emitterClient.emitterSyncChan")
 		close(c.emitterSyncChan)
+
 	} else {
-		c.debugMsg("emitterClient: emitterSyncChan was already closed")
+		c.debugger.Debug("emitterClient: emitterSyncChan was already closed")
 	}
 }
 
@@ -44,7 +63,7 @@ func (c *emitterClient) WatcherResult() *superwatcher.FilterResult {
 		return result
 	}
 
-	c.debugMsg("WatcherCurrentLog - filterReorgChan is closed")
+	c.debugger.Debug("WatcherCurrentLog - filterReorgChan is closed")
 	return nil
 }
 
@@ -54,10 +73,6 @@ func (c *emitterClient) WatcherError() error {
 		return err
 	}
 
-	c.debugMsg("WatcherError - errChan is closed")
+	c.debugger.Debug("WatcherError - errChan is closed")
 	return nil
-}
-
-func (c *emitterClient) debugMsg(msg string, fields ...zap.Field) {
-	debug.DebugMsg(c.debug, msg, fields...)
 }

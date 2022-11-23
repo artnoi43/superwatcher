@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debug"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type engine struct {
 	reorgedAt       uint64
 	emitterLookBack uint64
+	debugger        debugger.Debugger
 }
 
 func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
@@ -18,8 +19,7 @@ func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Arti
 }
 
 func (e *engine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
-	debug.DebugMsg(true, "GOT REORG LOGS IN SERVICE ENGINE")
-
+	e.debugger.Debug("GOT REORGED LOG IN SERVICETEST")
 	for _, log := range logs {
 		// TODO: Polish test checks
 		if log.BlockNumber != e.reorgedAt {
