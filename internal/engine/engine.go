@@ -34,7 +34,7 @@ func New(
 		stateDataGateway: statDataGateway,
 		metadataTracker:  NewTracker(debug),
 		debugger: &debugger.Debugger{
-			Key:         "emitter",
+			Key:         "engine",
 			ShouldDebug: debug,
 		},
 		debug: debug,

@@ -11,6 +11,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/enums"
+	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -47,6 +48,41 @@ type Config struct {
 	LookBackBlocks  uint64          `mapstructure:"lookback_blocks" json:"lookBackBlock"`
 	LookBackRetries uint64          `mapstructure:"lookback_retries" json:"lookBackRetries"`
 	IntervalSecond  int             `mapstructure:"interval_second" json:"intervalSecond"`
+}
+
+// NewEmitter initializes contract info from config
+func New(
+	conf *config.Config,
+	client superwatcher.EthClient,
+	stateDataGateway watcherstate.StateDataGateway,
+	addresses []common.Address,
+	topics [][]common.Hash,
+	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
+	filterResultChan chan<- *superwatcher.FilterResult,
+	errChan chan<- error,
+	debug bool,
+) superwatcher.WatcherEmitter {
+	if debug {
+		logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
+	}
+
+	return &emitter{
+		config:           conf,
+		client:           client,
+		stateDataGateway: stateDataGateway,
+		tracker:          newTracker("emitter", debug),
+		startBlock:       conf.StartBlock,
+		addresses:        addresses,
+		topics:           topics,
+		syncChan:         syncChan,
+		filterResultChan: filterResultChan,
+		errChan:          errChan,
+		debug:            debug,
+		debugger: &debugger.Debugger{
+			Key:         "emitter",
+			ShouldDebug: debug,
+		},
+	}
 }
 
 // Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.

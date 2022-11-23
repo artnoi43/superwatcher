@@ -15,9 +15,9 @@ import (
 type filterLogStatus struct {
 	FromBlock         uint64 `json:"fromBlock"`
 	ToBlock           uint64 `json:"toBlock"`
-	IsReorging        bool   `json:"isReorging"`
 	CurrentBlock      uint64 `json:"currentBlock"`
 	LastRecordedBlock uint64 `json:"lastRecordedBlock"`
+	IsReorging        bool   `json:"isReorging"`
 }
 
 // loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
