@@ -30,7 +30,7 @@ func New(
 		config:           conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,
-		tracker:          newTracker(),
+		tracker:          newTracker("emitter"),
 		startBlock:       conf.StartBlock,
 		addresses:        addresses,
 		topics:           topics,

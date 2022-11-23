@@ -11,7 +11,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-// mapFreshLogsByHashes collects **fresh** hashes and logs into 3 maps
+// mapFreshLogsByHashes collects fresh hashes and logs into 3 maps
 func mapFreshLogsByHashes(
 	freshLogs []types.Log,
 	freshHeaders map[uint64]superwatcher.BlockHeader,

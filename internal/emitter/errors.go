@@ -11,6 +11,7 @@ var (
 
 	errFetchHeader = errors.Wrap(errFetchError, "failed to get block headers")
 	errFetchLogs   = errors.Wrap(errFetchError, "failed to filter logs")
+	errNoHash      = errors.Wrap(errFetchError, "missing hash for a block")
 
 	ErrEmitterShutdown = errors.New("emitter was told to shutdown - Loop context done")
 )

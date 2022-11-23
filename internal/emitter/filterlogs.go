@@ -158,14 +158,26 @@ func (e *emitter) filterLogs(
 			filterResult.ReorgedBlocks = append(filterResult.ReorgedBlocks, reorgedBlock)
 		}
 
-		// Populate blockInfo with fresh info
-		b := superwatcher.NewBlankBlockInfo(blockNumber, mapFreshHashes[blockNumber])
+		logs, ok := mapFreshLogs[blockNumber]
+		if !ok {
+			continue
+		}
+		hash, ok := mapFreshHashes[blockNumber]
+		if !ok {
+			return errors.Wrapf(errNoHash, "blockNumber %d", blockNumber)
+		}
+
+		// Only add fresh, canonical blockInfo with interesting logs
+		b := &superwatcher.BlockInfo{
+			Number: blockNumber,
+			Hash:   hash,
+			Logs:   logs,
+		}
 		b.Logs = mapFreshLogs[blockNumber]
-		// Add only FRESH, CANONICAL block into tracker
 		e.tracker.addTrackerBlockInfo(b)
 
-		// Publish block with > 0 block
-		if len(b.Logs) > 0 {
+		// Publish only block with logs
+		if b.Logs != nil {
 			filterResult.GoodBlocks = append(filterResult.GoodBlocks, b)
 		}
 	}

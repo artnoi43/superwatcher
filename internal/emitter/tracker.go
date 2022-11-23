@@ -12,21 +12,25 @@ import (
 )
 
 // TODO: blockInfoTracker name needs revision!
+// TODO: Remove caller and logging
 // blockInfoTracker stores the `superwatcher.BlockInfo` with blockNumber as key.
 // It is used by emitter to store `BlockInfo` from the last run of `emitter.filterLogs`
 // to see if a block's hash has changed.
 type blockInfoTracker struct {
 	sortedSet *sortedset.SortedSet
+	caller    string
 }
 
-func newTracker() *blockInfoTracker {
+func newTracker(caller string) *blockInfoTracker {
 	return &blockInfoTracker{
 		sortedSet: sortedset.New(),
+		caller:    caller,
 	}
 }
 
 // addTrackerBlockInfo adds `*BlockInfo` |b| to the store using |b.Number| as key
 func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
+	fmt.Println("- Adding block", t.caller, b.Number, b.String(), "lenLogs", len(b.Logs))
 	k := strconv.FormatInt(int64(b.Number), 10)
 	t.sortedSet.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }

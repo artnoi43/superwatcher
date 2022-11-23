@@ -106,8 +106,6 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		testEmitter.(*emitter).Loop(ctx)
 	}()
 
-	var seenLogs []*types.Log
-
 	go func() {
 		if err := <-errChan; err != nil {
 			if errors.Is(err, reorgsim.ErrExitBlockReached) {
@@ -117,6 +115,9 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		}
 	}()
 
+	var seenLogs []*types.Log
+	var latestGoodBlocks = make(map[uint64]*superwatcher.BlockInfo)
+	// tracker := newTracker("emitterTest")
 	for {
 		result := <-filterResultChan
 
@@ -142,6 +143,14 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 				)
 			}
 
+			b, ok := latestGoodBlocks[block.Number]
+			if !ok {
+				t.Fatalf("reorged block not in latestGoodBlocks - %d %s", block.Number, block.String())
+			}
+			if block.Hash != b.Hash {
+				t.Fatalf("reorged block hash not seen before - %d %s", block.Number, block.String())
+			}
+
 			// prevGoodBlock, ok := tracker.getTrackerBlockInfo(blockNumber)
 			// if !ok {
 			// 	t.Fatalf("reorged blockNumber was not even in tracker: %d", blockNumber)
@@ -156,6 +165,8 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 				// TODO: Fix reorgsim before enabling check below
 				// prevGoodLog := prevGoodBlock.Logs[i]
 				// if prevGoodLog.BlockHash == log.BlockHash {
+				// 	t.Log("log", log)
+				// 	t.Log("prevGoodLog", prevGoodLog)
 				// 	fatalBadLog(t, "reorgedLog blockHash matches", log)
 				// }
 				// if prevGoodLog.TxHash == log.TxHash {
@@ -172,6 +183,12 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 				if !ok {
 					fatalBadLog(t, "duplicate good log in seenLogs", log)
 				}
+			}
+
+			_, ok := latestGoodBlocks[block.Number]
+			if !ok {
+				latestGoodBlocks[block.Number] = block
+				continue
 			}
 		}
 

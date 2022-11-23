@@ -18,18 +18,6 @@ type BlockInfo struct {
 	Logs   []*types.Log
 }
 
-// NewBlankBlockInfo returns a new BlockInfo sans the event logs.
-// Callers will have to populate the logs themselves.
-func NewBlankBlockInfo(
-	blockNumber uint64,
-	blockHash common.Hash,
-) *BlockInfo {
-	return &BlockInfo{
-		Number: blockNumber,
-		Hash:   blockHash,
-	}
-}
-
 // String returns the block hash with 0x prepended in all lowercase string.
 func (b *BlockInfo) String() string {
 	return gslutils.StringerToLowerString(b.Hash)
