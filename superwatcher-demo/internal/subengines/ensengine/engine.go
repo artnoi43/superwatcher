@@ -2,9 +2,11 @@ package ensengine
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/artnoi43/superwatcher"
 
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/enscontroller"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts/ens/ensregistrar"
@@ -20,6 +22,7 @@ var ensEngineEvents = []string{eventNameRegistered}
 type ensEngine struct {
 	ensRegistrar  contracts.BasicContract
 	ensController contracts.BasicContract
+	dataGateway   entity.EnsDataGateway
 }
 
 type EnsSubEngineSuite struct {
@@ -28,10 +31,11 @@ type EnsSubEngineSuite struct {
 	EnsServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
-func New(registrarContract, controllerContract contracts.BasicContract) superwatcher.ServiceEngine {
+func New(registrarContract, controllerContract contracts.BasicContract, redisClient redis.Client) superwatcher.ServiceEngine {
 	return &ensEngine{
 		ensRegistrar:  registrarContract,
 		ensController: controllerContract,
+		dataGateway:   *entity.NewEnsDataGateway(redisClient),
 	}
 }
 
