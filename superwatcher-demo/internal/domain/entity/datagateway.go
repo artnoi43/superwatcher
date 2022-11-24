@@ -22,16 +22,16 @@ const (
 	redisEnsKeyFormat = "demo:ens:%s"
 )
 
-type EnsRecorder struct {
+type EnsDataGateway struct {
 	redisEnsKey string
 	redisClient RedisClient
 }
 
-func NewRedisENSRecorder(
+func NewEnsDataGateway(
 	keyPrefix string,
 	redisCli RedisClient,
-) *EnsRecorder {
-	return &EnsRecorder{
+) *EnsDataGateway {
+	return &EnsDataGateway{
 		redisEnsKey: fmt.Sprintf(redisEnsKeyFormat, keyPrefix),
 		redisClient: redisCli,
 	}
@@ -50,7 +50,7 @@ func handleRedisErr(err error, action, key string) error {
 	return errors.Wrapf(err, "action: %s", action)
 }
 
-func (s *EnsRecorder) SetRecordedENS(
+func (s *EnsDataGateway) SetRecordedENS(
 	ctx context.Context,
 	ens *ENS,
 ) error {
@@ -62,7 +62,7 @@ func (s *EnsRecorder) SetRecordedENS(
 	)
 }
 
-func (s *EnsRecorder) GetRecordedENS(
+func (s *EnsDataGateway) GetRecordedENS(
 	ctx context.Context,
 	key string,
 ) (*ENS, error) {
@@ -79,7 +79,7 @@ func (s *EnsRecorder) GetRecordedENS(
 	return ens, nil
 }
 
-func (s *EnsRecorder) GetRecordedENSs(
+func (s *EnsDataGateway) GetRecordedENSs(
 	ctx context.Context,
 ) ([]*ENS, error) {
 	ENSs := []*ENS{}
@@ -111,7 +111,7 @@ func (s *EnsRecorder) GetRecordedENSs(
 	return ENSs, nil
 }
 
-func (s *EnsRecorder) DelRecordedENS(
+func (s *EnsDataGateway) DelRecordedENS(
 	ctx context.Context,
 	key string,
 ) error {
@@ -122,6 +122,6 @@ func (s *EnsRecorder) DelRecordedENS(
 	return nil
 }
 
-func (s *EnsRecorder) Shutdown() error {
+func (s *EnsDataGateway) Shutdown() error {
 	return s.redisClient.Close()
 }
