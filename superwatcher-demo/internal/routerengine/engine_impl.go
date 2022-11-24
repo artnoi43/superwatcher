@@ -20,8 +20,9 @@ func (e *routerEngine) HandleGoodLogs(
 ) {
 	// Artifacts to return - we don't know its size
 	var retArtifacts []superwatcher.Artifact //nolint:prealloc
-
 	logsMap := e.mapLogsToSubEngine(logs)
+
+	// ensLogs := logsMap[subengines.SubEngineENS]
 	for subEngine, logs := range logsMap {
 		serviceEngine, ok := e.services[subEngine]
 		if !ok {
@@ -39,7 +40,6 @@ func (e *routerEngine) HandleGoodLogs(
 
 		// Only append non-nil subengine artifacts
 		if resultArtifacts != nil {
-			// debug.DebugMsg(true, "got resultArtifacts", zap.Any("artifacts", resultArtifacts))
 			retArtifacts = append(retArtifacts, resultArtifacts)
 		}
 	}

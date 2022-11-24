@@ -3,9 +3,10 @@ package servicetest
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type engine struct {

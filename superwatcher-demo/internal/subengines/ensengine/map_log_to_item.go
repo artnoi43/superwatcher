@@ -46,7 +46,7 @@ func (e *ensEngine) unmarshalLogToENS(
 			}
 
 			ens.ID = gslutils.ToLower(log.Topics[1].String())
-			ens.Owner = common.HexToAddress(log.Topics[2].Hex())
+			ens.Owner = gslutils.ToLower(common.HexToAddress(log.Topics[2].Hex()).String())
 			ens.Expires = time.Unix(expire.Int64(), 0)
 		}
 
@@ -69,7 +69,7 @@ func (e *ensEngine) unmarshalLogToENS(
 			}
 
 			ens.Name = gslutils.ToLower(name)
-			ens.Owner = common.HexToAddress(log.Topics[2].Hex())
+			ens.Owner = gslutils.ToLower(common.HexToAddress(log.Topics[2].Hex()).String())
 			ens.Expires = time.Unix(expire.Int64(), 0)
 		}
 	}

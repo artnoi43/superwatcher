@@ -1,6 +1,10 @@
 package ensengine
 
 import (
+	"fmt"
+
+	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -19,7 +23,11 @@ func (e *ensEngine) handleNameRegisteredRegistrar(
 		panic("bad log with < 2 topics")
 	}
 
-	var name entity.ENS
+	name := entity.ENS{
+		TxHash:           gslutils.StringerToLowerString(log.TxHash),
+		BlockHashCreated: gslutils.StringerToLowerString(log.BlockHash),
+	}
+
 	// We'll only get ENS Name ID from contract Registrar
 	switch logEvent {
 	case eventNameRegistered:
@@ -30,7 +38,6 @@ func (e *ensEngine) handleNameRegisteredRegistrar(
 
 	return &ENSArtifact{
 		ID:                  name.ID,
-		TxHash:              log.TxHash,
 		RegisterBlockNumber: log.BlockNumber,
 		BlockEvents: map[ENSEvent]uint64{
 			RegisteredRegistrar: log.BlockNumber,
@@ -54,8 +61,15 @@ func (e *ensEngine) handleNameRegisteredController(
 	if prevArtifact == nil {
 		panic("handleNameRegisteredController: got nil prevArtifact")
 	}
+
 	if prevArtifact.BlockEvents == nil {
 		prevArtifact.BlockEvents = make(map[ENSEvent]uint64)
+	}
+	if prev, curr := common.HexToHash(prevArtifact.ENS.BlockHashCreated), log.BlockHash; prev != curr {
+		panic(fmt.Sprintf("controller prevArtifact from registrar has different blockHash: %s vs %s", prev.String(), curr.String()))
+	}
+	if prev, curr := common.HexToHash(prevArtifact.ENS.TxHash), log.TxHash; prev != curr {
+		panic(fmt.Sprintf("controller prevArtifact from registrar has different txHash: %s vs %s", prev.String(), curr.String()))
 	}
 
 	switch logEvent {

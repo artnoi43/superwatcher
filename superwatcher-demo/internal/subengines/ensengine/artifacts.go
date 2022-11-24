@@ -2,6 +2,7 @@ package ensengine
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -29,7 +30,6 @@ type ENSArtifact struct {
 	RegisterBlockNumber uint64              `json:"registerBlockNumber"`
 	LastEvent           ENSEvent            `json:"lastEvent"`
 	BlockEvents         map[ENSEvent]uint64 `json:"events"` // One block may have >1 events
-	TxHash              common.Hash         `json:"txHash"`
 	ENS                 entity.ENS          `json:"ens"`
 }
 
@@ -44,7 +44,7 @@ func spwArtifactsByTxHash(log *types.Log, artifacts []superwatcher.Artifact) *EN
 	)
 
 	var blankHash common.Hash
-	if artifact.LastEvent == Null && artifact.TxHash == blankHash {
+	if artifact.LastEvent == Null && common.HexToHash(artifact.ENS.TxHash) == blankHash {
 		return nil
 	}
 
@@ -67,12 +67,12 @@ func spwArtifactsToEnsArtifacts(artifacts []superwatcher.Artifact) []ENSArtifact
 
 func getPrevENSArtifactFromLogTxHash(log *types.Log, artifacts []ENSArtifact) ENSArtifact {
 	for _, artifact := range artifacts {
-		if artifact.TxHash == log.TxHash {
+		if common.HexToHash(artifact.ENS.TxHash) == log.TxHash {
 			return artifact
 		}
 	}
 
-	return ENSArtifact{}
+	panic(fmt.Sprintf("no such artifact for txHash %s", log.TxHash.String()))
 }
 
 func getPrevArtifactFromLogEntity(artifacts []ENSArtifact, ens entity.ENS) (*ENSArtifact, error) {

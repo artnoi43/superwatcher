@@ -5,10 +5,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/logutils"
@@ -39,7 +39,7 @@ func (e *ensEngine) revertNameRegisteredRegistrar(
 			logger.Panic("prevArtifact ENS ID != log ENS ID", zap.String("prevArtifact ID", name.ID), zap.String("log ID", id))
 		}
 
-		name.Owner = common.HexToAddress(log.Topics[2].Hex())
+		name.Owner = gslutils.ToLower(log.Topics[2].Hex())
 	}
 
 	prevArtifact.LastEvent = RevertRegisterRegistrar

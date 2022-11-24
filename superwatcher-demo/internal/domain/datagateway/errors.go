@@ -1,4 +1,4 @@
-package entity
+package datagateway
 
 import "github.com/pkg/errors"
 

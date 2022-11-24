@@ -19,6 +19,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/routerengine"
@@ -185,7 +186,8 @@ func contractsToServices(
 	}
 
 	// Initialize ensEngine
-	ensEngine := ensengine.New(ensRegistrar, ensController, rdb)
+	dgwENS := datagateway.NewEnsDataGateway(rdb)
+	ensEngine := ensengine.New(ensRegistrar, ensController, dgwENS)
 	demoServices[subengines.SubEngineENS] = ensEngine
 
 	return emitterAddresses, emitterTopics, demoRoutes, demoServices
