@@ -24,7 +24,7 @@ func TestMockDataGatewayENS(t *testing.T) {
 			ID:               s,
 			Name:             name,
 			TxHash:           gslutils.StringerToLowerString(common.HexToHash("0x" + s)),
-			BlockHashCreated: gslutils.StringerToLowerString(common.HexToHash("0x" + s100)),
+			BlockHash: gslutils.StringerToLowerString(common.HexToHash("0x" + s100)),
 		}
 
 		enses = append(enses, ens)

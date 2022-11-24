@@ -14,8 +14,9 @@ type ENS struct {
 	Owner   string    `json:"owner"`
 	Expires time.Time `json:"expires"`
 
-	TxHash           string `json:"txHash"`
-	BlockHashCreated string `json:"blockHash"`
+	TxHash      string `json:"txHash"`
+	BlockHash   string `json:"blockHash"`
+	BlockNumber uint64 `json:"blockNumber"`
 }
 
 func (e *ENS) DomainString() string {

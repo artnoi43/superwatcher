@@ -2,6 +2,7 @@ package datagateway
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 
@@ -35,7 +36,7 @@ func (m *mockDataGatewayENS) SetENS(ctx context.Context, ens *entity.ENS) error 
 func (m *mockDataGatewayENS) GetENS(ctx context.Context, domainName string) (*entity.ENS, error) {
 	saved, ok := m.m[domainName]
 	if !ok || saved == nil {
-		return nil, errors.Wrapf(ErrRecordNotFound, "not found for key %s", domainName)
+		return nil, errors.Wrapf(ErrRecordNotFound, "ens not found for key %s", domainName)
 	}
 
 	return saved.ens, nil
@@ -50,6 +51,11 @@ func (m *mockDataGatewayENS) GetENSes(context.Context) ([]*entity.ENS, error) {
 }
 
 func (m *mockDataGatewayENS) DelENS(ctx context.Context, ens *entity.ENS) error {
+	_, ok := m.m[ens.Name]
+	if !ok {
+		return errors.Wrapf(ErrRecordNotFound, "ens not found for key %s", ens.Name)
+	}
+	fmt.Println("# DEL ENS", ens.Name)
 	m.m[ens.Name] = nil
 	return nil
 }

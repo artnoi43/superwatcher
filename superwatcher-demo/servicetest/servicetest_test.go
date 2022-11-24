@@ -12,6 +12,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
 )
 
 type testCase struct {
@@ -45,41 +47,49 @@ func newCase(
 	}, param
 }
 
-func TestServiceEngine(t *testing.T) {
+func TestServiceEngineENS(t *testing.T) {
 	conf := &config.Config{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		Chain:           string(enums.ChainEthereum),
-		StartBlock:      15944390,
+		StartBlock:      15984020,
 		LookBackBlocks:  10,
 		LookBackRetries: 2,
 		LoopInterval:    0,
 	}
 
-	logsPath := "../../internal/emitter/assets"
+	logsPath := "../assets/ens"
 	logsPathFiles := []string{
-		logsPath + "/logs_lp.json",
-		logsPath + "/logs_poolfactory.json",
+		logsPath + "/logs_reorg_test.json",
 	}
 
-	reorgedAt := uint64(15944415)
+	ensStore := datagateway.NewMockDataGatewayENS()
+	ensEngine := ensengine.NewEnsSubEngineSuite(ensStore).Engine
+
+	reorgedAt := uint64(15984033)
 	tc, param := newCase(
 		conf,
-		&engine{
-			reorgedAt:       reorgedAt,
-			emitterLookBack: conf.LookBackBlocks,
-		},
+		ensEngine,
 		logsPathFiles,
 		conf.StartBlock,
 		reorgedAt,
-		reorgedAt+(conf.LookBackBlocks*conf.LookBackRetries),
+		15984100,
 	)
 
-	if err := testServiceEngine(t, tc, param); err != nil {
-		t.Error(err.Error())
+	if err := serviceEngineTestTemplate(t, tc, param); err != nil {
+		t.Error("error in test template", err.Error())
+	}
+
+	results, err := ensStore.GetENSes(nil)
+	if err != nil {
+		t.Error("error from ensStore", err.Error())
+	}
+
+	for _, result := range results {
+		t.Log(result.BlockNumber, result.BlockHash)
 	}
 }
 
-func testServiceEngine(t *testing.T, tc *testCase, param reorgsim.ReorgParam) error {
+func serviceEngineTestTemplate(t *testing.T, tc *testCase, param reorgsim.ReorgParam) error {
 	// Use nil addresses and topics
 	t.Logf("testCase param: %+v", param)
 	emitter, engine := initsuperwatcher.New(

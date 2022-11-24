@@ -24,8 +24,9 @@ func (e *ensEngine) handleNameRegisteredRegistrar(
 	}
 
 	name := entity.ENS{
-		TxHash:           gslutils.StringerToLowerString(log.TxHash),
-		BlockHashCreated: gslutils.StringerToLowerString(log.BlockHash),
+		TxHash:      gslutils.StringerToLowerString(log.TxHash),
+		BlockHash:   gslutils.StringerToLowerString(log.BlockHash),
+		BlockNumber: log.BlockNumber,
 	}
 
 	// We'll only get ENS Name ID from contract Registrar
@@ -65,7 +66,7 @@ func (e *ensEngine) handleNameRegisteredController(
 	if prevArtifact.BlockEvents == nil {
 		prevArtifact.BlockEvents = make(map[ENSEvent]uint64)
 	}
-	if prev, curr := common.HexToHash(prevArtifact.ENS.BlockHashCreated), log.BlockHash; prev != curr {
+	if prev, curr := common.HexToHash(prevArtifact.ENS.BlockHash), log.BlockHash; prev != curr {
 		panic(fmt.Sprintf("controller prevArtifact from registrar has different blockHash: %s vs %s", prev.String(), curr.String()))
 	}
 	if prev, curr := common.HexToHash(prevArtifact.ENS.TxHash), log.TxHash; prev != curr {

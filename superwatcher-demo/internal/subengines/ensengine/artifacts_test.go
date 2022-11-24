@@ -29,9 +29,10 @@ func TestArtifacts(t *testing.T) {
 	for i := int64(1); i < l; i++ {
 		ensArtifact := ENSArtifact{
 			ENS: entity.ENS{
-				Name:             names[i],
-				TxHash:           gslutils.StringerToLowerString(txHashes[i]),
-				BlockHashCreated: gslutils.StringerToLowerString(blockHashes[i]),
+				Name:        names[i],
+				TxHash:      gslutils.StringerToLowerString(txHashes[i]),
+				BlockHash:   gslutils.StringerToLowerString(blockHashes[i]),
+				BlockNumber: uint64(i),
 			},
 		}
 
