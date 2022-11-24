@@ -10,9 +10,9 @@ import (
 )
 
 type engine struct {
-	reorgedAt       uint64
-	emitterLookBack uint64
-	debugger        debugger.Debugger
+	reorgedAt          uint64
+	emitterFilterRange uint64
+	debugger           debugger.Debugger
 }
 
 func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
@@ -24,7 +24,7 @@ func (e *engine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.A
 	for _, log := range logs {
 		// TODO: Polish test checks
 		if log.BlockNumber != e.reorgedAt {
-			if log.BlockNumber > e.reorgedAt+e.emitterLookBack {
+			if log.BlockNumber > e.reorgedAt+e.emitterFilterRange {
 				return nil, fmt.Errorf("reorgedAt is different from logs passed to HandleReorgedLogs: expecting %d, got %d", e.reorgedAt, log.BlockNumber)
 			}
 		}

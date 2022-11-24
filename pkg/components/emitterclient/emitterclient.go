@@ -8,7 +8,7 @@ import (
 )
 
 func New(
-	conf *config.Config,
+	conf *config.EmitterConfig,
 	syncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,

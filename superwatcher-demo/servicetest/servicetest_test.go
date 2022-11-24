@@ -17,13 +17,13 @@ import (
 )
 
 type testCase struct {
-	conf          *config.Config
+	conf          *config.EmitterConfig
 	client        superwatcher.EthClient
 	serviceEngine superwatcher.ServiceEngine
 }
 
 func newCase(
-	conf *config.Config,
+	conf *config.EmitterConfig,
 	serviceEngine superwatcher.ServiceEngine,
 	logsFullPaths []string,
 	start,
@@ -48,13 +48,13 @@ func newCase(
 }
 
 func TestServiceEngineENS(t *testing.T) {
-	conf := &config.Config{
+	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		Chain:           string(enums.ChainEthereum),
-		StartBlock:      15984020,
-		LookBackBlocks:  10,
-		LookBackRetries: 2,
-		LoopInterval:    0,
+		Chain:         string(enums.ChainEthereum),
+		StartBlock:    15984020,
+		FilterRange:   10,
+		GoBackRetries: 2,
+		LoopInterval:  0,
 	}
 
 	logsPath := "../assets/ens"

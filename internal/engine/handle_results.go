@@ -8,11 +8,10 @@ import (
 )
 
 func (e *engine) handleResults(ctx context.Context) error {
-	// Get emitterConfig to clear tracker metadata based on lookBackBlocks
+	// Get emitterConfig to clear tracker metadata based on FilterRange
 	emitterConfig := e.emitterClient.WatcherConfig()
 
 	for {
-		e.debugger.Debug("henlo")
 		result := e.emitterClient.WatcherResult()
 		if result == nil {
 			e.debugger.Debug("handleLogs got nil result, emitterClient was probably shutdown, returning..")
@@ -89,7 +88,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		// TODO: How many should we clear?
 		e.metadataTracker.ClearUntil(
-			result.LastGoodBlock - (emitterConfig.LookBackBlocks * emitterConfig.LookBackRetries),
+			result.LastGoodBlock - (emitterConfig.FilterRange * emitterConfig.GoBackRetries),
 		)
 
 		var lastRecordedBlock uint64

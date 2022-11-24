@@ -14,7 +14,7 @@ import (
 // The EmitterClient is initialized and embedded to the returned engine within this function.
 // This is the preferred way for initializing superwatcher components.
 func New(
-	conf *config.Config,
+	conf *config.EmitterConfig,
 	ethClient superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,

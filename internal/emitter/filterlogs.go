@@ -108,15 +108,16 @@ func (e *emitter) filterLogs(
 	lenLogs := len(eventLogs)
 	e.debugger.Debug("got headers and logs", zap.Int("logs", lenLogs))
 
-	// Clear all tracker's blocks before fromBlock - lookBackBlocks
-	until := fromBlock - e.config.LookBackBlocks
+	// Clear all tracker's blocks before fromBlock - filterRange
+	until := fromBlock - e.conf.FilterRange
 	e.debugger.Debug("clearing tracker", zap.Uint64("untilBlock", until))
-	e.tracker.clearUntil(fromBlock - e.config.LookBackBlocks)
+	e.tracker.clearUntil(until)
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
 	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogsByHashes(eventLogs, headersByBlockNumber)
-	// wasReorged maps block numbers whose fresh hash and tracker hash differ
+
+	// wasReorged maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
 	wasReorged := processReorged(
 		e.tracker,
 		fromBlock,

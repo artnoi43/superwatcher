@@ -13,7 +13,7 @@ import (
 
 // New returns a new, default superwatcher.WatcherEmitter.
 func New(
-	conf *config.Config,
+	conf *config.EmitterConfig,
 	client superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,

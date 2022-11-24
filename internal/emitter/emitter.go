@@ -10,7 +10,6 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
-	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
@@ -20,12 +19,11 @@ import (
 // to facil mock testing.
 type emitter struct {
 	// These fields are used for filtering event logs
-	config     *config.Config
-	client     superwatcher.EthClient
-	tracker    *blockInfoTracker
-	startBlock uint64
-	addresses  []common.Address
-	topics     [][]common.Hash
+	conf      *config.EmitterConfig
+	client    superwatcher.EthClient
+	tracker   *blockInfoTracker
+	addresses []common.Address
+	topics    [][]common.Hash
 
 	// Redis-store for tracking last recorded block
 	stateDataGateway watcherstate.StateDataGateway
@@ -40,19 +38,9 @@ type emitter struct {
 	debugger *debugger.Debugger
 }
 
-// Config represents the configuration structure for watcher
-type Config struct {
-	Chain           enums.ChainType `mapstructure:"chain" json:"chain"`
-	Node            string          `mapstructure:"node_url" json:"node"`
-	StartBlock      uint64          `mapstructure:"start_block" json:"startBlock"`
-	LookBackBlocks  uint64          `mapstructure:"lookback_blocks" json:"lookBackBlock"`
-	LookBackRetries uint64          `mapstructure:"lookback_retries" json:"lookBackRetries"`
-	IntervalSecond  int             `mapstructure:"interval_second" json:"intervalSecond"`
-}
-
 // NewEmitter initializes contract info from config
 func New(
-	conf *config.Config,
+	conf *config.EmitterConfig,
 	client superwatcher.EthClient,
 	stateDataGateway watcherstate.StateDataGateway,
 	addresses []common.Address,
@@ -67,11 +55,10 @@ func New(
 	}
 
 	return &emitter{
-		config:           conf,
+		conf:             conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,
 		tracker:          newTracker("emitter", debug),
-		startBlock:       conf.StartBlock,
 		addresses:        addresses,
 		topics:           topics,
 		syncChan:         syncChan,

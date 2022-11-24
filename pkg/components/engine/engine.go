@@ -29,7 +29,7 @@ func New(
 
 // New creates a new emitterClient, and pair it with an engine
 func NewWithClient(
-	emitterConfig *config.Config,
+	emitterConfig *config.EmitterConfig,
 	serviceEngine superwatcher.ServiceEngine,
 	stateDataGateway watcherstate.StateDataGateway,
 	syncChan chan<- struct{},

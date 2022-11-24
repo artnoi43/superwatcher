@@ -9,7 +9,7 @@ import (
 // emitterClient is the actual implementation of Client.
 // It uses channels to communicate with emitter.
 type emitterClient struct {
-	emitterConfig    *config.Config
+	emitterConfig    *config.EmitterConfig
 	emitterSyncChan  chan<- struct{}
 	filterResultChan <-chan *superwatcher.FilterResult
 	errChan          <-chan error
@@ -18,7 +18,7 @@ type emitterClient struct {
 }
 
 func New(
-	emitterConfig *config.Config,
+	emitterConfig *config.EmitterConfig,
 	emitterSyncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,
@@ -53,7 +53,7 @@ func (c *emitterClient) WatcherEmitterSync() {
 	c.emitterSyncChan <- struct{}{}
 }
 
-func (c *emitterClient) WatcherConfig() *config.Config {
+func (c *emitterClient) WatcherConfig() *config.EmitterConfig {
 	return c.emitterConfig
 }
 

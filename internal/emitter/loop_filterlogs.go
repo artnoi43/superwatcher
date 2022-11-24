@@ -20,22 +20,23 @@ type filterLogStatus struct {
 	IsReorging        bool   `json:"isReorging"`
 }
 
+func (e *emitter) sleep() {
+	time.Sleep(time.Second * time.Duration(e.conf.LoopInterval))
+}
+
 // loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
 // and will only returns if (some) errors happened.
 func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) error {
-	sleep := func() {
-		time.Sleep(time.Second * time.Duration(e.config.LoopInterval))
-	}
-	loopCtx := context.Background()
 	// Assume that this is a normal first start (watcher restarted).
-	lookBackFirstStart := true
+	goBackFirstStart := true
 
 	// This will keep track of fromBlock/toBlock, as well as reorg status
+	loopCtx := context.Background()
 	for {
 		// Don't sleep or log status on first loop
-		if !lookBackFirstStart {
+		if !goBackFirstStart {
 			e.debugger.Debug("new loopFilterLogs loop")
-			sleep()
+			e.sleep()
 		}
 
 		select {
@@ -46,10 +47,10 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 		default:
 			newStatus, err := e.computeFromBlockToBlock(
 				loopCtx,
-				&lookBackFirstStart,
+				&goBackFirstStart,
 				status,
 			)
-			if lookBackFirstStart && errors.Is(err, errNoNewBlock) {
+			if goBackFirstStart && errors.Is(err, errNoNewBlock) {
 				err = nil
 			}
 
@@ -110,7 +111,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 // It returns old status with updated values if there was an error, or new status if successful.
 func (e *emitter) computeFromBlockToBlock(
 	ctx context.Context,
-	lookBackFirstStart *bool,
+	goBackFirstStart *bool,
 	status *filterLogStatus,
 ) (
 	*filterLogStatus,
@@ -133,10 +134,10 @@ func (e *emitter) computeFromBlockToBlock(
 			return status, errors.Wrap(err, "failed to get last recorded block from Redis")
 		}
 
-		// If no lastRecordedBlock => watcher has never been run on the host: there's no need to look back.
-		*lookBackFirstStart = false
+		// If no lastRecordedBlock, then it means the emitter has never been run on the host: there's no need to look back.
+		*goBackFirstStart = false
 		// If no lastRecordedBlock, use startBlock (contract genesis block)
-		lastRecordedBlock = e.startBlock
+		lastRecordedBlock = e.conf.StartBlock
 	}
 	status.LastRecordedBlock = lastRecordedBlock
 
@@ -147,7 +148,7 @@ func (e *emitter) computeFromBlockToBlock(
 	)
 
 	// Continue if there's no new block yet
-	if !*lookBackFirstStart {
+	if !*goBackFirstStart {
 		if lastRecordedBlock == currentBlock {
 			return status, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
 		}
@@ -156,9 +157,9 @@ func (e *emitter) computeFromBlockToBlock(
 	fromBlock, toBlock := computeFromBlockToBlock(
 		currentBlock,
 		lastRecordedBlock,
-		e.config.LookBackBlocks,
-		e.config.LookBackRetries,
-		lookBackFirstStart,
+		e.conf.FilterRange,
+		e.conf.GoBackRetries,
+		goBackFirstStart,
 		status,
 		e.debug,
 	)
@@ -178,9 +179,9 @@ func (e *emitter) computeFromBlockToBlock(
 func computeFromBlockToBlock(
 	currentBlock uint64,
 	lastRecordedBlock uint64,
-	lookBackBlocks uint64,
-	lookBackRetries uint64,
-	lookBackFirstStart *bool,
+	filterRange uint64,
+	goBackRetries uint64,
+	goBackFirstStart *bool,
 	status *filterLogStatus,
 	debug bool,
 ) (
@@ -190,13 +191,14 @@ func computeFromBlockToBlock(
 	var fromBlock, toBlock uint64
 
 	// Special case
-	if *lookBackFirstStart || status.IsReorging {
+	if *goBackFirstStart || status.IsReorging {
 		// Toggle
-		*lookBackFirstStart = false
+		*goBackFirstStart = false
 
-		// Start with going back lookBack * maxLookBack times if watcher was restarted
-		goBack := lookBackBlocks * lookBackRetries
+		// TODO: Implement maxGoBack
+		// Start with going back filterRange * goBackRetries times if watcher was restarted
 		base := lastRecordedBlock + 1
+		goBack := filterRange * goBackRetries
 
 		// Prevent overflow
 		if goBack > base {
@@ -204,7 +206,7 @@ func computeFromBlockToBlock(
 		} else {
 			fromBlock = base - goBack
 		}
-		toBlock = fromBlock + lookBackBlocks
+		toBlock = fromBlock + filterRange
 
 		if debug {
 			debugger.Debug(
@@ -216,7 +218,7 @@ func computeFromBlockToBlock(
 		}
 
 	} else {
-		fromBlock, toBlock = fromBlockToBlock(currentBlock, lastRecordedBlock, lookBackBlocks)
+		fromBlock, toBlock = fromBlockToBlock(currentBlock, lastRecordedBlock, filterRange)
 	}
 
 	// Update status here too
