@@ -9,21 +9,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	redisEnsKeyFormat = "demo:ens:%s"
-)
+func redisEnsKey(key string) string {
+	return fmt.Sprintf("demo:ens:%s", key)
+}
 
 type EnsDataGateway struct {
-	redisEnsKey string
 	redisClient redis.Client
 }
 
 func NewEnsDataGateway(
-	keyPrefix string,
 	redisCli redis.Client,
 ) *EnsDataGateway {
 	return &EnsDataGateway{
-		redisEnsKey: fmt.Sprintf(redisEnsKeyFormat, keyPrefix),
 		redisClient: redisCli,
 	}
 }
@@ -41,11 +38,11 @@ func handleRedisErr(err error, action, key string) error {
 	return errors.Wrapf(err, "action: %s", action)
 }
 
-func (s *EnsDataGateway) SetRecordedENS(
+func (s *EnsDataGateway) SaveENS(
 	ctx context.Context,
 	ens *ENS,
 ) error {
-	key := fmt.Sprintf(s.redisEnsKey+":%d", ens.ID)
+	key := redisEnsKey(ens.ID)
 	return handleRedisErr(
 		s.redisClient.Set(ctx, key, ens, -1).Err(),
 		"set RecordedENS",
@@ -75,7 +72,7 @@ func (s *EnsDataGateway) GetRecordedENSs(
 ) ([]*ENS, error) {
 	ENSs := []*ENS{}
 	var cursor uint64
-	prefix := s.redisEnsKey + ":*"
+	prefix := redisEnsKey("*")
 
 	for {
 		var keys []string
@@ -102,7 +99,7 @@ func (s *EnsDataGateway) GetRecordedENSs(
 	return ENSs, nil
 }
 
-func (s *EnsDataGateway) DelRecordedENS(
+func (s *EnsDataGateway) RemoveENS(
 	ctx context.Context,
 	key string,
 ) error {
