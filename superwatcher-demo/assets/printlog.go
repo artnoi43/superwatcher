@@ -24,6 +24,7 @@ func main() {
 		var logs []types.Log
 		if err := json.Unmarshal(b, &logs); err != nil {
 			fmt.Println("failed to unmarshal logs in", filename)
+			continue
 		}
 
 		for _, log := range logs {
