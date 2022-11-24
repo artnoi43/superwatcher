@@ -14,11 +14,11 @@ func redisEnsKey(key string) string {
 }
 
 type EnsDataGateway struct {
-	redisClient redis.Client
+	redisClient *redis.Client
 }
 
 func NewEnsDataGateway(
-	redisCli redis.Client,
+	redisCli *redis.Client,
 ) *EnsDataGateway {
 	return &EnsDataGateway{
 		redisClient: redisCli,

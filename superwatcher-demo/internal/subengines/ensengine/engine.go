@@ -31,7 +31,7 @@ type EnsSubEngineSuite struct {
 	EnsServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
-func New(registrarContract, controllerContract contracts.BasicContract, redisClient redis.Client) superwatcher.ServiceEngine {
+func New(registrarContract, controllerContract contracts.BasicContract, redisClient *redis.Client) superwatcher.ServiceEngine {
 	return &ensEngine{
 		ensRegistrar:  registrarContract,
 		ensController: controllerContract,
