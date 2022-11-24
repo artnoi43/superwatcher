@@ -101,8 +101,9 @@ func (s *EnsDataGateway) GetRecordedENSs(
 
 func (s *EnsDataGateway) RemoveENS(
 	ctx context.Context,
-	key string,
+	ens *ENS,
 ) error {
+	key := redisEnsKey(ens.ID)
 	_, err := s.redisClient.Del(ctx, key).Result()
 	if err != nil {
 		return handleRedisErr(err, "del RecordedENS", key)
