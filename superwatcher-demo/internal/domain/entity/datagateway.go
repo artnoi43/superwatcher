@@ -4,19 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
-
-type RedisClient interface {
-	Set(context.Context, string, interface{}, time.Duration) *redis.StatusCmd
-	Get(ctx context.Context, key string) *redis.StringCmd
-	Scan(ctx context.Context, cursor uint64, keymatch string, count int64) *redis.ScanCmd
-	Del(ctx context.Context, keys ...string) *redis.IntCmd
-	Close() error
-}
 
 const (
 	redisEnsKeyFormat = "demo:ens:%s"
@@ -24,12 +15,12 @@ const (
 
 type EnsDataGateway struct {
 	redisEnsKey string
-	redisClient RedisClient
+	redisClient redis.Client
 }
 
 func NewEnsDataGateway(
 	keyPrefix string,
-	redisCli RedisClient,
+	redisCli redis.Client,
 ) *EnsDataGateway {
 	return &EnsDataGateway{
 		redisEnsKey: fmt.Sprintf(redisEnsKeyFormat, keyPrefix),
