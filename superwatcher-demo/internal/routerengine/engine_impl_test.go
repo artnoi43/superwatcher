@@ -7,10 +7,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/artnoi43/superwatcher"
 
+	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
@@ -34,6 +36,18 @@ func TestHandleGoodLogs(t *testing.T) {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
 
+	conf, err := config.ConfigYAML("./config/config.yaml")
+	if err != nil {
+		panic("failed to read YAML config: " + err.Error())
+	}
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: conf.RedisConnAddr,
+	})
+	if redisClient == nil {
+		t.Fatalf("nil redis")
+	}
+	defer redisClient.Close()
+
 	demoContracts := hardcode.DemoContracts(hardcode.Uniswapv3Factory, hardcode.ENSRegistrar, hardcode.ENSController)
 	poolFactoryContract := demoContracts[hardcode.Uniswapv3Factory]
 	poolFactoryHashes := contracts.CollectEventHashes(poolFactoryContract.ContractEvents)
@@ -42,7 +56,7 @@ func TestHandleGoodLogs(t *testing.T) {
 	ensRegistrarHashes := contracts.CollectEventHashes(ensRegistrarContract.ContractEvents)
 	ensControllerContract := demoContracts[hardcode.ENSController]
 	ensControllerHashes := contracts.CollectEventHashes(ensControllerContract.ContractEvents)
-	ensEngine := ensengine.New(ensRegistrarContract, ensControllerContract)
+	ensEngine := ensengine.New(ensRegistrarContract, ensControllerContract, redisClient)
 
 	routes := map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
 		subengines.SubEngineUniswapv3Factory: {

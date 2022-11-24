@@ -75,7 +75,7 @@ func main() {
 	)
 
 	// Init demo service instances and items with demoContracts
-	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts)
+	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts, rdb)
 	logger.Debug("init: addresses", zap.Any("emitterAddresses", emitterAddresses))
 	logger.Debug("init: topics", zap.Any("emitterTopics", emitterTopics))
 	logger.Debug("init: demoRoutes", zap.Any("demoRoutes", demoRoutes))
@@ -135,6 +135,7 @@ func main() {
 
 func contractsToServices(
 	demoContracts map[string]contracts.BasicContract,
+	rdb *redis.Client,
 ) (
 	[]common.Address,
 	[]common.Hash,
@@ -184,7 +185,7 @@ func contractsToServices(
 	}
 
 	// Initialize ensEngine
-	ensEngine := ensengine.New(ensRegistrar, ensController)
+	ensEngine := ensengine.New(ensRegistrar, ensController, rdb)
 	demoServices[subengines.SubEngineENS] = ensEngine
 
 	return emitterAddresses, emitterTopics, demoRoutes, demoServices

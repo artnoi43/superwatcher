@@ -1,6 +1,7 @@
 package ensengine
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -24,6 +25,9 @@ func (e *ensEngine) HandleGoodLogs(
 	[]superwatcher.Artifact,
 	error,
 ) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger.Debug("ensengine.HandleGoodLogs: got logs")
 
 	var outArtifacts []superwatcher.Artifact
@@ -38,6 +42,11 @@ func (e *ensEngine) HandleGoodLogs(
 
 		artifacts = append(artifacts, logArtifact)
 		outArtifacts = append(outArtifacts, logArtifact)
+
+		err = e.dataGateway.SaveENS(ctx, &logArtifact.ENS)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Save ENS failed on log txHash %s", log.BlockHash.String())
+		}
 	}
 
 	return outArtifacts, nil
@@ -112,6 +121,9 @@ func (e *ensEngine) HandleReorgedLogs(
 	[]superwatcher.Artifact,
 	error,
 ) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	logger.Debug(fmt.Sprintf("got %d reorged logs", len(logs)), zap.Any("got artifacts", artifacts))
 
 	var outputArtifacts []superwatcher.Artifact
@@ -122,6 +134,11 @@ func (e *ensEngine) HandleReorgedLogs(
 		}
 
 		outputArtifacts = append(outputArtifacts, ens)
+
+		err = e.dataGateway.RemoveENS(ctx, &ens.ENS)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", log.BlockHash.String())
+		}
 	}
 
 	return outputArtifacts, nil
