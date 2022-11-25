@@ -29,6 +29,7 @@ func TestArtifacts(t *testing.T) {
 	for i := int64(1); i < l; i++ {
 		ensArtifact := ENSArtifact{
 			ENS: entity.ENS{
+				ID:          txHashes[i].String(),
 				Name:        names[i],
 				TxHash:      gslutils.StringerToLowerString(txHashes[i]),
 				BlockHash:   gslutils.StringerToLowerString(blockHashes[i]),
@@ -42,7 +43,7 @@ func TestArtifacts(t *testing.T) {
 	var ensArtifacts = make([]ENSArtifact, l)
 	for i := int64(1); i < l; i++ {
 		txHash := txHashes[i]
-		log := &types.Log{TxHash: txHash}
+		log := &types.Log{TxHash: txHash, Topics: []common.Hash{{}, txHash}}
 		out := prevRegistrarArtifact(log, artifacts)
 		if out == nil {
 			t.Errorf("nil from spwArtifactsByTxHash for txHash %s", txHash.String())
