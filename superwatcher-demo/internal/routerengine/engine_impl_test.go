@@ -35,15 +35,17 @@ func TestHandleGoodLogs(t *testing.T) {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
 
+	logLevel := uint8(2)
+
 	demoContracts := hardcode.DemoContracts(hardcode.Uniswapv3Factory, hardcode.ENSRegistrar, hardcode.ENSController)
 	poolFactoryContract := demoContracts[hardcode.Uniswapv3Factory]
 	poolFactoryHashes := contracts.CollectEventHashes(poolFactoryContract.ContractEvents)
-	poolFactoryEngine := uniswapv3factoryengine.New(poolFactoryContract)
+	poolFactoryEngine := uniswapv3factoryengine.New(poolFactoryContract, logLevel)
 	ensRegistrarContract := demoContracts[hardcode.ENSRegistrar]
 	ensRegistrarHashes := contracts.CollectEventHashes(ensRegistrarContract.ContractEvents)
 	ensControllerContract := demoContracts[hardcode.ENSController]
 	ensControllerHashes := contracts.CollectEventHashes(ensControllerContract.ContractEvents)
-	ensEngine := ensengine.New(ensRegistrarContract, ensControllerContract, datagateway.NewMockDataGatewayENS())
+	ensEngine := ensengine.New(ensRegistrarContract, ensControllerContract, datagateway.NewMockDataGatewayENS(), logLevel)
 
 	routes := map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
 		subengines.SubEngineUniswapv3Factory: {
@@ -60,7 +62,7 @@ func TestHandleGoodLogs(t *testing.T) {
 		subengines.SubEngineENS:              ensEngine,
 	}
 
-	routerEngine := New(routes, services)
+	routerEngine := New(routes, services, 2)
 
 	logs := append(ensLogs, poolFactoryLogs...)
 	testHandleGoodLogs(t, routerEngine, logs, 2)

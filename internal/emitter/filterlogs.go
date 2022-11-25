@@ -106,11 +106,11 @@ func (e *emitter) filterLogs(
 	}
 
 	lenLogs := len(eventLogs)
-	e.debugger.Debug("got headers and logs", zap.Int("logs", lenLogs))
+	e.debugger.Debug(2, "got headers and logs", zap.Int("logs", lenLogs))
 
 	// Clear all tracker's blocks before fromBlock - filterRange
 	until := fromBlock - e.conf.FilterRange
-	e.debugger.Debug("clearing tracker", zap.Uint64("untilBlock", until))
+	e.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
 	e.tracker.clearUntil(until)
 
 	/* Use code from reorg package to manage/handle chain reorg */
@@ -214,6 +214,7 @@ func (e *emitter) filterLogs(
 
 	// End loop
 	e.debugger.Debug(
+		1,
 		"number of logs published by filterLogs",
 		zap.Int("eventLogs (filtered)", lenLogs),
 		zap.Int("processLogs (all logs processed)", len(mapProcessLogs)),

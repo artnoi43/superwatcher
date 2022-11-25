@@ -30,13 +30,10 @@ type metadataTracker struct {
 	debugger  *debugger.Debugger
 }
 
-func NewTracker(debug bool) *metadataTracker {
+func NewTracker(debugLevel uint8) *metadataTracker {
 	return &metadataTracker{
 		sortedSet: sortedset.New(),
-		debugger: &debugger.Debugger{
-			Key:         "metadataTracker",
-			ShouldDebug: debug,
-		},
+		debugger:  debugger.NewDebugger("metadataTracker", debugLevel),
 	}
 }
 
@@ -46,7 +43,7 @@ func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 	t.Lock()
 	defer t.Unlock()
 
-	t.debugger.Debug("clearing engine state tracker", zap.Uint64("until", blockNumber))
+	t.debugger.Debug(2, "clearing engine state tracker", zap.Uint64("until", blockNumber))
 
 	for {
 		oldest := t.sortedSet.PeekMin()

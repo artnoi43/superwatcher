@@ -20,7 +20,7 @@ func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Arti
 }
 
 func (e *engine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
-	e.debugger.Debug("GOT REORGED LOG IN SERVICETEST")
+	e.debugger.Debug(1, "GOT REORGED LOG IN SERVICETEST")
 	for _, log := range logs {
 		// TODO: Polish test checks
 		if log.BlockNumber != e.reorgedAt {

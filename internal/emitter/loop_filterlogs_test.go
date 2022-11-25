@@ -2,6 +2,8 @@ package emitter
 
 import (
 	"testing"
+
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 func TestComputeFromBlockToBlock(t *testing.T) {
@@ -163,7 +165,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			test.GoBackRetries,
 			&test.GoBackFirstStart,
 			test.Status,
-			false,
+			debugger.NewDebugger("testComputeFromBlockToBlock", 2),
 		)
 
 		var failed bool

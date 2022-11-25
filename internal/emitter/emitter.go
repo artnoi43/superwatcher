@@ -10,7 +10,6 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
-	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -48,27 +47,22 @@ func New(
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
 	filterResultChan chan<- *superwatcher.FilterResult,
 	errChan chan<- error,
-	debug bool,
 ) superwatcher.WatcherEmitter {
-	if debug {
-		logger.Debug("initializing watcher", zap.Any("addresses", addresses), zap.Any("topics", topics))
-	}
+	debugger := debugger.NewDebugger("emitter", conf.LogLevel)
+	debugger.Debug(1, "initializing emitter")
 
 	return &emitter{
 		conf:             conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,
-		tracker:          newTracker("emitter", debug),
+		tracker:          newTracker("emitter", conf.LogLevel),
 		addresses:        addresses,
 		topics:           topics,
 		syncChan:         syncChan,
 		filterResultChan: filterResultChan,
 		errChan:          errChan,
-		debug:            debug,
-		debugger: &debugger.Debugger{
-			Key:         "emitter",
-			ShouldDebug: debug,
-		},
+		debug:            conf.LogLevel > 0,
+		debugger:         debugger,
 	}
 }
 
@@ -81,13 +75,13 @@ func (e *emitter) Loop(ctx context.Context) error {
 		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
 		case <-ctx.Done():
-			e.debugger.Debug("shutting down emitter", zap.Any("emitterStatus", status))
+			e.debugger.Debug(1, "shutting down emitter", zap.Any("emitterStatus", status))
 			e.Shutdown()
 			return errors.Wrap(ctx.Err(), ErrEmitterShutdown.Error())
 
 		default:
 			if err := e.loopFilterLogs(ctx, status); err != nil {
-				e.debugger.Debug("loopFilterLogs returned", zap.Any("status", status), zap.Error(err))
+				e.debugger.Debug(1, "loopFilterLogs returned", zap.Any("status", status), zap.Error(err))
 				e.emitError(errors.Wrap(err, "error in loopFilterLogs"))
 			}
 		}
@@ -100,9 +94,9 @@ func (e *emitter) Shutdown() {
 }
 
 func (e *emitter) SyncsWithEngine() {
-	e.debugger.Debug("waiting for engine sync")
+	e.debugger.Debug(1, "waiting for engine sync")
 
 	<-e.syncChan
 
-	e.debugger.Debug("synced with engine")
+	e.debugger.Debug(1, "synced with engine")
 }

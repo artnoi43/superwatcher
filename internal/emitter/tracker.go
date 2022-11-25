@@ -24,20 +24,20 @@ type blockInfoTracker struct {
 	debugger  *debugger.Debugger
 }
 
-func newTracker(user string, debug bool) *blockInfoTracker {
+func newTracker(user string, debugLevel uint8) *blockInfoTracker {
+	key := fmt.Sprintf("blockInfoTracker for %s", user)
+
 	return &blockInfoTracker{
 		sortedSet: sortedset.New(),
 		user:      user,
-		debugger: &debugger.Debugger{
-			Key:         fmt.Sprintf("blockInfoTracker for %s", user),
-			ShouldDebug: debug,
-		},
+		debugger:  debugger.NewDebugger(key, debugLevel),
 	}
 }
 
 // addTrackerBlockInfo adds `*BlockInfo` |b| to the store using |b.Number| as key
 func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
 	t.debugger.Debug(
+		3,
 		"adding block",
 		zap.Uint64("blockNumber", b.Number),
 		zap.String("blockHash", b.String()),

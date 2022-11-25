@@ -7,7 +7,6 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal"
 )
 
@@ -32,7 +31,7 @@ func (e *routerEngine) HandleGoodLogs(
 		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs, artifacts)
 		if err != nil {
 			if errors.Is(err, internal.ErrNoNeedHandle) {
-				debugger.Debug("routerEngine: got ErrNoNeedHandle", zap.String("subEngine", subEngine.String()))
+				e.debugger.Debug(2, "routerEngine: got ErrNoNeedHandle", zap.String("subEngine", subEngine.String()))
 				continue
 			}
 			return nil, errors.Wrapf(err, "subengine %s HandleGoodBlock failed", subEngine.String())

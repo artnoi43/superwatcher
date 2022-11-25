@@ -34,6 +34,7 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 
 	log := func(prefix string) {
 		r.debugger.Debug(
+			2,
 			fmt.Sprintf("%s chooseBlock", prefix),
 			zap.Uint64("blockNumber", b.blockNumber),
 			zap.String("caller", caller),
@@ -66,7 +67,7 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 			}
 
 			if !r.wasForked {
-				r.debugger.Debug("!REORGED!", zap.Uint64("blockNumber", blockNumber))
+				r.debugger.Debug(1, "!REORGED!", zap.Uint64("blockNumber", blockNumber))
 
 				r.chain = r.reorgedChain
 				r.wasForked = true

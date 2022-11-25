@@ -107,7 +107,7 @@ func TestFoo(t *testing.T) {
 		ExitBlock:     reorgedAt + 100,
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 3)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),

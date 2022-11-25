@@ -44,7 +44,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 }
 
 func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
-	logger.Debug("poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
+	e.debugger.Debug(1, "poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
 	var logArtifact PoolFactoryArtifact
 	var err error

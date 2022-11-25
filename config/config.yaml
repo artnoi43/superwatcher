@@ -5,3 +5,4 @@ loop_interval: 1
 start_block: 6000000000
 filter_range: 5
 go_back_retries: 2
+log_level: 1

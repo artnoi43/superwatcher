@@ -22,29 +22,26 @@ func New(
 	emitterSyncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,
-	debug bool,
+	logLevel uint8,
 ) superwatcher.EmitterClient {
 	return &emitterClient{
 		emitterConfig:    emitterConfig,
 		filterResultChan: filterResultChan,
 		emitterSyncChan:  emitterSyncChan,
 		errChan:          errChan,
-		debugger: &debugger.Debugger{
-			Key:         "emitter-client",
-			ShouldDebug: debug,
-		},
+		debugger:         debugger.NewDebugger("emitter-client", logLevel),
 	}
 }
 
 func (c *emitterClient) Shutdown() {
-	c.debugger.Debug("emitterClient.Shutdown() called")
+	c.debugger.Debug(2, "emitterClient.Shutdown() called")
 
 	if c.emitterSyncChan != nil {
-		c.debugger.Debug("closing emitterClient.emitterSyncChan")
+		c.debugger.Debug(2, "closing emitterClient.emitterSyncChan")
 		close(c.emitterSyncChan)
 
 	} else {
-		c.debugger.Debug("emitterClient: emitterSyncChan was already closed")
+		c.debugger.Debug(2, "emitterClient: emitterSyncChan was already closed")
 	}
 }
 
@@ -63,7 +60,7 @@ func (c *emitterClient) WatcherResult() *superwatcher.FilterResult {
 		return result
 	}
 
-	c.debugger.Debug("WatcherCurrentLog - filterReorgChan is closed")
+	c.debugger.Debug(2, "WatcherCurrentLog - filterReorgChan is closed")
 	return nil
 }
 
@@ -73,6 +70,6 @@ func (c *emitterClient) WatcherError() error {
 		return err
 	}
 
-	c.debugger.Debug("WatcherError - errChan is closed")
+	c.debugger.Debug(2, "WatcherError - errChan is closed")
 	return nil
 }

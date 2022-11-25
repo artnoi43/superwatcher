@@ -49,7 +49,7 @@ func initTestComponents(
 
 	return &testComponents{
 		conf:          conf,
-		client:        reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths),
+		client:        reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel),
 		serviceEngine: serviceEngine,
 	}, param
 }
@@ -112,7 +112,7 @@ func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensS
 		LoopInterval:  0,
 	}
 
-	ensEngine := ensengine.NewEnsSubEngineSuite(ensStore).Engine
+	ensEngine := ensengine.NewEnsSubEngineSuite(ensStore, 2).Engine
 
 	components, param := initTestComponents(
 		conf,
@@ -135,7 +135,6 @@ func serviceEngineTestTemplate(components *testComponents, param reorgsim.Param)
 		nil,
 		nil,
 		components.serviceEngine,
-		true,
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())

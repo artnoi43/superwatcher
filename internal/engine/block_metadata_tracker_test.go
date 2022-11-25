@@ -18,7 +18,7 @@ func newBlockInfo(number uint64) *superwatcher.BlockInfo {
 }
 
 func TestMetadataTracker(t *testing.T) {
-	tracker := NewTracker(true)
+	tracker := NewTracker(3)
 
 	// GetBlockMetadata should not return nil even if it's empty
 	block69 := newBlockInfo(69)

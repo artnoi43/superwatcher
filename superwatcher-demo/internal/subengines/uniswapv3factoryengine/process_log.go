@@ -49,7 +49,7 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 	for _, a := range artifacts {
 		pa, ok := a.(PoolFactoryArtifact)
 		if !ok {
-			logger.Debug("found non-pool artifact")
+			e.debugger.Debug(1, "found non-pool artifact")
 			continue
 		}
 
@@ -100,7 +100,7 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedPool(
 }
 
 func (e *uniswapv3PoolFactoryEngine) createPool(pool *entity.Uniswapv3PoolCreated) error {
-	logger.Debug("createPool: got pool", zap.Any("pool", pool))
+	e.debugger.Debug(2, "createPool: got pool", zap.Any("pool", pool))
 
 	return nil
 }

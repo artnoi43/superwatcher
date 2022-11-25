@@ -10,7 +10,6 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal"
 )
@@ -25,7 +24,7 @@ func (e *ensEngine) HandleGoodLogs(
 	[]superwatcher.Artifact,
 	error,
 ) {
-	logger.Debug("ensengine.HandleGoodLogs: got logs")
+	e.debugger.Debug(3, "HandleGoodLogs called")
 
 	var outArtifacts []superwatcher.Artifact
 	for _, log := range logs {
@@ -93,7 +92,7 @@ func (e *ensEngine) HandleGoodLog(
 	}
 
 	if handleFunc == nil {
-		debugger.Debug("ensEngine: handleFunc is nil, probably because uninteresting topics", zap.Any("artifact", artifacts))
+		e.debugger.Debug(3, "ensEngine: handleFunc is nil, probably because uninteresting topics", zap.Any("artifact", artifacts))
 		return artifact, internal.ErrNoNeedHandle
 	}
 
@@ -122,7 +121,7 @@ func (e *ensEngine) HandleReorgedLogs(
 	[]superwatcher.Artifact,
 	error,
 ) {
-	logger.Debug(fmt.Sprintf("got %d reorged logs", len(logs)), zap.Any("got artifacts", artifacts))
+	e.debugger.Debug(1, fmt.Sprintf("got %d reorged logs", len(logs)), zap.Any("got artifacts", artifacts))
 
 	var outputArtifacts []superwatcher.Artifact
 	for _, log := range logs {

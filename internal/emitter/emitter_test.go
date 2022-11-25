@@ -98,13 +98,13 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		Debug:         true,
 	}
 
-	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles)
+	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2)
 
 	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 	errChan := make(chan error, 5)
 	syncChan := make(chan struct{})
 	filterResultChan := make(chan *superwatcher.FilterResult)
-	testEmitter := New(conf, sim, fakeRedis, nil, nil, syncChan, filterResultChan, errChan, true)
+	testEmitter := New(conf, sim, fakeRedis, nil, nil, syncChan, filterResultChan, errChan)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {

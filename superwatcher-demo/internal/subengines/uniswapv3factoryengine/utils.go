@@ -5,8 +5,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/pkg/logger"
-
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/logutils"
 )
@@ -14,7 +12,7 @@ import (
 func (e *uniswapv3PoolFactoryEngine) handlePoolCreated(
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
-	logger.Info("got poolCreated, writing to db", zap.Any("pool", pool))
+	e.debugger.Debug(1, "got poolCreated, writing to db", zap.Any("pool", pool))
 
 	return nil
 }
@@ -22,7 +20,7 @@ func (e *uniswapv3PoolFactoryEngine) handlePoolCreated(
 func (e *uniswapv3PoolFactoryEngine) revertPoolCreated(
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
-	logger.Info("reverting poolCreated", zap.Any("pool", pool))
+	e.debugger.Debug(1, "reverting poolCreated", zap.Any("pool", pool))
 
 	return nil
 }

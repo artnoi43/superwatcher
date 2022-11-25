@@ -4,6 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
@@ -22,6 +23,7 @@ type ensEngine struct {
 	ensRegistrar  contracts.BasicContract
 	ensController contracts.BasicContract
 	dataGateway   datagateway.DataGatewayENS
+	debugger      *debugger.Debugger
 }
 
 type EnsSubEngineSuite struct {
@@ -30,16 +32,22 @@ type EnsSubEngineSuite struct {
 	EnsServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
-func New(registrarContract, controllerContract contracts.BasicContract, dgwENS datagateway.DataGatewayENS) superwatcher.ServiceEngine {
+func New(
+	registrarContract contracts.BasicContract,
+	controllerContract contracts.BasicContract,
+	dgwENS datagateway.DataGatewayENS,
+	logLevel uint8,
+) superwatcher.ServiceEngine {
 	return &ensEngine{
 		ensRegistrar:  registrarContract,
 		ensController: controllerContract,
 		dataGateway:   dgwENS,
+		debugger:      debugger.NewDebugger("ensEngine", logLevel),
 	}
 }
 
 // NewEnsSubEngineSuite returns a convenient struct for injecting into routerengine.routerEngine
-func NewEnsSubEngineSuite(dgwENS datagateway.DataGatewayENS) *EnsSubEngineSuite {
+func NewEnsSubEngineSuite(dgwENS datagateway.DataGatewayENS, logLevel uint8) *EnsSubEngineSuite {
 	registrarContract := contracts.NewBasicContract(
 		"ENSRegistrar",
 		ensregistrar.EnsRegistrarABI,
@@ -52,11 +60,8 @@ func NewEnsSubEngineSuite(dgwENS datagateway.DataGatewayENS) *EnsSubEngineSuite 
 		"0x283af0b28c62c092c9727f1ee09c02ca627eb7f5",
 		ensEngineEvents...,
 	)
-	ensEngine := &ensEngine{
-		ensRegistrar:  registrarContract,
-		ensController: controllerContract,
-		dataGateway:   dgwENS,
-	}
+
+	ensEngine := New(registrarContract, controllerContract, dgwENS, logLevel)
 
 	registrarTopics := contracts.CollectEventHashes(registrarContract.ContractEvents)
 	controllerTopics := contracts.CollectEventHashes(controllerContract.ContractEvents)
@@ -72,15 +77,5 @@ func NewEnsSubEngineSuite(dgwENS datagateway.DataGatewayENS) *EnsSubEngineSuite 
 		EnsServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
 			subengines.SubEngineENS: ensEngine,
 		},
-	}
-}
-
-func NewEnsEngine(
-	registrarContract contracts.BasicContract,
-	controllerContract contracts.BasicContract,
-) superwatcher.ServiceEngine {
-	return &ensEngine{
-		ensRegistrar:  registrarContract,
-		ensController: controllerContract,
 	}
 }

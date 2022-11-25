@@ -9,17 +9,20 @@ import (
 )
 
 type Debugger struct {
-	Key         string
-	ShouldDebug bool
+	Key   string // Debugger key - should represent something where this debugger is embedded or used.
+	Level uint8  // Level maps to different verbosity level, higher being more verbose
 }
 
-func (d *Debugger) Debug(msg string, fields ...zap.Field) {
-	msg = fmt.Sprintf("%s: %s", d.Key, msg)
-	if d.ShouldDebug {
-		Debug(msg, fields...)
+func NewDebugger(key string, level uint8) *Debugger {
+	return &Debugger{
+		Key:   key,
+		Level: level,
 	}
 }
 
-func Debug(msg string, fields ...zap.Field) {
-	logger.Debug(msg, fields...)
+func (d *Debugger) Debug(level uint8, msg string, fields ...zap.Field) {
+	if d.Level >= level {
+		msg = fmt.Sprintf("%s: %s", d.Key, msg)
+		logger.Debug(msg, fields...)
+	}
 }

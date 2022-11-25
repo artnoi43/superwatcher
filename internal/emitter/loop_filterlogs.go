@@ -35,7 +35,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 	for {
 		// Don't sleep or log status on first loop
 		if !goBackFirstStart {
-			e.debugger.Debug("new loopFilterLogs loop")
+			e.debugger.Debug(1, "new loopFilterLogs loop")
 			e.sleep()
 		}
 
@@ -57,11 +57,11 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			if err != nil {
 				if errors.Is(err, errNoNewBlock) {
 					// Use zap.String because this is not actually an error
-					e.debugger.Debug("skipping", zap.String("reason", err.Error()))
+					e.debugger.Debug(1, "skipping", zap.String("reason", err.Error()))
 					continue
 				}
 				if errors.Is(err, errFetchError) {
-					e.debugger.Debug("fetch error", zap.Error(err))
+					e.debugger.Debug(1, "fetch error", zap.Error(err))
 					continue
 				}
 
@@ -74,6 +74,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			}
 
 			e.debugger.Debug(
+				2,
 				"calling filterLogs",
 				zap.Any("current_status", newStatus),
 			)
@@ -98,6 +99,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			toggleStatusIsReorging(false)
 
 			e.debugger.Debug(
+				1,
 				"filterLogs returned successfully",
 				zap.Any("emitterStatus", newStatus),
 			)
@@ -142,8 +144,9 @@ func (e *emitter) computeFromBlockToBlock(
 	status.LastRecordedBlock = lastRecordedBlock
 
 	e.debugger.Debug(
+		1,
 		"recent blocks",
-		zap.Uint64("currentBlock", currentBlock),
+		zap.Uint64("currentChainBlock", currentBlock),
 		zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 	)
 
@@ -161,7 +164,7 @@ func (e *emitter) computeFromBlockToBlock(
 		e.conf.GoBackRetries,
 		goBackFirstStart,
 		status,
-		e.debug,
+		e.debugger,
 	)
 
 	return &filterLogStatus{
@@ -183,7 +186,7 @@ func computeFromBlockToBlock(
 	goBackRetries uint64,
 	goBackFirstStart *bool,
 	status *filterLogStatus,
-	debug bool,
+	debugger *debugger.Debugger,
 ) (
 	uint64,
 	uint64,
@@ -208,8 +211,9 @@ func computeFromBlockToBlock(
 		}
 		toBlock = fromBlock + filterRange
 
-		if debug {
+		if debugger != nil {
 			debugger.Debug(
+				1,
 				"emitter: first run, going back",
 				zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 				zap.Uint64("goBack", goBack),

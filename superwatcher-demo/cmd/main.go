@@ -76,7 +76,7 @@ func main() {
 	)
 
 	// Init demo service instances and items with demoContracts
-	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts, rdb)
+	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts, rdb, conf.LogLevel)
 	logger.Debug("init: addresses", zap.Any("emitterAddresses", emitterAddresses))
 	logger.Debug("init: topics", zap.Any("emitterTopics", emitterTopics))
 	logger.Debug("init: demoRoutes", zap.Any("demoRoutes", demoRoutes))
@@ -87,6 +87,7 @@ func main() {
 	demoEngine := routerengine.New(
 		demoRoutes,
 		demoServices,
+		conf.LogLevel,
 	)
 
 	watcherEmitter, watcherEngine := initsuperwatcher.New(
@@ -97,7 +98,6 @@ func main() {
 		emitterAddresses,
 		[][]common.Hash{emitterTopics},
 		demoEngine,
-		true,
 	)
 
 	// Graceful shutdown
@@ -137,6 +137,7 @@ func main() {
 func contractsToServices(
 	demoContracts map[string]contracts.BasicContract,
 	rdb *redis.Client,
+	logLevel uint8,
 ) (
 	[]common.Address,
 	[]common.Hash,
@@ -162,7 +163,7 @@ func contractsToServices(
 		switch contractName {
 		case hardcode.Uniswapv3Factory:
 			subEngine = subengines.SubEngineUniswapv3Factory
-			demoServices[subEngine] = uniswapv3factoryengine.New(demoContract)
+			demoServices[subEngine] = uniswapv3factoryengine.New(demoContract, logLevel)
 
 		case hardcode.ENSRegistrar, hardcode.ENSController:
 			// demoServices for ENS will be created outside of this for loop
@@ -187,7 +188,7 @@ func contractsToServices(
 
 	// Initialize ensEngine
 	dgwENS := datagateway.NewEnsDataGateway(rdb)
-	ensEngine := ensengine.New(ensRegistrar, ensController, dgwENS)
+	ensEngine := ensengine.New(ensRegistrar, ensController, dgwENS, logLevel)
 	demoServices[subengines.SubEngineENS] = ensEngine
 
 	return emitterAddresses, emitterTopics, demoRoutes, demoServices

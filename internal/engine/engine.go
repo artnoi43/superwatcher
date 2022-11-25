@@ -26,18 +26,17 @@ func New(
 	client superwatcher.EmitterClient,
 	serviceEngine superwatcher.ServiceEngine,
 	statDataGateway watcherstate.StateDataGateway,
-	debug bool,
+	logLevel uint8,
 ) superwatcher.WatcherEngine {
+	debug := logLevel > 0
+
 	return &engine{
 		emitterClient:    client,
 		serviceEngine:    serviceEngine,
 		stateDataGateway: statDataGateway,
-		metadataTracker:  NewTracker(debug),
-		debugger: &debugger.Debugger{
-			Key:         "engine",
-			ShouldDebug: debug,
-		},
-		debug: debug,
+		metadataTracker:  NewTracker(logLevel),
+		debugger:         debugger.NewDebugger("engine", logLevel),
+		debug:            debug,
 	}
 }
 
@@ -46,7 +45,7 @@ func (e *engine) Loop(ctx context.Context) error {
 		defer e.shutdown()
 
 		if err := e.handleResults(ctx); err != nil {
-			e.debugger.Debug("*engine.run exited", zap.Error(err))
+			e.debugger.Debug(1, "engine.run exited", zap.Error(err))
 		}
 	}()
 

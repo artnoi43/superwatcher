@@ -26,7 +26,7 @@ func testHandleENSLogs(t *testing.T, logsJSON, logsName string) {
 		t.Fatalf("error unmarshaling json logs: %s", err.Error())
 	}
 
-	bundle := NewEnsSubEngineSuite(datagateway.NewMockDataGatewayENS())
+	bundle := NewEnsSubEngineSuite(datagateway.NewMockDataGatewayENS(), 3)
 	ensEngine := bundle.Engine
 	ensNamesExpected := expecteds[logsJSON]
 
@@ -68,7 +68,7 @@ func TestCountArtifacts(t *testing.T) {
 			t.Fatalf("error unmarshaling %s: %s", logsName, err.Error())
 		}
 
-		bundle := NewEnsSubEngineSuite(datagateway.NewMockDataGatewayENS())
+		bundle := NewEnsSubEngineSuite(datagateway.NewMockDataGatewayENS(), 2)
 		ensEngine := bundle.Engine
 
 		artifacts, err := ensEngine.HandleGoodLogs(logs, []superwatcher.Artifact{})

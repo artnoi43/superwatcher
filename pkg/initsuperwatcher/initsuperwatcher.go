@@ -20,7 +20,6 @@ func New(
 	addresses []common.Address,
 	topics [][]common.Hash,
 	serviceEngine superwatcher.ServiceEngine,
-	debug bool,
 ) (
 	superwatcher.WatcherEmitter,
 	superwatcher.WatcherEngine,
@@ -38,7 +37,6 @@ func New(
 		syncChan,
 		filterResultChan,
 		errChan,
-		debug,
 	)
 
 	watcherEngine := engine.NewWithClient(
@@ -48,7 +46,6 @@ func New(
 		syncChan,
 		filterResultChan,
 		errChan,
-		debug,
 	)
 
 	return watcherEmitter, watcherEngine
