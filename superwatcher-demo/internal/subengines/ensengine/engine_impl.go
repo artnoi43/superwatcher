@@ -81,7 +81,7 @@ func (e *ensEngine) HandleGoodLog(
 					handleFunc = e.handleNameRegisteredController
 					eventName = eventNameRegistered
 					// Get previous artifacts
-					prevArtifact = spwArtifactsByTxHash(log, artifacts)
+					prevArtifact = prevRegistrarArtifact(log, artifacts)
 					if prevArtifact == nil {
 						panic("nil prevArtifact")
 					}
@@ -151,7 +151,7 @@ func (e *ensEngine) handleReorgedLog(
 	error,
 ) {
 	// Previous artifacts
-	prevArtifact := spwArtifactsByTxHash(log, artifacts)
+	prevArtifact := prevRegistrarArtifact(log, artifacts)
 	if prevArtifact == nil {
 		panic("nil prevArtifact")
 	}

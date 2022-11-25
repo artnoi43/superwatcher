@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate/mockwatcherstate"
@@ -17,12 +18,18 @@ import (
 )
 
 type testCase struct {
+	startBlock uint64
+	reorgBlock uint64
+	logsFiles  []string
+}
+
+type testComponents struct {
 	conf          *config.EmitterConfig
 	client        superwatcher.EthClient
 	serviceEngine superwatcher.ServiceEngine
 }
 
-func newCase(
+func initTestComponents(
 	conf *config.EmitterConfig,
 	serviceEngine superwatcher.ServiceEngine,
 	logsFullPaths []string,
@@ -30,7 +37,7 @@ func newCase(
 	reorgAt,
 	exit uint64,
 ) (
-	*testCase,
+	*testComponents,
 	reorgsim.ReorgParam, // For logging
 ) {
 	param := reorgsim.ReorgParam{
@@ -40,7 +47,7 @@ func newCase(
 		ExitBlock:     exit,
 	}
 
-	return &testCase{
+	return &testComponents{
 		conf:          conf,
 		client:        reorgsim.NewReorgSim(param, logsFullPaths),
 		serviceEngine: serviceEngine,
@@ -48,57 +55,88 @@ func newCase(
 }
 
 func TestServiceEngineENS(t *testing.T) {
+	logsPath := "../assets/ens"
+	testCases := []testCase{
+		{
+			startBlock: 15984020,
+			reorgBlock: 15984033,
+			logsFiles: []string{
+				logsPath + "/logs_reorg_test.json",
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Logf("testCase for ENS: %+v", testCase)
+		// We'll later use |ensStore| to check for saved results
+		ensStore := datagateway.NewMockDataGatewayENS()
+
+		err := testServiceEngineENS(testCase.startBlock, testCase.reorgBlock, testCase.logsFiles, ensStore)
+		if err != nil {
+			t.Error("error in full servicetest:", err.Error())
+		}
+
+		results, err := ensStore.GetENSes(nil)
+		if err != nil {
+			t.Error("error from ensStore:", err.Error())
+		}
+
+		for _, result := range results {
+			if result.BlockNumber >= testCase.reorgBlock {
+				t.Log("checking block", result.BlockNumber)
+				// Since reorged block uses hash from deterministic PRandomHash,
+				// we can check for equality this way
+				expectedHash := reorgsim.PRandomHash(result.BlockNumber).String()
+				t.Logf("%+v", result)
+
+				if result.BlockHash != gslutils.ToLower(expectedHash) {
+					t.Fatal("unexpected blockHash")
+				}
+				if result.ID == "" {
+					t.Fatal("empty ENS ID -- should not happen")
+				}
+				if result.Name == "" {
+					t.Fatal("empty ENS Name -- should not happen")
+				}
+			}
+		}
+
+	}
+}
+
+func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensStore datagateway.DataGatewayENS) error {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		Chain:         string(enums.ChainEthereum),
-		StartBlock:    15984020,
+		StartBlock:    startBlock,
 		FilterRange:   10,
 		GoBackRetries: 2,
 		LoopInterval:  0,
 	}
 
-	logsPath := "../assets/ens"
-	logsPathFiles := []string{
-		logsPath + "/logs_reorg_test.json",
-	}
-
-	ensStore := datagateway.NewMockDataGatewayENS()
 	ensEngine := ensengine.NewEnsSubEngineSuite(ensStore).Engine
 
-	reorgedAt := uint64(15984033)
-	tc, param := newCase(
+	components, param := initTestComponents(
 		conf,
 		ensEngine,
-		logsPathFiles,
+		logsFiles,
 		conf.StartBlock,
 		reorgedAt,
-		15984100,
+		reorgedAt+conf.FilterRange*conf.GoBackRetries,
 	)
 
-	if err := serviceEngineTestTemplate(t, tc, param); err != nil {
-		t.Error("error in test template", err.Error())
-	}
-
-	results, err := ensStore.GetENSes(nil)
-	if err != nil {
-		t.Error("error from ensStore", err.Error())
-	}
-
-	for _, result := range results {
-		t.Log(result.BlockNumber, result.BlockHash)
-	}
+	return serviceEngineTestTemplate(components, param)
 }
 
-func serviceEngineTestTemplate(t *testing.T, tc *testCase, param reorgsim.ReorgParam) error {
+func serviceEngineTestTemplate(components *testComponents, param reorgsim.ReorgParam) error {
 	// Use nil addresses and topics
-	t.Logf("testCase param: %+v", param)
 	emitter, engine := initsuperwatcher.New(
-		tc.conf,
-		tc.client,
-		mockwatcherstate.New(tc.conf.StartBlock),
+		components.conf,
+		components.client,
+		mockwatcherstate.New(components.conf.StartBlock),
 		nil,
 		nil,
-		tc.serviceEngine,
+		components.serviceEngine,
 		true,
 	)
 

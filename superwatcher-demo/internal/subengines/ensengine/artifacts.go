@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
@@ -37,11 +38,8 @@ func (e ENSArtifact) ForSubEngine() subengines.SubEngineEnum {
 	return subengines.SubEngineENS
 }
 
-func spwArtifactsByTxHash(log *types.Log, artifacts []superwatcher.Artifact) *ENSArtifact {
-	artifact := getPrevENSArtifactFromLogTxHash(
-		log,
-		spwArtifactsToEnsArtifacts(artifacts),
-	)
+func prevRegistrarArtifact(log *types.Log, artifacts []superwatcher.Artifact) *ENSArtifact {
+	artifact := filterRegistrarArtifact(log, collectArtifactsENS(artifacts))
 
 	var blankHash common.Hash
 	if artifact.LastEvent == Null && common.HexToHash(artifact.ENS.TxHash) == blankHash {
@@ -51,7 +49,7 @@ func spwArtifactsByTxHash(log *types.Log, artifacts []superwatcher.Artifact) *EN
 	return &artifact
 }
 
-func spwArtifactsToEnsArtifacts(artifacts []superwatcher.Artifact) []ENSArtifact {
+func collectArtifactsENS(artifacts []superwatcher.Artifact) []ENSArtifact {
 	var ensArtifacts []ENSArtifact //nolint:prealloc
 	for _, artifact := range artifacts {
 		ensArtifact, ok := artifact.(ENSArtifact)
@@ -65,9 +63,10 @@ func spwArtifactsToEnsArtifacts(artifacts []superwatcher.Artifact) []ENSArtifact
 	return ensArtifacts
 }
 
-func getPrevENSArtifactFromLogTxHash(log *types.Log, artifacts []ENSArtifact) ENSArtifact {
+func filterRegistrarArtifact(log *types.Log, artifacts []ENSArtifact) ENSArtifact {
 	for _, artifact := range artifacts {
-		if common.HexToHash(artifact.ENS.TxHash) == log.TxHash {
+		ensID := log.Topics[1].String()
+		if artifact.ENS.ID == gslutils.ToLower(ensID) {
 			return artifact
 		}
 	}

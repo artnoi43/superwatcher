@@ -43,7 +43,7 @@ func TestArtifacts(t *testing.T) {
 	for i := int64(1); i < l; i++ {
 		txHash := txHashes[i]
 		log := &types.Log{TxHash: txHash}
-		out := spwArtifactsByTxHash(log, artifacts)
+		out := prevRegistrarArtifact(log, artifacts)
 		if out == nil {
 			t.Errorf("nil from spwArtifactsByTxHash for txHash %s", txHash.String())
 		}
@@ -56,7 +56,7 @@ func TestArtifacts(t *testing.T) {
 		ensArtifacts[i] = artifacts[i].(ENSArtifact)
 
 		// Will panic if prev not found
-		prev := getPrevENSArtifactFromLogTxHash(log, ensArtifacts)
+		prev := filterRegistrarArtifact(log, ensArtifacts)
 		t.Log(prev.ENS.Name)
 	}
 }

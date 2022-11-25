@@ -30,7 +30,7 @@ func (b block) Logs() []types.Log {
 // by changing the hash, and changing the logs' block hashes.
 func (b *block) reorg() block {
 	// TODO: implement
-	newBlockHash := randomHash(b.blockNumber)
+	newBlockHash := PRandomHash(b.blockNumber)
 
 	logs := make([]types.Log, len(b.logs))
 	copy(logs, b.logs)
@@ -38,7 +38,7 @@ func (b *block) reorg() block {
 	// Use index to access logs so that the internal array members change value too.
 	for i := range logs {
 		logs[i].BlockHash = newBlockHash
-		logs[i].TxHash = deterministicRandomHash(logs[i].TxHash.Big().Uint64() + 696969)
+		// logs[i].TxHash = PRandomHash(logs[i].TxHash.Big().Uint64() + 696969)
 	}
 
 	return block{

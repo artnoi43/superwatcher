@@ -11,8 +11,8 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
-func EnsRedisKey(domainName string) string {
-	return fmt.Sprintf("demo:ens:%s", domainName)
+func EnsRedisKey(id string) string {
+	return fmt.Sprintf("demo:ens:%s", id)
 }
 
 type DataGatewayENS interface {

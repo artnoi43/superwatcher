@@ -15,6 +15,7 @@ type mockENS struct {
 }
 
 type mockDataGatewayENS struct {
+	// m maps ID to *mockENS
 	m map[string]*mockENS
 }
 
@@ -25,7 +26,7 @@ func NewMockDataGatewayENS() DataGatewayENS {
 }
 
 func (m *mockDataGatewayENS) SetENS(ctx context.Context, ens *entity.ENS) error {
-	m.m[ens.Name] = &mockENS{
+	m.m[ens.ID] = &mockENS{
 		ens:     ens,
 		removed: false,
 	}
@@ -33,10 +34,10 @@ func (m *mockDataGatewayENS) SetENS(ctx context.Context, ens *entity.ENS) error 
 	return nil
 }
 
-func (m *mockDataGatewayENS) GetENS(ctx context.Context, domainName string) (*entity.ENS, error) {
-	saved, ok := m.m[domainName]
+func (m *mockDataGatewayENS) GetENS(ctx context.Context, ensID string) (*entity.ENS, error) {
+	saved, ok := m.m[ensID]
 	if !ok || saved == nil {
-		return nil, errors.Wrapf(ErrRecordNotFound, "ens not found for key %s", domainName)
+		return nil, errors.Wrapf(ErrRecordNotFound, "ens not found for key %s", ensID)
 	}
 
 	return saved.ens, nil
@@ -51,11 +52,12 @@ func (m *mockDataGatewayENS) GetENSes(context.Context) ([]*entity.ENS, error) {
 }
 
 func (m *mockDataGatewayENS) DelENS(ctx context.Context, ens *entity.ENS) error {
-	_, ok := m.m[ens.Name]
+	_, ok := m.m[ens.ID]
 	if !ok {
 		return errors.Wrapf(ErrRecordNotFound, "ens not found for key %s", ens.Name)
 	}
 	fmt.Println("# DEL ENS", ens.Name)
-	m.m[ens.Name] = nil
+	m.m[ens.ID] = nil
+
 	return nil
 }

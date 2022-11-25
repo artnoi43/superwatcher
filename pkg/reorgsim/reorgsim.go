@@ -30,7 +30,7 @@ type ReorgSim struct {
 
 // NewReorgSim returns a new reorgSim with hard-coded good and reorged chains.
 func NewReorgSim(param ReorgParam, logFiles []string) superwatcher.EthClient {
-	mappedLogs := InitLogs(logFiles)
+	mappedLogs := InitLogsFromFiles(logFiles)
 	chain, reorgedChain := NewBlockChain(mappedLogs, param.ReorgedAt)
 
 	return &ReorgSim{

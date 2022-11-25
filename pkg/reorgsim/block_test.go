@@ -7,7 +7,7 @@ import (
 
 func TestReorg(t *testing.T) {
 	var blockNumber uint64 = 15944408
-	logs := InitLogs(defaultLogs)
+	logs := InitLogsFromFiles(defaultLogs)
 	blockLogs := logs[blockNumber]
 	oldLogsByTxHash := mapLogsToTxHash(blockLogs)
 	fmt.Println("oldLogs by TxHash")
@@ -15,7 +15,7 @@ func TestReorg(t *testing.T) {
 
 	b := block{
 		blockNumber: blockNumber,
-		hash:        randomHash(70),
+		hash:        RandomHash(70),
 		logs:        blockLogs,
 		reorgedHere: false,
 		toBeForked:  true,

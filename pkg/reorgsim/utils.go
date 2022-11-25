@@ -8,9 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// InitLogs returns unmarshaled hard-coded logs.
+// InitLogsFromFiles returns unmarshaled hard-coded logs.
 // It is export for use in internal/emitter testing.
-func InitLogs(filenames []string) map[uint64][]types.Log {
+func InitLogsFromFiles(filenames []string) map[uint64][]types.Log {
 	hardcodedLogs := []types.Log{}
 	for _, filename := range filenames {
 		logs := readJsonLogs(filename)

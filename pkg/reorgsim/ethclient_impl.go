@@ -145,10 +145,7 @@ func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwa
 		return *b, nil
 	}
 
-	block := &block{
-		// We only need hash here because caller will only call superwatcher.EthClient.Hash()
-		hash: deterministicRandomHash(blockNumber),
-	}
-
-	return block, nil
+	return &block{
+		hash: PRandomHash(number.Uint64()),
+	}, nil
 }

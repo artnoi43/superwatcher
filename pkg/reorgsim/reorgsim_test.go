@@ -20,7 +20,7 @@ var (
 )
 
 func initChains(reorgedAt uint64) (blockChain, blockChain) {
-	mappedLogs := InitLogs(defaultLogs)
+	mappedLogs := InitLogsFromFiles(defaultLogs)
 	return NewBlockChain(mappedLogs, reorgedAt)
 }
 
@@ -57,9 +57,10 @@ func TestNewBlockChain(t *testing.T) {
 		for i, reorgedLog := range reorgedLogs {
 			oldLog := oldLogs[i]
 
-			if reorgedLog.TxHash == oldLog.TxHash {
-				t.Fatal("old and reorg log txHash match")
-			}
+			// Uncomment to change txHash when reorg too
+			// if reorgedLog.TxHash == oldLog.TxHash {
+			// 	t.Fatal("old and reorg log txHash match")
+			// }
 
 			if reorgedLog.BlockHash == oldLog.BlockHash {
 				t.Fatal("old and reorg log blockHash match")
