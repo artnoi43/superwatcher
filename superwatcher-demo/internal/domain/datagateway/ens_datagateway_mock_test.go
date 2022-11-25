@@ -16,19 +16,21 @@ func TestMockDataGatewayENS(t *testing.T) {
 
 	var enses []*entity.ENS
 	var names []string
+	var ids []string
 	for i := 1; i <= 5; i++ {
-		s := fmt.Sprintf("%d", i)
+		id := fmt.Sprintf("%d", i)
 		s100 := fmt.Sprintf("%d", i+100)
-		name := "ens" + s
+		name := "ens" + id
 		ens := &entity.ENS{
-			ID:               s,
-			Name:             name,
-			TxHash:           gslutils.StringerToLowerString(common.HexToHash("0x" + s)),
+			ID:        id,
+			Name:      name,
+			TxHash:    gslutils.StringerToLowerString(common.HexToHash("0x" + id)),
 			BlockHash: gslutils.StringerToLowerString(common.HexToHash("0x" + s100)),
 		}
 
 		enses = append(enses, ens)
 		names = append(names, name)
+		ids = append(ids, id)
 	}
 
 	for i, ens := range enses {
@@ -36,8 +38,8 @@ func TestMockDataGatewayENS(t *testing.T) {
 			t.Error("failed to SetENS:", err.Error())
 		}
 
-		name := names[i]
-		out, err := dgw.GetENS(nil, name)
+		key := ids[i]
+		out, err := dgw.GetENS(nil, key)
 		if err != nil {
 			t.Fatal("failed to GetENS:", err.Error())
 		}
@@ -50,7 +52,7 @@ func TestMockDataGatewayENS(t *testing.T) {
 			t.Fatal("failed to DelENS:", err.Error())
 		}
 
-		out, err = dgw.GetENS(nil, name)
+		out, err = dgw.GetENS(nil, key)
 		if err != nil {
 			if errors.Is(err, ErrRecordNotFound) {
 				if out != nil {
