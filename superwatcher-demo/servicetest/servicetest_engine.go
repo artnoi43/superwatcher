@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
@@ -16,6 +17,7 @@ type engine struct {
 }
 
 func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
+	e.debugger.Debug(2, fmt.Sprintf("got %d logs", len(logs)))
 	return nil, nil
 }
 
@@ -37,5 +39,6 @@ func (e *engine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.A
 }
 
 func (e *engine) HandleEmitterError(err error) error {
+	e.debugger.Debug(1, "got error", zap.Error(err))
 	return err
 }
