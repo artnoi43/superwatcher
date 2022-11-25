@@ -19,15 +19,34 @@ var (
 	}
 )
 
-func initChains(reorgedAt uint64) (blockChain, blockChain) {
-	mappedLogs := InitLogsFromFiles(defaultLogs)
+func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
+	mappedLogs := InitMappedLogsFromFiles(defaultLogs)
+
 	return NewBlockChain(mappedLogs, reorgedAt)
+}
+
+func initDefaultChainsNg(reorgedAt uint64) (blockChain, blockChain) {
+	logs := InitLogsFromFiles(defaultLogs)
+
+	return NewBlockChainNg(logs, reorgedAt)
+}
+
+func TestNewBlockChainNg(t *testing.T) {
+	oldChain, reorgedChain := initDefaultChainsNg(reorgedAt)
+	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
+		t.Fatal(err.Error())
+	}
 }
 
 // Test if NewBlockChain works properly
 func TestNewBlockChain(t *testing.T) {
-	oldChain, reorgedChain := initChains(reorgedAt)
+	oldChain, reorgedChain := initDefaultChains(reorgedAt)
+	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
+		t.Fatal(err.Error())
+	}
+}
 
+func testBlockChain(t *testing.T, oldChain, reorgedChain blockChain) error {
 	for blockNumber, reorgedBlock := range reorgedChain {
 		oldBlock := oldChain[blockNumber]
 
@@ -35,7 +54,7 @@ func TestNewBlockChain(t *testing.T) {
 		reorgedLogs := reorgedBlock.Logs()
 
 		if lo, lr := len(oldLogs), len(reorgedLogs); lo != lr {
-			t.Fatalf("len(logs) not match on block %d", blockNumber)
+			return fmt.Errorf("len(logs) not match on block %d", blockNumber)
 		}
 
 		if !reorgedBlock.toBeForked {
@@ -43,15 +62,15 @@ func TestNewBlockChain(t *testing.T) {
 		}
 
 		if oldBlock.Hash() == reorgedBlock.Hash() {
-			t.Fatal("old and reorg block hashes match")
+			return fmt.Errorf("old and reorg block hashes match on block %d:%s", blockNumber, oldBlock.Hash().String())
 		}
 
 		if blockNumber < reorgedAt && reorgedBlock.toBeForked {
-			t.Fatal("unreorged block from reorgedChain tagged with toBeForked")
+			return fmt.Errorf("unreorged block %d from reorgedChain tagged with toBeForked", blockNumber)
 		}
 
 		if blockNumber > reorgedAt && !reorgedBlock.toBeForked {
-			t.Fatal("reorgedBlock not tagged with toBeForked")
+			return fmt.Errorf("reorgedBlock %d not tagged with toBeForked", blockNumber)
 		}
 
 		for i, reorgedLog := range reorgedLogs {
@@ -63,15 +82,17 @@ func TestNewBlockChain(t *testing.T) {
 			// }
 
 			if reorgedLog.BlockHash == oldLog.BlockHash {
-				t.Fatal("old and reorg log blockHash match")
+				return fmt.Errorf("old and reorg log blockHash match %d:%s", blockNumber, reorgedLog.BlockHash.String())
 			}
 		}
 	}
+
+	return nil
 }
 
 func TestFoo(t *testing.T) {
 	reorgedAt := uint64(15944408)
-	chain, reorgedChain := initChains(reorgedAt)
+	chain, reorgedChain := initDefaultChains(reorgedAt)
 
 	fmt.Println("old chain")
 	prontBlockChain(chain)
@@ -79,14 +100,14 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	param := ReorgParam{
+	param := Param{
 		StartBlock:    startBlock,
 		BlockProgress: 3,
-		ReorgedAt:     reorgedAt,
+		ReorgedBlock:  reorgedAt,
 		ExitBlock:     reorgedAt + 100,
 	}
 
-	sim := NewReorgSim(param, defaultLogs)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),

@@ -11,11 +11,11 @@ import (
 )
 
 func TestFilterLogs(t *testing.T) {
-	param := ReorgParam{
-		StartBlock: startBlock,
-		ReorgedAt:  reorgedAt,
+	param := Param{
+		StartBlock:   startBlock,
+		ReorgedBlock: reorgedAt,
 	}
-	sim := NewReorgSim(param, defaultLogs)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs)
 	ctx := context.Background()
 	logs, err := sim.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: big.NewInt(69),
@@ -49,12 +49,12 @@ func TestFilterLogsReorg(t *testing.T) {
 		logsPath + "/logs_poolfactory.json",
 	}
 
-	param := ReorgParam{
-		StartBlock: reorgedAt,
-		ReorgedAt:  reorgedAt,
+	param := Param{
+		StartBlock:   reorgedAt,
+		ReorgedBlock: reorgedAt,
 	}
 
-	rSim := NewReorgSim(param, logsFiles).(*ReorgSim)
+	rSim := NewReorgSimFromLogsFiles(param, logsFiles).(*ReorgSim)
 
 	block := rSim.Chain()[reorgedAt]
 	rBlock := rSim.ReorgedChain()[reorgedAt]
@@ -93,13 +93,13 @@ func TestExitBlock(t *testing.T) {
 	exitBlock := reorgedAt + 100
 	t.Log("exit block", exitBlock)
 
-	param := ReorgParam{
+	param := Param{
 		StartBlock:    startBlock,
 		BlockProgress: 5,
-		ReorgedAt:     reorgedAt,
+		ReorgedBlock:  reorgedAt,
 		ExitBlock:     exitBlock,
 	}
-	sim := NewReorgSim(param, defaultLogs)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs)
 
 	ctx := context.Background()
 	for {

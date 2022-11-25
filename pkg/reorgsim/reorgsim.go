@@ -4,14 +4,15 @@ import (
 	"sync"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-type ReorgParam struct {
+type Param struct {
 	StartBlock    uint64
-	currentBlock  uint64 // currentBlock is hidden from outside for using exclusively in BlockByNumber
 	BlockProgress uint64
-	ReorgedAt     uint64
+	ReorgedBlock  uint64
 	ExitBlock     uint64 // reorgSim.HeaderByNumber will return ErrExitBlockReached once its currentBlock reach this
+	Debug         bool
 }
 
 // ReorgSim implements superwatcher.EthClient[block],
@@ -19,25 +20,35 @@ type ReorgParam struct {
 // to test the default emitter implementation.
 type ReorgSim struct {
 	sync.RWMutex
-	ReorgParam
+	Param
 
-	chain        blockChain
-	reorgedChain blockChain
-	forked       bool
+	chain             blockChain
+	reorgedChain      blockChain
+	currentBlock      uint64 // currentBlock is hidden from outside for using exclusively in BlockByNumber
+	wasForked         bool
+	filterLogsCounter map[uint64]int
 
-	seenFilterLogs map[uint64]int
+	debugger debugger.Debugger
 }
 
-// NewReorgSim returns a new reorgSim with hard-coded good and reorged chains.
-func NewReorgSim(param ReorgParam, logFiles []string) superwatcher.EthClient {
-	mappedLogs := InitLogsFromFiles(logFiles)
-	chain, reorgedChain := NewBlockChain(mappedLogs, param.ReorgedAt)
+// NewReorgSimFromLogsFiles returns a new reorgSim with good and reorged chains mocked using the files.
+func NewReorgSimFromLogsFiles(param Param, logFiles []string) superwatcher.EthClient {
+	logs := InitLogsFromFiles(logFiles)
+	chain, reorgedChain := NewBlockChainNg(logs, param.ReorgedBlock)
 
+	return NewReorgSim(param, chain, reorgedChain)
+}
+
+func NewReorgSim(param Param, chain, reorgedChain blockChain) superwatcher.EthClient {
 	return &ReorgSim{
-		ReorgParam:     param,
-		chain:          chain,
-		reorgedChain:   reorgedChain,
-		seenFilterLogs: make(map[uint64]int),
+		Param:             param,
+		chain:             chain,
+		reorgedChain:      reorgedChain,
+		filterLogsCounter: make(map[uint64]int),
+		debugger: debugger.Debugger{
+			Key:         "reorgsim",
+			ShouldDebug: param.Debug,
+		},
 	}
 }
 

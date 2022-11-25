@@ -8,6 +8,12 @@ import (
 
 type blockChain map[uint64]block
 
+// NewBlockChainNg returns a tuple of blockChain(s). It takes in |reorgedAt|,
+// and construct the chains based on that number.
+func NewBlockChainNg(logs []types.Log, reorgedAt uint64) (blockChain, blockChain) {
+	return NewBlockChain(mapLogsToNumber(logs), reorgedAt)
+}
+
 // NewBlockChain returns a tuple of blockChain(s). It takes in |reorgedAt|,
 // and construct the chains based on that number.
 func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {

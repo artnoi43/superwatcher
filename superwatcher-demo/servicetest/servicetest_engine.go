@@ -25,10 +25,14 @@ func (e *engine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.A
 		// TODO: Polish test checks
 		if log.BlockNumber != e.reorgedAt {
 			if log.BlockNumber > e.reorgedAt+e.emitterFilterRange {
-				return nil, fmt.Errorf("reorgedAt is different from logs passed to HandleReorgedLogs: expecting %d, got %d", e.reorgedAt, log.BlockNumber)
+				return nil, fmt.Errorf(
+					"reorgedAt is different from logs passed to HandleReorgedLogs: expecting %d, got %d",
+					e.reorgedAt, log.BlockNumber,
+				)
 			}
 		}
 	}
+
 	return nil, nil
 }
 

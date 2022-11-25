@@ -90,14 +90,15 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 	fakeRedis := mockwatcherstate.New(tc.FromBlock - 1)
 
-	param := reorgsim.ReorgParam{
+	param := reorgsim.Param{
 		StartBlock:    tc.FromBlock,
 		BlockProgress: 20,
-		ReorgedAt:     tc.ReorgedAt,
+		ReorgedBlock:  tc.ReorgedAt,
 		ExitBlock:     tc.ToBlock + 200,
+		Debug:         true,
 	}
 
-	sim := reorgsim.NewReorgSim(param, tc.LogsFiles)
+	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles)
 
 	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 	errChan := make(chan error, 5)

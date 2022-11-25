@@ -38,18 +38,18 @@ func initTestComponents(
 	exit uint64,
 ) (
 	*testComponents,
-	reorgsim.ReorgParam, // For logging
+	reorgsim.Param, // For logging
 ) {
-	param := reorgsim.ReorgParam{
+	param := reorgsim.Param{
 		StartBlock:    start,
 		BlockProgress: 5,
-		ReorgedAt:     reorgAt,
+		ReorgedBlock:  reorgAt,
 		ExitBlock:     exit,
 	}
 
 	return &testComponents{
 		conf:          conf,
-		client:        reorgsim.NewReorgSim(param, logsFullPaths),
+		client:        reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths),
 		serviceEngine: serviceEngine,
 	}, param
 }
@@ -87,8 +87,6 @@ func TestServiceEngineENS(t *testing.T) {
 				// Since reorged block uses hash from deterministic PRandomHash,
 				// we can check for equality this way
 				expectedHash := reorgsim.PRandomHash(result.BlockNumber).String()
-				t.Logf("%+v", result)
-
 				if result.BlockHash != gslutils.ToLower(expectedHash) {
 					t.Fatal("unexpected blockHash")
 				}
@@ -128,7 +126,7 @@ func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensS
 	return serviceEngineTestTemplate(components, param)
 }
 
-func serviceEngineTestTemplate(components *testComponents, param reorgsim.ReorgParam) error {
+func serviceEngineTestTemplate(components *testComponents, param reorgsim.Param) error {
 	// Use nil addresses and topics
 	emitter, engine := initsuperwatcher.New(
 		components.conf,

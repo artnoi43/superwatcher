@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 )
@@ -31,38 +32,53 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 		return nil
 	}
 
-	fmt.Println("< chooseBlock:", blockNumber, caller, "toBeForked:", b.toBeForked, "seen:", r.seenFilterLogs[blockNumber])
+	log := func(prefix string) {
+		r.debugger.Debug(
+			fmt.Sprintf("%s chooseBlock", prefix),
+			zap.Uint64("blockNumber", b.blockNumber),
+			zap.String("caller", caller),
+			zap.Bool("toBeForked", b.toBeForked),
+			zap.Int("seen", r.filterLogsCounter[b.blockNumber]),
+		)
+	}
+
+	log("<")
 
 	// Use reorg block for this blockNumber
 	if b.toBeForked {
+		// In emitter.FilterLogs, client.FilterLogs is called before client.HeaderByNumber,
+		// so here we use call from FilterLogs to trigger a reorg by incrementing the filterLogsCounter
+		// and using reorged block if the counter is > 1.
+		// This is why reorgSim.HeaderByNumber should only use reorgedChain if FilterLogs already returned
+		// the reorged logs, and thus a different |n| value.
 		var n int
 		switch caller {
 		case filterLogs:
-			n = 1
+			n = 1 // reorgSim.FilterLogs returns reorged blocks first
 		case headerByNumber:
 			n = 2
 		}
 
-		if r.seenFilterLogs[blockNumber] >= n {
+		if r.filterLogsCounter[blockNumber] >= n {
 			b, found = r.reorgedChain[blockNumber]
 			if !found {
 				return nil
 			}
 
-			if !r.forked {
-				fmt.Println("REORG!", blockNumber)
+			if !r.wasForked {
+				r.debugger.Debug("!REORGED!", zap.Uint64("blockNumber", blockNumber))
+
 				r.chain = r.reorgedChain
-				r.forked = true
+				r.wasForked = true
 			}
 		}
 	}
 
 	if caller == filterLogs && b.toBeForked {
-		r.seenFilterLogs[blockNumber]++
+		r.filterLogsCounter[blockNumber]++
 	}
 
-	fmt.Println("> chooseBlock:", blockNumber, caller, "toBeForked:", b.toBeForked, "seen:", r.seenFilterLogs[blockNumber])
-
+	log(">")
 	return &b
 }
 
@@ -119,21 +135,21 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	r.Lock()
 	defer r.Unlock()
 
-	if r.ReorgParam.BlockProgress == 0 {
+	if r.Param.BlockProgress == 0 {
 		panic("0 BlockProgress")
 	}
 
-	if r.ReorgParam.currentBlock == 0 {
-		r.ReorgParam.currentBlock = r.ReorgParam.StartBlock
+	if r.currentBlock == 0 {
+		r.currentBlock = r.Param.StartBlock
 		return r.currentBlock, nil
 	}
 
-	currentBlock := r.ReorgParam.currentBlock
-	if currentBlock >= r.ReorgParam.ExitBlock {
-		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.ReorgParam.ExitBlock)
+	currentBlock := r.currentBlock
+	if currentBlock >= r.Param.ExitBlock {
+		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.Param.ExitBlock)
 	}
 
-	r.ReorgParam.currentBlock = currentBlock + r.ReorgParam.BlockProgress
+	r.currentBlock = currentBlock + r.Param.BlockProgress
 	return currentBlock, nil
 }
 
