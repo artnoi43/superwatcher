@@ -148,22 +148,24 @@ func contractsToServices(
 	demoRoutes := make(map[subengines.SubEngineEnum]map[common.Address][]common.Hash)
 	demoServices := make(map[subengines.SubEngineEnum]superwatcher.ServiceEngine)
 
+	dgwENS := datagateway.NewEnsDataGateway(rdb)
+	dgwPoolFactory := datagateway.NewDataGatewayPoolFactory(rdb)
+
 	// ENS sub-engine has 2 contracts
 	// so we can't init the engine in the for loop below
 	var ensRegistrar, ensController contracts.BasicContract
-
 	// Topics and addresses to be used by watcher emitter
 	var emitterTopics []common.Hash
 	var emitterAddresses []common.Address
-
 	for contractName, demoContract := range demoContracts {
+
 		var contractTopics = make([]common.Hash, len(demoContract.ContractEvents))
 		var subEngine subengines.SubEngineEnum
 
 		switch contractName {
 		case hardcode.Uniswapv3Factory:
 			subEngine = subengines.SubEngineUniswapv3Factory
-			demoServices[subEngine] = uniswapv3factoryengine.New(demoContract, logLevel)
+			demoServices[subEngine] = uniswapv3factoryengine.New(demoContract, dgwPoolFactory, logLevel)
 
 		case hardcode.ENSRegistrar, hardcode.ENSController:
 			// demoServices for ENS will be created outside of this for loop
@@ -187,7 +189,6 @@ func contractsToServices(
 	}
 
 	// Initialize ensEngine
-	dgwENS := datagateway.NewEnsDataGateway(rdb)
 	ensEngine := ensengine.New(ensRegistrar, ensController, dgwENS, logLevel)
 	demoServices[subengines.SubEngineENS] = ensEngine
 

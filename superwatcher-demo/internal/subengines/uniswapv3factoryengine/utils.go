@@ -1,6 +1,8 @@
 package uniswapv3factoryengine
 
 import (
+	"context"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -13,16 +15,14 @@ func (e *uniswapv3PoolFactoryEngine) handlePoolCreated(
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
 	e.debugger.Debug(1, "got poolCreated, writing to db", zap.Any("pool", pool))
-
-	return nil
+	return e.dataGateway.SetPool(context.Background(), pool)
 }
 
 func (e *uniswapv3PoolFactoryEngine) revertPoolCreated(
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
 	e.debugger.Debug(1, "reverting poolCreated", zap.Any("pool", pool))
-
-	return nil
+	return e.dataGateway.DelPool(context.Background(), pool)
 }
 
 // parsePoolCreatedUnpackedMap collects unpacked log.Data into *entity.Uniswapv3PoolCreated.

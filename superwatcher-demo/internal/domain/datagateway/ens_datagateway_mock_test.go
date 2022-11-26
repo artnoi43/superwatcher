@@ -14,10 +14,12 @@ import (
 func TestMockDataGatewayENS(t *testing.T) {
 	dgw := NewMockDataGatewayENS()
 
+	l := 5
 	var enses []*entity.ENS
 	var names []string
 	var ids []string
-	for i := 1; i <= 5; i++ {
+
+	for i := 1; i <= l; i++ {
 		id := fmt.Sprintf("%d", i)
 		s100 := fmt.Sprintf("%d", i+100)
 		name := "ens" + id
@@ -58,11 +60,14 @@ func TestMockDataGatewayENS(t *testing.T) {
 				if out != nil {
 					t.Fatal("got non-nil ens after call to DelENS")
 				}
-
 				continue
 			}
 
 			t.Fatal("unexpected error", err.Error())
+		}
+
+		if out != nil {
+			t.Fatal("got non-nil ens after call to DelENS")
 		}
 	}
 }

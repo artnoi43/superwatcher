@@ -40,7 +40,7 @@ func TestHandleGoodLogs(t *testing.T) {
 	demoContracts := hardcode.DemoContracts(hardcode.Uniswapv3Factory, hardcode.ENSRegistrar, hardcode.ENSController)
 	poolFactoryContract := demoContracts[hardcode.Uniswapv3Factory]
 	poolFactoryHashes := contracts.CollectEventHashes(poolFactoryContract.ContractEvents)
-	poolFactoryEngine := uniswapv3factoryengine.New(poolFactoryContract, logLevel)
+	poolFactoryEngine := uniswapv3factoryengine.New(poolFactoryContract, datagateway.NewMockDataGatewayPoolFactory(), logLevel)
 	ensRegistrarContract := demoContracts[hardcode.ENSRegistrar]
 	ensRegistrarHashes := contracts.CollectEventHashes(ensRegistrarContract.ContractEvents)
 	ensControllerContract := demoContracts[hardcode.ENSController]

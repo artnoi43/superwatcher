@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
@@ -96,11 +95,6 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedPool(
 	}
 
 	poolArtifact[*pool] = PoolFactoryStateNull
+
 	return poolArtifact, nil
-}
-
-func (e *uniswapv3PoolFactoryEngine) createPool(pool *entity.Uniswapv3PoolCreated) error {
-	e.debugger.Debug(2, "createPool: got pool", zap.Any("pool", pool))
-
-	return nil
 }

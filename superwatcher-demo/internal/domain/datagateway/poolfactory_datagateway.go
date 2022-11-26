@@ -14,18 +14,24 @@ import (
 
 const PoolFactoryRedisKey = "demo:poolfactory"
 
-type PoolFactoryDataGateway interface {
+type DataGatewayPoolFactory interface {
 	SetPool(context.Context, *entity.Uniswapv3PoolCreated) error
-	GetPool(context.Context) (*entity.Uniswapv3PoolCreated, error)
+	GetPool(context.Context, common.Address) (*entity.Uniswapv3PoolCreated, error)
 	GetPools(context.Context) ([]*entity.Uniswapv3PoolCreated, error)
 	DelPool(context.Context, *entity.Uniswapv3PoolCreated) error
 }
 
-type poolFactoryDataGateway struct {
+type dataGatewayPoolFactory struct {
 	redisCli *redis.Client
 }
 
-func (s *poolFactoryDataGateway) SetPool(
+func NewDataGatewayPoolFactory(redisCli *redis.Client) DataGatewayPoolFactory {
+	return &dataGatewayPoolFactory{
+		redisCli: redisCli,
+	}
+}
+
+func (s *dataGatewayPoolFactory) SetPool(
 	ctx context.Context,
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
@@ -42,7 +48,7 @@ func (s *poolFactoryDataGateway) SetPool(
 	return nil
 }
 
-func (s *poolFactoryDataGateway) GetPool(
+func (s *dataGatewayPoolFactory) GetPool(
 	ctx context.Context,
 	lpAddress common.Address,
 ) (
@@ -63,7 +69,7 @@ func (s *poolFactoryDataGateway) GetPool(
 	return &pool, nil
 }
 
-func (s *poolFactoryDataGateway) GetPools(
+func (s *dataGatewayPoolFactory) GetPools(
 	ctx context.Context,
 ) (
 	[]*entity.Uniswapv3PoolCreated,
@@ -87,7 +93,7 @@ func (s *poolFactoryDataGateway) GetPools(
 	return pools, nil
 }
 
-func (s *poolFactoryDataGateway) DelPool(
+func (s *dataGatewayPoolFactory) DelPool(
 	ctx context.Context,
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
