@@ -1,8 +1,6 @@
 package uniswapv3factoryengine
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -71,9 +69,11 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 
 			returnArtifacts = append(returnArtifacts, processArtifacts)
 		}
+
+		continue
 	}
 
-	return nil, fmt.Errorf("event topic %s not found", logEventKey)
+	return nil, nil
 }
 
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
@@ -95,6 +95,5 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedPool(
 	}
 
 	poolArtifact[*pool] = PoolFactoryStateNull
-
 	return poolArtifact, nil
 }

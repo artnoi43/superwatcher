@@ -53,6 +53,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifa
 		if err != nil {
 			return nil, errors.Wrap(err, "uniswapv3PoolFactoryEngine.handleReorgedLog failed")
 		}
+
 	}
 
 	return []superwatcher.Artifact{logArtifact}, nil
@@ -60,5 +61,5 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifa
 
 func (e *uniswapv3PoolFactoryEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
-	return nil
+	return err
 }

@@ -50,7 +50,7 @@ func (s *mockDataGatewayENS) DelENS(ctx context.Context, ens *entity.ENS) error 
 	}
 
 	fmt.Println("# DEL ENS", ens.Name, ens.ID)
-	delete(s.m, ens.ID)
+	s.m[ens.ID] = nil
 
 	return nil
 }

@@ -22,7 +22,14 @@ func (e *uniswapv3PoolFactoryEngine) revertPoolCreated(
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
 	e.debugger.Debug(1, "reverting poolCreated", zap.Any("pool", pool))
-	return e.dataGateway.DelPool(context.Background(), pool)
+
+	err := e.dataGateway.DelPool(context.Background(), pool)
+	if err != nil {
+		panic("lol")
+		return errors.Wrapf(err, "failed to revert pool %s", pool.Address.String())
+	}
+
+	return nil
 }
 
 // parsePoolCreatedUnpackedMap collects unpacked log.Data into *entity.Uniswapv3PoolCreated.

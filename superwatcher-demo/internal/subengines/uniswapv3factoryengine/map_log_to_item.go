@@ -33,6 +33,7 @@ func mapLogToPoolCreated(
 	poolCreated.Token1 = common.HexToAddress(l.Topics[2].String())
 	poolCreated.Fee = l.Topics[3].Big().Uint64()
 	poolCreated.BlockCreated = l.BlockNumber
+	poolCreated.BlockHash = l.BlockHash
 
 	return poolCreated, nil
 }

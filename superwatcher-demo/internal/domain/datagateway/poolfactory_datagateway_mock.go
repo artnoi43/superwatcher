@@ -2,6 +2,7 @@ package datagateway
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
@@ -37,6 +38,7 @@ func (s *mockDataGatewayPoolFactory) GetPool(
 	error,
 ) {
 	addr := gslutils.StringerToLowerString(lpAddress)
+	fmt.Println("SET", addr)
 	pool, ok := s.m[addr]
 	if !ok {
 		return nil, errors.Wrapf(ErrRecordNotFound, "lp %s not found", addr)
@@ -59,12 +61,13 @@ func (s *mockDataGatewayPoolFactory) DelPool(
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
 	addr := gslutils.StringerToLowerString(pool.Address)
+	fmt.Println("DEL", addr)
 	pool, ok := s.m[addr]
 	if !ok {
 		return errors.Wrapf(ErrRecordNotFound, "lp %s not found", addr)
 	}
 
-	delete(s.m, addr)
+	s.m[addr] = nil
 
 	return nil
 }

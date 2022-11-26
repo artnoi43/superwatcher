@@ -26,10 +26,10 @@ type ensEngine struct {
 	debugger      *debugger.Debugger
 }
 
-type EnsSubEngineSuite struct {
-	Engine      superwatcher.ServiceEngine // *ensEngine
-	EnsRoutes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
-	EnsServices map[subengines.SubEngineEnum]superwatcher.ServiceEngine
+type TestSuiteENS struct {
+	Engine   superwatcher.ServiceEngine // *ensEngine
+	Routes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
+	Services map[subengines.SubEngineEnum]superwatcher.ServiceEngine
 }
 
 func New(
@@ -46,8 +46,8 @@ func New(
 	}
 }
 
-// NewEnsSubEngineSuite returns a convenient struct for injecting into routerengine.routerEngine
-func NewEnsSubEngineSuite(dgwENS datagateway.DataGatewayENS, logLevel uint8) *EnsSubEngineSuite {
+// NewTestSuiteENS returns a convenient struct for injecting into routerengine.routerEngine
+func NewTestSuiteENS(dgwENS datagateway.DataGatewayENS, logLevel uint8) *TestSuiteENS {
 	registrarContract := contracts.NewBasicContract(
 		"ENSRegistrar",
 		ensregistrar.EnsRegistrarABI,
@@ -66,15 +66,15 @@ func NewEnsSubEngineSuite(dgwENS datagateway.DataGatewayENS, logLevel uint8) *En
 	registrarTopics := contracts.CollectEventHashes(registrarContract.ContractEvents)
 	controllerTopics := contracts.CollectEventHashes(controllerContract.ContractEvents)
 
-	return &EnsSubEngineSuite{
+	return &TestSuiteENS{
 		Engine: ensEngine,
-		EnsRoutes: map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
+		Routes: map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
 			subengines.SubEngineENS: {
 				registrarContract.Address:  registrarTopics,
 				controllerContract.Address: controllerTopics,
 			},
 		},
-		EnsServices: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
+		Services: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
 			subengines.SubEngineENS: ensEngine,
 		},
 	}
