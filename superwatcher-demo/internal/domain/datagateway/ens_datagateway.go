@@ -3,7 +3,6 @@ package datagateway
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
@@ -11,9 +10,8 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
-func EnsRedisKey(id string) string {
-	return fmt.Sprintf("demo:ens:%s", id)
-}
+// Use Redis Hash Map to store entity.ENS, with ID as field (sub-key)
+const EnsRedisKey = "demo:ens"
 
 type DataGatewayENS interface {
 	SetENS(context.Context, *entity.ENS) error
@@ -23,12 +21,12 @@ type DataGatewayENS interface {
 }
 
 type dataGatewayENS struct {
-	redisClient *redis.Client
+	redisCli *redis.Client
 }
 
 func NewEnsDataGateway(redisCli *redis.Client) *dataGatewayENS {
 	return &dataGatewayENS{
-		redisClient: redisCli,
+		redisCli: redisCli,
 	}
 }
 
@@ -49,34 +47,35 @@ func (s *dataGatewayENS) SetENS(
 	ctx context.Context,
 	ens *entity.ENS,
 ) error {
-	key := EnsRedisKey(ens.ID)
 	ensJSON, err := json.Marshal(ens)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal ENS")
+		return errors.Wrapf(err, "failed to marshal ENS for ensID %s", ens.ID)
 	}
 
-	return handleRedisErr(
-		s.redisClient.Set(ctx, key, ensJSON, -1).Err(),
-		"set RecordedENS",
-		key,
-	)
+	id := ens.ID
+	err = s.redisCli.HSet(ctx, EnsRedisKey, id, ensJSON).Err()
+
+	return handleRedisErr(err, "HSET ens", id)
 }
 
 func (s *dataGatewayENS) GetENS(
 	ctx context.Context,
-	key string,
-) (*entity.ENS, error) {
-	stringData, err := s.redisClient.Get(ctx, key).Result()
+	ensID string,
+) (
+	*entity.ENS,
+	error,
+) {
+	stringData, err := s.redisCli.HGet(ctx, EnsRedisKey, ensID).Result()
 	if err != nil {
-		return nil, handleRedisErr(err, "get RecordedENS", key)
+		return nil, handleRedisErr(err, "HGET ens", ensID)
 	}
 
-	ens := &entity.ENS{}
-	err = json.Unmarshal([]byte(stringData), ens)
+	var ens entity.ENS
+	err = json.Unmarshal([]byte(stringData), &ens)
 	if err != nil {
-		return nil, errors.Wrapf(err, "action: %s", "unmarshal RecordedENS")
+		return nil, errors.Wrapf(err, "failed to unmarshal for ensID %s", ensID)
 	}
-	return ens, nil
+	return &ens, nil
 }
 
 func (s *dataGatewayENS) GetENSes(
@@ -85,47 +84,37 @@ func (s *dataGatewayENS) GetENSes(
 	[]*entity.ENS,
 	error,
 ) {
-	ENSs := []*entity.ENS{}
-	var cursor uint64
-	prefix := EnsRedisKey("*")
-
-	for {
-		var keys []string
-		var err error
-		keys, cursor, err = s.redisClient.Scan(ctx, cursor, prefix, 0).Result()
-		if err != nil {
-			return nil, errors.Wrapf(err, "action: %s", "scan RecordedENS")
-		}
-
-		for _, key := range keys {
-			ens, err := s.GetENS(ctx, key)
-			if err != nil {
-				return nil, errors.Wrapf(err, "action: %s", "get RecordedENS")
-			}
-
-			ENSs = append(ENSs, ens)
-		}
-
-		if cursor == 0 {
-			break
-		}
+	resultMap, err := s.redisCli.HGetAll(ctx, EnsRedisKey).Result()
+	if err != nil {
+		return nil, handleRedisErr(err, "HGETALL ens", "null")
 	}
 
-	return ENSs, nil
+	var enses []*entity.ENS
+	for ensID, ensJSON := range resultMap {
+		var ens entity.ENS
+		if err := json.Unmarshal([]byte(ensJSON), &ens); err != nil {
+			return nil, errors.Wrapf(err, "failec to unmarshal for ensID %s", ensID)
+		}
+
+		enses = append(enses, &ens)
+	}
+
+	return enses, nil
 }
 
 func (s *dataGatewayENS) DelENS(
 	ctx context.Context,
 	ens *entity.ENS,
 ) error {
-	key := EnsRedisKey(ens.ID)
-	_, err := s.redisClient.Del(ctx, key).Result()
+	id := ens.ID
+	_, err := s.redisCli.HDel(ctx, EnsRedisKey, id).Result()
 	if err != nil {
-		return handleRedisErr(err, "del RecordedENS", key)
+		return handleRedisErr(err, "del RecordedENS", EnsRedisKey)
 	}
+
 	return nil
 }
 
 func (s *dataGatewayENS) Shutdown() error {
-	return s.redisClient.Close()
+	return s.redisCli.Close()
 }

@@ -9,11 +9,11 @@ import (
 )
 
 type Uniswapv3PoolCreated struct {
-	Address      common.Address
-	Token0       common.Address
-	Token1       common.Address
-	Fee          uint64
-	BlockCreated uint64
+	Address      common.Address `json:"lpAddress"`
+	Token0       common.Address `json:"token0"`
+	Token1       common.Address `json:"token1"`
+	Fee          uint64         `json:"fee"`
+	BlockCreated uint64         `json:"blockCreated"`
 }
 
 type Uniswapv3FactoryWatcherKey struct {
