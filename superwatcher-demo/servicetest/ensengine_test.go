@@ -16,7 +16,7 @@ func TestServiceEngineENS(t *testing.T) {
 	logsPath := "../assets/ens"
 	testCases := []testCase{
 		{
-			startBlock: 15984020,
+			startBlock: 15984000,
 			reorgBlock: 15984033,
 			exitBlock:  15984100,
 			logsFiles: []string{

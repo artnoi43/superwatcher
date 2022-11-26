@@ -82,5 +82,5 @@ func (e *routerEngine) HandleReorgedLogs(
 func (e *routerEngine) HandleEmitterError(err error) error {
 	logger.Warn("emitter error", zap.Error(err))
 
-	return nil
+	return err
 }
