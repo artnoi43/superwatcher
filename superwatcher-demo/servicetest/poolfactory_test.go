@@ -17,6 +17,7 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 		{
 			startBlock: 16054000,
 			reorgBlock: 16054066,
+			exitBlock:  16054200,
 			logsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
@@ -25,8 +26,14 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 
 	for _, testCase := range testCases {
 		dgw := datagateway.NewMockDataGatewayPoolFactory()
-		if err := testServiceEnginePoolFactory(testCase.startBlock, testCase.reorgBlock, testCase.logsFiles, dgw); err != nil {
-			t.Fatalf("error in full servicetest (poolfactory): %s", err.Error())
+		if err := testServiceEnginePoolFactory(
+			testCase.startBlock,
+			testCase.reorgBlock,
+			testCase.exitBlock,
+			testCase.logsFiles,
+			dgw,
+		); err != nil {
+			t.Errorf("error in full servicetest (poolfactory): %s", err.Error())
 		}
 
 		results, err := dgw.GetPools(nil)
@@ -35,17 +42,29 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 		}
 
 		for _, result := range results {
-			if result.BlockCreated > testCase.reorgBlock {
-				expectedHash := reorgsim.PRandomHash(result.BlockCreated)
-				if result.BlockHash != expectedHash {
+			expectedReorgedHash := reorgsim.PRandomHash(result.BlockCreated)
+			if result.BlockCreated >= testCase.reorgBlock {
+				if result.BlockHash != expectedReorgedHash {
 					t.Fatalf("blockHash not reorged")
 				}
+
+				continue
+			}
+
+			if result.BlockHash == expectedReorgedHash {
+				t.Fatal("old block in the old chain has reorged hash")
 			}
 		}
 	}
 }
 
-func testServiceEnginePoolFactory(startBlock, reorgedAt uint64, logsFiles []string, lpStore datagateway.DataGatewayPoolFactory) error {
+func testServiceEnginePoolFactory(
+	startBlock uint64,
+	reorgedAt uint64,
+	exitBlock uint64,
+	logsFiles []string,
+	lpStore datagateway.DataGatewayPoolFactory,
+) error {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		Chain:         string(enums.ChainEthereum),
@@ -62,7 +81,7 @@ func testServiceEnginePoolFactory(startBlock, reorgedAt uint64, logsFiles []stri
 		logsFiles,
 		conf.StartBlock,
 		reorgedAt,
-		16054200,
+		exitBlock,
 	)
 
 	return serviceEngineTestTemplate(components, param)

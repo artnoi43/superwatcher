@@ -18,6 +18,7 @@ func TestServiceEngineENS(t *testing.T) {
 		{
 			startBlock: 15984020,
 			reorgBlock: 15984033,
+			exitBlock:  15984100,
 			logsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},

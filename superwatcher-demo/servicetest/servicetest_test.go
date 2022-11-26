@@ -2,8 +2,9 @@ package servicetest
 
 import (
 	"context"
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
@@ -15,6 +16,7 @@ import (
 type testCase struct {
 	startBlock uint64
 	reorgBlock uint64
+	exitBlock  uint64
 	logsFiles  []string
 }
 
@@ -72,6 +74,8 @@ func serviceEngineTestTemplate(components *testComponents, param reorgsim.Param)
 				emitter.Shutdown()
 				return
 			}
+
+			panic("unexpected emitter error: " + err.Error())
 		}
 	}()
 

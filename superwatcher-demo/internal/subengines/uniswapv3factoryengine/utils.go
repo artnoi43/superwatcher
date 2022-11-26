@@ -25,7 +25,6 @@ func (e *uniswapv3PoolFactoryEngine) revertPoolCreated(
 
 	err := e.dataGateway.DelPool(context.Background(), pool)
 	if err != nil {
-		panic("lol")
 		return errors.Wrapf(err, "failed to revert pool %s", pool.Address.String())
 	}
 

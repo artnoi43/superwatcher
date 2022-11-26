@@ -5,9 +5,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
 func TestMockDataGatewayPoolFactory(t *testing.T) {
