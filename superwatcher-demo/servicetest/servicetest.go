@@ -21,7 +21,7 @@ func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Arti
 	e.debugger.Debug(2, fmt.Sprintf("HandleGoodLogs: got %d logs", len(logs)))
 	for _, log := range logs {
 		e.debugger.Debug(
-			1, "reorged log info",
+			1, "good log info",
 			zap.Uint64("blockNumber", log.BlockNumber),
 			zap.String("blockHash", gslutils.StringerToLowerString(log.BlockHash)),
 		)
@@ -30,7 +30,12 @@ func (e *engine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Arti
 }
 
 func (e *engine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
-	e.debugger.Debug(1, "GOT REORGED LOG IN SERVICETEST", zap.Int("len(artifacts)", len(artifacts)), zap.Any("artifacts", artifacts))
+	e.debugger.Debug(
+		1, "GOT REORGED LOG IN SERVICETEST",
+		zap.Int("len(artifacts)", len(artifacts)),
+		zap.Any("artifacts", artifacts),
+	)
+
 	for _, log := range logs {
 		e.debugger.Debug(
 			1, "reorged log info",

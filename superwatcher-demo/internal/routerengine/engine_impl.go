@@ -28,7 +28,7 @@ func (e *routerEngine) HandleGoodLogs(
 			return nil, errors.Wrapf(errNoService, "subengine: %s", subEngine.String())
 		}
 
-		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs, artifacts)
+		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs, filterArtifacts(subEngine, artifacts))
 		if err != nil {
 			if errors.Is(err, internal.ErrNoNeedHandle) {
 				e.debugger.Debug(2, "routerEngine: got ErrNoNeedHandle", zap.String("subEngine", subEngine.String()))
@@ -50,6 +50,7 @@ func (e *routerEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) ([]superwatcher.Artifact, error) {
+	e.debugger.Debug(2, "HandleReorgedLogs called", zap.Int("len(logs)", len(logs)), zap.Any("artifacts", artifacts))
 	logsMap := e.mapLogsToSubEngine(logs)
 
 	var retArtifacts []superwatcher.Artifact //nolint:all Artifacts to return - we dont know the size
@@ -60,14 +61,7 @@ func (e *routerEngine) HandleReorgedLogs(
 		}
 
 		// Aggregate subEngine-specific artifacts
-		var subEngineArtifacts []superwatcher.Artifact
-		for _, artifact := range artifacts {
-			if artifactIsFor(artifact, subEngine) {
-				subEngineArtifacts = append(subEngineArtifacts, artifact)
-			}
-		}
-
-		outputArtifacts, err := serviceEngine.HandleReorgedLogs(logs, subEngineArtifacts)
+		outputArtifacts, err := serviceEngine.HandleReorgedLogs(logs, filterArtifacts(subEngine, artifacts))
 		if err != nil {
 			return nil, errors.Wrapf(err, "subengine %s HandleReorgedBlock failed", subEngine.String())
 		}

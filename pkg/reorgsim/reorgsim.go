@@ -33,7 +33,7 @@ type ReorgSim struct {
 
 // NewReorgSimFromLogsFiles returns a new reorgSim with good and reorged chains mocked using the files.
 func NewReorgSimFromLogsFiles(param Param, logFiles []string, logLevel uint8) superwatcher.EthClient {
-	logs := InitLogsFromFiles(logFiles)
+	logs := InitLogsFromFiles(logFiles...)
 	chain, reorgedChain := NewBlockChainNg(logs, param.ReorgedBlock)
 
 	return NewReorgSim(param, chain, reorgedChain, logLevel)

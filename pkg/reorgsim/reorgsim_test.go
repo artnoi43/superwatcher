@@ -26,7 +26,7 @@ func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
 }
 
 func initDefaultChainsNg(reorgedAt uint64) (blockChain, blockChain) {
-	logs := InitLogsFromFiles(defaultLogs)
+	logs := InitLogsFromFiles(defaultLogs...)
 
 	return NewBlockChainNg(logs, reorgedAt)
 }

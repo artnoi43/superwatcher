@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func InitLogsFromFiles(filenames []string) []types.Log {
+func InitLogsFromFiles(filenames ...string) []types.Log {
 	var logs []types.Log
 	for _, filename := range filenames {
 		fileLogs := readJsonLogs(filename)
