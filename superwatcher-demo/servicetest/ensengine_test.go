@@ -23,6 +23,14 @@ func TestServiceEngineENS(t *testing.T) {
 				logsPath + "/logs_reorg_test.json",
 			},
 		},
+		{
+			startBlock: 16054000,
+			reorgBlock: 16054078,
+			exitBlock:  16054100,
+			logsFiles: []string{
+				logsPath + "/logs_servicetest_16054000_16054100.json",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
