@@ -20,16 +20,21 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		var reorged bool
 		for _, block := range result.ReorgedBlocks {
+
 			reorged = true
+			metadata := e.metadataTracker.GetBlockMetadata(callerReorgedLogs, block)
+			e.debugger.Debug(
+				4, "* got reorged metadata",
+				zap.Uint64("blockNumber", block.Number),
+				zap.String("blockHash", block.String()),
+				zap.Any("metadata artifacts", metadata.artifacts),
+			)
 
-			metadata := e.metadataTracker.GetBlockMetadata(block)
 			metadata.state.Fire(EventReorg)
-
 			// Only process block with Reorged state
 			if metadata.state != StateReorged {
 				e.debugger.Debug(
-					1,
-					"skip bad reorged block logs",
+					1, "skip bad reorged block logs",
 					zap.String("state", metadata.state.String()),
 					zap.Uint64("blockNumber", metadata.blockNumber),
 					zap.String("blockHash", metadata.blockHash),
@@ -38,14 +43,16 @@ func (e *engine) handleResults(ctx context.Context) error {
 				continue
 			}
 
-			e.metadataTracker.SetBlockMetadata(block, metadata)
+			// Update state to tracker
+			e.metadataTracker.SetBlockMetadata(callerReorgedLogs, block, metadata)
 
 			artifacts, err := e.serviceEngine.HandleReorgedLogs(block.Logs, metadata.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleReorgedBlockLogs failed")
 			}
 
-			// Check debug here so we dont have to iterate over all keys in map artifacts before checking in `e.debugMsg`
+			// Check debug here so we dont have to iterate over all |artifacts| members
+			// before checking
 			if e.debug {
 				for k, v := range artifacts {
 					e.debugger.Debug(2, "got handleReorgedLogs artifacts", zap.Any("k", k), zap.Any("v", v))
@@ -55,19 +62,27 @@ func (e *engine) handleResults(ctx context.Context) error {
 			metadata.state.Fire(EventHandleReorg)
 			metadata.artifacts = artifacts
 
-			e.debugger.Debug(2, "saving handleReorgedLogs metadata for block", zap.Any("metadata", metadata))
-			e.metadataTracker.SetBlockMetadata(block, metadata)
+			e.debugger.Debug(
+				4, "* saving reorgedBlock metadata",
+				zap.Uint64("blockNumber", block.Number),
+				zap.String("blockHash", block.String()),
+				zap.Any("metadata artifacts", metadata.artifacts),
+			)
+
+			e.metadataTracker.SetBlockMetadata(callerReorgedLogs, block, metadata)
 		}
 
 		for _, block := range result.GoodBlocks {
-			metadata := e.metadataTracker.GetBlockMetadata(block)
+			metadata := e.metadataTracker.GetBlockMetadata(callerGoodLogs, block)
 			metadata.state.Fire(EventGotLog)
+
+			// Update state to tracker
+			e.metadataTracker.SetBlockMetadata(callerGoodLogs, block, metadata)
 
 			// Only process block with Seen state
 			if metadata.state != StateSeen {
 				e.debugger.Debug(
-					1,
-					"skip block",
+					1, "skip block",
 					zap.String("state", metadata.state.String()),
 					zap.Uint64("blockNumber", metadata.blockNumber),
 					zap.String("blockHash", metadata.blockHash),
@@ -84,8 +99,14 @@ func (e *engine) handleResults(ctx context.Context) error {
 			metadata.state.Fire(EventProcess)
 			metadata.artifacts = artifacts
 
-			e.debugger.Debug(2, "saving metadata for block", zap.Any("metadata", metadata))
-			e.metadataTracker.SetBlockMetadata(block, metadata)
+			e.debugger.Debug(
+				4, "* saving goodBlock metadata",
+				zap.Uint64("blockNumber", block.Number),
+				zap.String("blockHash", block.String()),
+				zap.Any("metadata artifacts", metadata.artifacts),
+			)
+
+			e.metadataTracker.SetBlockMetadata(callerGoodLogs, block, metadata)
 		}
 
 		// TODO: How many should we clear?

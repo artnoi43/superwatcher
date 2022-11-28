@@ -101,7 +101,7 @@ func (e *emitter) filterLogs(
 
 	// Wait here for logs and headers
 	if err := concurrent.WaitAndCollectErrors(&wg, getErrChan); err != nil {
-		logger.Error("get fresh data from blockchain failed", zap.Error(err))
+		e.debugger.Debug(1, "get fresh data from blockchain failed", zap.Error(err))
 		return errors.Wrap(err, "get blockchain data")
 	}
 
@@ -214,8 +214,7 @@ func (e *emitter) filterLogs(
 
 	// End loop
 	e.debugger.Debug(
-		1,
-		"number of logs published by filterLogs",
+		1, "number of logs published by filterLogs",
 		zap.Int("eventLogs (filtered)", lenLogs),
 		zap.Int("processLogs (all logs processed)", len(mapProcessLogs)),
 		zap.Int("goodBlocks", len(filterResult.GoodBlocks)),

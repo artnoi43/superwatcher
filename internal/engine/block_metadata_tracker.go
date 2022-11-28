@@ -13,10 +13,18 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
+// TODO: remove callerMethod after debugging?
+type callerMethod string
+
+const (
+	callerGoodLogs    = "callerGoodLogs"
+	callerReorgedLogs = "callerReorgedLogs"
+)
+
 type MetadataTracker interface {
 	ClearUntil(blockNumber uint64)
-	SetBlockMetadata(*superwatcher.BlockInfo, *blockMetadata)
-	GetBlockMetadata(*superwatcher.BlockInfo) *blockMetadata
+	SetBlockMetadata(callerMethod, *superwatcher.BlockInfo, *blockMetadata)
+	GetBlockMetadata(callerMethod, *superwatcher.BlockInfo) *blockMetadata
 }
 
 // metadataTracker is an in-memory store for keeping engine internal states.
@@ -43,7 +51,10 @@ func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 	t.Lock()
 	defer t.Unlock()
 
-	t.debugger.Debug(2, "clearing engine state tracker", zap.Uint64("until", blockNumber))
+	t.debugger.Debug(
+		2, "clearing engine state tracker",
+		zap.Uint64("untilBlock", blockNumber),
+	)
 
 	for {
 		oldest := t.sortedSet.PeekMin()
@@ -55,20 +66,43 @@ func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 	}
 }
 
-func (t *metadataTracker) SetBlockMetadata(b *superwatcher.BlockInfo, metadata *blockMetadata) {
+func (t *metadataTracker) SetBlockMetadata(
+	caller callerMethod,
+	b *superwatcher.BlockInfo,
+	metadata *blockMetadata,
+) {
 	t.Lock()
 	defer t.Unlock()
+
+	t.debugger.Debug(
+		3, "adding blockMetadata",
+		zap.String("caller", string(caller)),
+		zap.Uint64("blockNumber", b.Number),
+		zap.String("blockHash", b.String()),
+		zap.Any("metadata artifacts", metadata.artifacts),
+	)
 
 	t.sortedSet.AddOrUpdate(b.String(), sortedset.SCORE(b.Number), metadata)
 }
 
-func (t *metadataTracker) GetBlockMetadata(b *superwatcher.BlockInfo) *blockMetadata {
+func (t *metadataTracker) GetBlockMetadata(
+	caller callerMethod,
+	b *superwatcher.BlockInfo,
+) *blockMetadata {
 	t.RLock()
 	defer t.RUnlock()
 
 	node := t.sortedSet.GetByKey(b.String())
 	// Avoid panicking when assert type on nil value
 	if node == nil {
+		if caller == callerReorgedLogs {
+			logger.Panic(
+				"nil metadata for reorged block",
+				zap.Uint64("blockNumber", b.Number),
+				zap.String("blockHash", b.String()),
+			)
+		}
+
 		return &blockMetadata{
 			blockNumber: b.Number,
 			blockHash:   b.String(),
