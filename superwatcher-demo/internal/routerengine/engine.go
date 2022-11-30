@@ -1,6 +1,8 @@
 package routerengine
 
 import (
+	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
@@ -12,15 +14,22 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
 )
 
-type (
-	// routerEngine wraps "subservices' engines"
-	routerEngine struct {
-		routes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash
-		services map[subengines.SubEngineEnum]superwatcher.ServiceEngine
+// routerEngine wraps "subservices' engines"
+type routerEngine struct {
+	Routes   map[subengines.SubEngineEnum]map[common.Address][]common.Hash `json:"routes"`
+	Services map[subengines.SubEngineEnum]superwatcher.ServiceEngine       `json:"services"`
 
-		debugger *debugger.Debugger
+	debugger *debugger.Debugger
+}
+
+func (e *routerEngine) String() string {
+	b, err := json.Marshal(e)
+	if err != nil {
+		panic("failed to marshal routerEngine")
 	}
-)
+
+	return string(b)
+}
 
 func New(
 	routes map[subengines.SubEngineEnum]map[common.Address][]common.Hash,
@@ -28,8 +37,8 @@ func New(
 	logLevel uint8,
 ) superwatcher.ServiceEngine {
 	return &routerEngine{
-		routes:   routes,
-		services: services,
+		Routes:   routes,
+		Services: services,
 		debugger: debugger.NewDebugger("routerEngine", logLevel),
 	}
 }

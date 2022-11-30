@@ -8,7 +8,6 @@ import (
 	"github.com/wangjia184/sortedset"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
@@ -23,8 +22,8 @@ const (
 
 type MetadataTracker interface {
 	ClearUntil(blockNumber uint64)
-	SetBlockMetadata(callerMethod, *superwatcher.BlockInfo, *blockMetadata)
-	GetBlockMetadata(callerMethod, *superwatcher.BlockInfo) *blockMetadata
+	SetBlockMetadata(callerMethod, *blockMetadata)
+	GetBlockMetadata(callerMethod, uint64, string) *blockMetadata
 }
 
 // metadataTracker is an in-memory store for keeping engine internal states.
@@ -68,7 +67,6 @@ func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 
 func (t *metadataTracker) SetBlockMetadata(
 	caller callerMethod,
-	b *superwatcher.BlockInfo,
 	metadata *blockMetadata,
 ) {
 	t.Lock()
@@ -77,35 +75,36 @@ func (t *metadataTracker) SetBlockMetadata(
 	t.debugger.Debug(
 		3, "adding blockMetadata",
 		zap.String("caller", string(caller)),
-		zap.Uint64("blockNumber", b.Number),
-		zap.String("blockHash", b.String()),
+		zap.Uint64("blockNumber", metadata.blockNumber),
+		zap.String("blockHash", metadata.blockHash),
 		zap.Any("metadata artifacts", metadata.artifacts),
 	)
 
-	t.sortedSet.AddOrUpdate(b.String(), sortedset.SCORE(b.Number), metadata)
+	t.sortedSet.AddOrUpdate(metadata.blockHash, sortedset.SCORE(metadata.blockNumber), metadata)
 }
 
 func (t *metadataTracker) GetBlockMetadata(
 	caller callerMethod,
-	b *superwatcher.BlockInfo,
+	blockNumber uint64,
+	blockHash string,
 ) *blockMetadata {
 	t.RLock()
 	defer t.RUnlock()
 
-	node := t.sortedSet.GetByKey(b.String())
+	node := t.sortedSet.GetByKey(blockHash)
 	// Avoid panicking when assert type on nil value
 	if node == nil {
 		if caller == callerReorgedLogs {
 			logger.Panic(
 				"nil metadata for reorged block",
-				zap.Uint64("blockNumber", b.Number),
-				zap.String("blockHash", b.String()),
+				zap.Uint64("blockNumber", blockNumber),
+				zap.String("blockHash", blockHash),
 			)
 		}
 
 		return &blockMetadata{
-			blockNumber: b.Number,
-			blockHash:   b.String(),
+			blockNumber: blockNumber,
+			blockHash:   blockHash,
 		}
 	}
 

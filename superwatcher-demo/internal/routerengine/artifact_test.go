@@ -10,6 +10,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
 )
 
 func TestRouterArtifacts(t *testing.T) {
@@ -21,26 +23,37 @@ func TestRouterArtifacts(t *testing.T) {
 	dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
 	router := NewMockRouter(4, dgwENS, dgwPoolFactory)
 
-	artifacts, err := router.HandleGoodLogs(logsCasted, nil)
+	mapArtifacts, err := router.HandleGoodLogs(logsCasted, nil)
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	typeArtifacts := reflect.TypeOf(artifacts).String()
-	if typeArtifacts != "[]superwatcher.Artifact" {
-		t.Error("typeOf(artifacts)", typeArtifacts)
+	if len(mapArtifacts) == 0 {
+		t.Fatal("empty artifacts")
 	}
-	for _, seArtifacts := range artifacts {
-		typeSeArtifacts := reflect.TypeOf(seArtifacts).String()
-		if typeSeArtifacts != "[]superwatcher.Artifact" {
-			t.Error("typeOf(seArtifacts)", typeSeArtifacts)
-		}
 
-		for _, seArtifact := range seArtifacts.([]superwatcher.Artifact) {
-			typeSeArtifact := reflect.TypeOf(seArtifact).String()
-			if typeSeArtifact == "[]superwatcher.Artifact" {
-				t.Error("typeOf(seArtifact)", typeSeArtifact)
-			}
+	var artifacts []superwatcher.Artifact
+	for _, outArtifacts := range mapArtifacts {
+		artifacts = append(artifacts, outArtifacts...)
+	}
+
+	var artifactsENS []ensengine.ENSArtifact
+	var artifactsPoolFactory []uniswapv3factoryengine.PoolFactoryArtifact
+	for _, artifact := range artifacts {
+		switch artifact.(type) {
+		case ensengine.ENSArtifact:
+			artifactsENS = append(artifactsENS, artifact.(ensengine.ENSArtifact))
+		case uniswapv3factoryengine.PoolFactoryArtifact:
+			artifactsPoolFactory = append(artifactsPoolFactory, artifact.(uniswapv3factoryengine.PoolFactoryArtifact))
+		default:
+			t.Fatalf("unexpected artifact type: %s", reflect.TypeOf(artifact).String())
 		}
+	}
+
+	if len(artifactsENS) == 0 {
+		t.Fatal("0 ENS artifacts")
+	}
+	if len(artifactsPoolFactory) == 0 {
+		t.Fatal("0 PoolFactory artifacts")
 	}
 }

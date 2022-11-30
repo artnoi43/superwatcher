@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -21,13 +22,14 @@ func (e *ensEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	[]superwatcher.Artifact,
+	map[string][]superwatcher.Artifact,
 	error,
 ) {
 	e.debugger.Debug(3, "HandleGoodLogs called")
 
-	var outArtifacts []superwatcher.Artifact
+	var outArtifacts = make(map[string][]superwatcher.Artifact)
 	for _, log := range logs {
+		blockHash := gslutils.StringerToLowerString(log.BlockHash)
 		logArtifact, err := e.HandleGoodLog(log, artifacts)
 		if err != nil {
 			if errors.Is(err, internal.ErrNoNeedHandle) {
@@ -37,7 +39,7 @@ func (e *ensEngine) HandleGoodLogs(
 		}
 
 		artifacts = append(artifacts, logArtifact)
-		outArtifacts = append(outArtifacts, logArtifact)
+		outArtifacts[blockHash] = append(outArtifacts[blockHash], logArtifact)
 	}
 
 	return outArtifacts, nil
@@ -118,19 +120,20 @@ func (e *ensEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	[]superwatcher.Artifact,
+	map[string][]superwatcher.Artifact,
 	error,
 ) {
-	e.debugger.Debug(1, fmt.Sprintf("got %d reorged logs", len(logs)), zap.Any("got artifacts", artifacts))
+	e.debugger.Debug(1, fmt.Sprintf("got %d reorged logs and %d artifacts", len(logs), len(artifacts)), zap.Any("artifacts", artifacts))
 
-	var outputArtifacts []superwatcher.Artifact
+	var outputArtifacts = make(map[string][]superwatcher.Artifact)
 	for _, log := range logs {
+		blockHash := gslutils.StringerToLowerString(log.BlockHash)
 		ens, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {
 			return nil, errors.Wrap(err, "ensEngine.handleReorgedLog failed")
 		}
 
-		outputArtifacts = append(outputArtifacts, ens)
+		outputArtifacts[blockHash] = append(outputArtifacts[blockHash], ens)
 
 		err = e.dataGateway.DelENS(context.Background(), &ens.ENS)
 		if err != nil {

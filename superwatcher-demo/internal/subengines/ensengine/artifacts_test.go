@@ -19,14 +19,14 @@ func TestArtifacts(t *testing.T) {
 	blockHashes := make([]common.Hash, l)
 	names := make([]string, l)
 
-	for i := int64(1); i < l; i++ {
+	for i := int64(0); i < l; i++ {
 		txHashes[i] = common.BigToHash(big.NewInt(i))
 		blockHashes[i] = common.BigToHash(big.NewInt(i + 100))
 		names[i] = fmt.Sprintf("ens%d", i)
 	}
 
 	artifacts := make([]superwatcher.Artifact, l)
-	for i := int64(1); i < l; i++ {
+	for i := int64(0); i < l; i++ {
 		ensArtifact := ENSArtifact{
 			ENS: entity.ENS{
 				ID:          txHashes[i].String(),
@@ -40,8 +40,9 @@ func TestArtifacts(t *testing.T) {
 		artifacts[i] = ensArtifact
 	}
 
+	// Casted ENS Artifacts
 	var ensArtifacts = make([]ENSArtifact, l)
-	for i := int64(1); i < l; i++ {
+	for i := int64(0); i < l; i++ {
 		txHash := txHashes[i]
 		log := &types.Log{TxHash: txHash, Topics: []common.Hash{{}, txHash}}
 		out := prevRegistrarArtifact(log, artifacts)

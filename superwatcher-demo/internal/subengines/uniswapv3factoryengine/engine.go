@@ -45,12 +45,12 @@ func NewTestSuitePoolFactory(dgw datagateway.DataGatewayPoolFactory, logLevel ui
 	return &TestSuitePoolFactory{
 		Engine: poolFactoryEngine,
 		Routes: map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
-			subengines.SubEngineUniswapv3Pool: {
+			subengines.SubEngineUniswapv3Factory: {
 				poolFactoryContract.Address: poolFactoryTopics,
 			},
 		},
 		Services: map[subengines.SubEngineEnum]superwatcher.ServiceEngine{
-			subengines.SubEngineUniswapv3Pool: poolFactoryEngine,
+			subengines.SubEngineUniswapv3Factory: poolFactoryEngine,
 		},
 	}
 }

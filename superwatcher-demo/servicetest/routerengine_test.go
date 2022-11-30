@@ -60,9 +60,15 @@ func TestServiceEngineRouter(t *testing.T) {
 		if err != nil {
 			t.Errorf("error getting results from dgwENS: %s", err.Error())
 		}
+		if len(resultsENS) == 0 {
+			t.Fatalf("0 results from dgwENS")
+		}
 		resultsPoolFactory, err := dgwPoolFactory.GetPools(nil)
 		if err != nil {
 			t.Errorf("error getting results from dgwPoolFactory: %s", err.Error())
+		}
+		if len(resultsPoolFactory) == 0 {
+			t.Fatalf("0 results from dgwPoolFactory")
 		}
 
 		for _, result := range resultsENS {

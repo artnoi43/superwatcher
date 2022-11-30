@@ -1,8 +1,11 @@
 package uniswapv3factoryengine
 
 import (
+	"reflect"
+
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
@@ -43,14 +46,24 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 
 	// Find poolFactory artifact here
 	var poolArtifact PoolFactoryArtifact
-	for _, a := range artifacts {
-		pa, ok := a.(PoolFactoryArtifact)
-		if !ok {
-			e.debugger.Debug(1, "found non-pool artifact")
+	for _, artifacts := range artifacts {
+		pa, ok := artifacts.(PoolFactoryArtifact)
+		if ok {
+			poolArtifact = pa
 			continue
 		}
 
-		poolArtifact = pa
+		if !ok {
+			for _, artifact := range artifacts.([]superwatcher.Artifact) {
+				pa, ok := artifact.(PoolFactoryArtifact)
+				if !ok {
+					e.debugger.Debug(1, "found non-pool artifact", zap.String("actual type", reflect.TypeOf(artifact).String()))
+					continue
+				}
+
+				poolArtifact = pa
+			}
+		}
 	}
 
 	for _, event := range e.poolFactoryContract.ContractEvents {

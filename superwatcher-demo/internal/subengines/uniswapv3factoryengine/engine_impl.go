@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
@@ -26,37 +27,46 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	[]superwatcher.Artifact,
+	map[string][]superwatcher.Artifact,
 	error,
 ) {
 	// New artifact is created for new logs
-	var logArtifact PoolFactoryArtifact
-	var err error
+	var retArtifacts = make(map[string][]superwatcher.Artifact)
 	for _, log := range logs {
-		logArtifact, err = e.handleGoodLog(log)
+		logArtifact, err := e.handleGoodLog(log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "poolfactory.HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
+
+		blockHash := gslutils.StringerToLowerString(log.BlockHash)
+		retArtifacts[blockHash] = append(retArtifacts[blockHash], logArtifact)
 	}
 
 	// poolArtifact is a map, use one instance returned from HandleGoodLog
-	return []superwatcher.Artifact{logArtifact}, nil
+	return retArtifacts, nil
 }
 
-func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
+func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(
+	logs []*types.Log,
+	artifacts []superwatcher.Artifact,
+) (
+	map[string][]superwatcher.Artifact,
+	error,
+) {
 	e.debugger.Debug(1, "poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
-	var logArtifact PoolFactoryArtifact
-	var err error
+	var retArtifacts = make(map[string][]superwatcher.Artifact)
 	for _, log := range logs {
-		logArtifact, err = e.handleReorgedLog(log, artifacts)
+		logArtifact, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {
 			return nil, errors.Wrap(err, "uniswapv3PoolFactoryEngine.handleReorgedLog failed")
 		}
 
+		blockHash := gslutils.StringerToLowerString(log.BlockHash)
+		retArtifacts[blockHash] = append(retArtifacts[blockHash], logArtifact)
 	}
 
-	return []superwatcher.Artifact{logArtifact}, nil
+	return retArtifacts, nil
 }
 
 func (e *uniswapv3PoolFactoryEngine) HandleEmitterError(err error) error {

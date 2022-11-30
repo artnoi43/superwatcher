@@ -76,6 +76,7 @@ func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensS
 		FilterRange:   10,
 		GoBackRetries: 2,
 		LoopInterval:  0,
+		LogLevel:      4,
 	}
 
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine

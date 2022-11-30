@@ -77,27 +77,24 @@ func testHandleGoodLogs(
 
 	// Should have len == 1, since this is just a single call to HandleGoodLogs
 	// and the demoEngine only has 1 sub-engine.
-	artifacts, err := routerEngine.HandleGoodLogs(logs, nil)
+	mapArtifacts, err := routerEngine.HandleGoodLogs(logs, nil)
 	if err != nil {
 		t.Errorf("error in demoEngine.HandleGoodLogs: %s", err.Error())
 	}
-	t.Logf("len artifacts: %d\n", len(artifacts))
-	if l := len(artifacts); l != numSubEngines {
-		t.Errorf("unexpected artifacts len - expected 1, got %d", l)
-	}
 
-	for i, artifact := range artifacts {
-		engineArtifacts := artifact.([]superwatcher.Artifact)
-		for j, engineArtifact := range engineArtifacts {
-			switch engineArtifact.(type) {
+	for blockHash, artifacts := range mapArtifacts {
+		t.Logf("len artifacts for blockHash %s: %d\n", blockHash, len(artifacts))
+
+		for i, artifact := range artifacts {
+			switch artifact.(type) {
 			case ensengine.ENSArtifact:
-				err = assertType[ensengine.ENSArtifact](engineArtifact)
+				err = assertType[ensengine.ENSArtifact](artifact)
 			case uniswapv3factoryengine.PoolFactoryArtifact:
-				err = assertType[uniswapv3factoryengine.PoolFactoryArtifact](engineArtifact)
+				err = assertType[uniswapv3factoryengine.PoolFactoryArtifact](artifact)
 			}
 
 			if err != nil {
-				t.Fatalf("%d - %d: %s\n", i, j, err.Error())
+				t.Fatalf("%d: %s\n", i, err.Error())
 			}
 		}
 	}

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines"
@@ -51,24 +51,49 @@ func prevRegistrarArtifact(log *types.Log, artifacts []superwatcher.Artifact) *E
 
 func collectArtifactsENS(artifacts []superwatcher.Artifact) []ENSArtifact {
 	var ensArtifacts []ENSArtifact //nolint:prealloc
-	for _, artifact := range artifacts {
+	for i, artifact := range artifacts {
+		if artifact == nil {
+			panic(fmt.Sprintf("nil artifact at index %d", i))
+		}
+
 		ensArtifact, ok := artifact.(ENSArtifact)
-		if !ok {
+		if ok {
+			ensArtifacts = append(ensArtifacts, ensArtifact)
 			continue
 		}
 
-		ensArtifacts = append(ensArtifacts, ensArtifact)
+		for _, seArtifact := range artifact.([]superwatcher.Artifact) {
+			ensArtifact, ok := seArtifact.(ENSArtifact)
+			if !ok {
+				continue
+			}
+
+			ensArtifacts = append(ensArtifacts, ensArtifact)
+		}
 	}
 
 	return ensArtifacts
 }
 
 func filterRegistrarArtifact(log *types.Log, artifacts []ENSArtifact) ENSArtifact {
+	if artifacts == nil {
+		panic("nil artifacts")
+	}
+	if len(artifacts) == 0 {
+		panic(fmt.Sprintf("0 artifacts from blockHash %s", log.BlockHash.String()))
+	}
+
 	for _, artifact := range artifacts {
-		ensID := log.Topics[1].String()
-		if artifact.ENS.ID == gslutils.ToLower(ensID) {
+		ensID := gslutils.StringerToLowerString(log.Topics[1])
+		if artifact.ENS.ID == ensID {
 			return artifact
 		}
+
+		txHash := gslutils.StringerToLowerString(log.TxHash)
+		if artifact.ENS.TxHash == txHash {
+			return artifact
+		}
+
 	}
 
 	panic(fmt.Sprintf("no such artifact for txHash %s", log.TxHash.String()))

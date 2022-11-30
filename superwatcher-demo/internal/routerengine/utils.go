@@ -1,10 +1,10 @@
 package routerengine
 
 import (
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
@@ -26,7 +26,7 @@ func (e *routerEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubE
 }
 
 func (e *routerEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum, bool) {
-	for subEngine, addrTopics := range e.routes {
+	for subEngine, addrTopics := range e.Routes {
 		for address, topics := range addrTopics {
 			if address == log.Address {
 				if gslutils.Contains(topics, log.Topics[0]) {
@@ -46,7 +46,7 @@ func (e *routerEngine) logToService(log *types.Log) superwatcher.ServiceEngine {
 		logger.Panic("log address not mapped to subengine - should not happen", zap.String("address", log.Address.String()))
 	}
 
-	serviceEngine, ok := e.services[subEngine]
+	serviceEngine, ok := e.Services[subEngine]
 	if !ok {
 		logger.Panic(
 			"usecase has no service",
@@ -55,4 +55,13 @@ func (e *routerEngine) logToService(log *types.Log) superwatcher.ServiceEngine {
 	}
 
 	return serviceEngine
+}
+
+func mergeArtifacts(
+	routerArtifacts map[string][]superwatcher.Artifact, // Usually empty
+	subEngineArtifacts map[string][]superwatcher.Artifact,
+) {
+	for blockHash := range subEngineArtifacts {
+		routerArtifacts[blockHash] = append(routerArtifacts[blockHash], subEngineArtifacts[blockHash]...)
+	}
 }

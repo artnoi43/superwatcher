@@ -31,7 +31,7 @@ func testHandleENSLogs(t *testing.T, logsJSON, logsName string) {
 	ensNamesExpected := expecteds[logsJSON]
 
 	var artifacts []superwatcher.Artifact
-	artifacts, err := ensEngine.HandleGoodLogs(logs, artifacts)
+	_, err := ensEngine.HandleGoodLogs(logs, artifacts)
 	if err != nil {
 		t.Errorf("HandleGoodLogs error: %s", err.Error())
 	}
