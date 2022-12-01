@@ -83,10 +83,10 @@ func (e *emitter) filterLogs(
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
-	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogsByHashes(eventLogs)
+	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogs(eventLogs)
 
-	// wasReorged maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
-	wasReorged, err := processReorged(
+	// reorgedBlocks maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
+	reorgedBlocks, err := processReorg(
 		e.tracker,
 		fromBlock,
 		toBlock,
@@ -101,7 +101,9 @@ func (e *emitter) filterLogs(
 	// Fills |filterResult| and saves current data back to tracker first.
 	filterResult := new(superwatcher.FilterResult)
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
-		if wasReorged[blockNumber] {
+
+		// Reorged blocks (the ones that were removed) will be published with data from tracker
+		if reorgedBlocks[blockNumber] {
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
 				logger.Panic(
@@ -125,6 +127,7 @@ func (e *emitter) filterLogs(
 			filterResult.ReorgedBlocks = append(filterResult.ReorgedBlocks, reorgedBlock)
 		}
 
+		// New blocks will use fresh information. This includes new block after a reorg.
 		logs, ok := mapFreshLogs[blockNumber]
 		if !ok {
 			continue
@@ -153,20 +156,22 @@ func (e *emitter) filterLogs(
 	// Results will not be published, so the engine will never know that fromBlock is reorging.
 	// **The reorged blocks different hashes have also been saved to tracker,
 	// so if they come back in the next loop, with the same hash here, they'll be marked as non-reorg blocks**.
-	if wasReorged[fromBlock] {
+	if reorgedBlocks[fromBlock] {
 		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
 	}
 
 	filterResult.FromBlock = fromBlock
 	filterResult.ToBlock = toBlock
 
+	// TODO: Test this
 	// Decide result.LastGoodBlock
-	if len(wasReorged) == 0 {
+	if len(reorgedBlocks) == 0 {
 		// If no reorg, just use toBlock
 		filterResult.LastGoodBlock = toBlock
 
-	} else {
 		// If reorg (there should be goodBlocks too)
+	} else {
+		// If there's also goodBlocks during reorg
 		if l := len(filterResult.GoodBlocks); l != 0 {
 			// Use last good block's number as LastGoodBlock
 			lastGood := filterResult.GoodBlocks[l-1].Number

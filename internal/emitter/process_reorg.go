@@ -8,8 +8,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-// mapFreshLogsByHashes collects and maps information from the logs filtered.
-func mapFreshLogsByHashes(
+// mapFreshLogs collects and maps information from the logs filtered into 3 hashmaps, with blockNumber as key.
+func mapFreshLogs(
 	freshLogs []types.Log,
 ) (
 	mapFreshHashes map[uint64]common.Hash,
@@ -78,9 +78,10 @@ func mapFreshLogsByHashes(
 	}
 */
 
-// processReorged compares fresh hashes and hashes saved in tracker, and prepends reorged blocks to mapProcessLogs.
+// processReorg compares fresh hashes and hashes saved in tracker, and prepends reorged blocks to mapProcessLogs.
+// processReorg returns a map of blockNumber and a bool indicating if chain reorg was detected on that blockNumber.
 // Note: Go maps are passed by reference, so there's no need to return the map.
-func processReorged(
+func processReorg(
 	tracker *blockInfoTracker,
 	fromBlock, toBlock uint64,
 	// New hashes from *ethclient.Client.HeaderByNumber
@@ -95,7 +96,7 @@ func processReorged(
 	error,
 ) {
 	// This map will be returned to caller.
-	wasReorged := make(map[uint64]bool)
+	reorgedChain := make(map[uint64]bool)
 
 	for blockNumber := toBlock; blockNumber >= toBlock; blockNumber-- {
 		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
@@ -121,7 +122,7 @@ func processReorged(
 		}
 
 		// REORG HAPPENED!
-		wasReorged[blockNumber] = true
+		reorgedChain[blockNumber] = true
 		// Mark every log in this block as removed
 		for _, oldLog := range trackerBlock.Logs {
 			oldLog.Removed = true
@@ -131,5 +132,5 @@ func processReorged(
 		mapProcessLogs[blockNumber] = append(trackerBlock.Logs, mapProcessLogs[blockNumber]...)
 	}
 
-	return wasReorged, nil
+	return reorgedChain, nil
 }

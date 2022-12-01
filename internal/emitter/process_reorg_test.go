@@ -103,9 +103,9 @@ func testProcessReorg(c testConfig) error {
 		}
 	}
 
-	freshHashes, freshLogs, processLogs := mapFreshLogsByHashes(reorgedLogs)
+	freshHashes, freshLogs, processLogs := mapFreshLogs(reorgedLogs)
 
-	wasReorged, err := processReorged(
+	wasReorged, err := processReorg(
 		tracker,
 		c.FromBlock,
 		c.ToBlock,
