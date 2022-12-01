@@ -2,11 +2,13 @@ package emitter
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
@@ -103,11 +105,14 @@ func processReorged(
 	mapFreshHashes map[uint64]common.Hash, // New hashes from *ethclient.Client.HeaderByNumber
 	mapFreshLogs map[uint64][]*types.Log, // New logs from *ethclient.Client.FilterLogs
 	mapProcessLogs map[uint64][]*types.Log, // Concatenated logs from both old and reorged chains
-) map[uint64]bool {
+) (
+	map[uint64]bool,
+	error,
+) {
 	// This map will be returned to caller. True means the block was reorged and had different hashes.
 	wasReorged := make(map[uint64]bool)
 
-	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
+	for blockNumber := toBlock; blockNumber >= toBlock; blockNumber-- {
 		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
 		// which are not yet 'reorged' at the execution time.
 		trackerBlock, foundInTracker := tracker.getTrackerBlockInfo(blockNumber)
@@ -115,13 +120,18 @@ func processReorged(
 			continue
 		}
 
-		// If tracker's is the same from recently filtered hash, i.e. no reorg
-		// logger.Info("found block in tracker, comparing hashes in tracker", zap.Uint64("blockNumber", blockNumber))
+		// If tracker's is the same from recently filtered hash.
+		// i.e. No reorg
 		if h := mapFreshHashes[blockNumber]; h == trackerBlock.Hash {
 			// Mark blockNumber with identical hash (no reorg)
 			if len(mapFreshLogs[blockNumber]) == len(trackerBlock.Logs) {
 				continue
 			}
+
+			return wasReorged, fmt.Errorf(
+				"tracker has different number of logs for identical blockHash %s",
+				gslutils.StringerToLowerString(h),
+			)
 		}
 
 		// REORG HAPPENED!
@@ -134,5 +144,5 @@ func processReorged(
 		mapProcessLogs[blockNumber] = append(trackerBlock.Logs, mapProcessLogs[blockNumber]...)
 	}
 
-	return wasReorged
+	return wasReorged, nil
 }

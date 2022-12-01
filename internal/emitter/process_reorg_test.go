@@ -107,7 +107,7 @@ func testProcessReorg(c testConfig) error {
 
 	freshHashes, freshLogs, processLogs := mapFreshLogsByHashes(reorgedLogs, reorgedHeader)
 
-	wasReorged := processReorged(
+	wasReorged, err := processReorged(
 		tracker,
 		c.FromBlock,
 		c.ToBlock,
@@ -115,6 +115,10 @@ func testProcessReorg(c testConfig) error {
 		freshLogs,
 		processLogs,
 	)
+
+	if err != nil {
+		return err
+	}
 
 	for blockNumber, reorged := range wasReorged {
 		// Any blocks after c.reorgedAt should be reorged.

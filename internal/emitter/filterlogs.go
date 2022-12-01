@@ -118,7 +118,7 @@ func (e *emitter) filterLogs(
 	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogsByHashes(eventLogs, headersByBlockNumber)
 
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
-	wasReorged := processReorged(
+	wasReorged, err := processReorged(
 		e.tracker,
 		fromBlock,
 		toBlock,
@@ -126,6 +126,9 @@ func (e *emitter) filterLogs(
 		mapFreshLogs,
 		mapProcessLogs,
 	)
+	if err != nil {
+		return errors.Wrap(err, "error detecting chain reorg")
+	}
 
 	// If fromBlock was reorged, then return to loopFilterLogs
 	if wasReorged[fromBlock] {
