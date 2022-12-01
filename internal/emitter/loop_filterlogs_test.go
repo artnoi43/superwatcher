@@ -8,17 +8,26 @@ import (
 
 func TestComputeFromBlockToBlock(t *testing.T) {
 	type testCase struct {
-		Name               string           `json:"Name"`
-		CurrentBlock       uint64           `json:"currentBlock"`
-		LastRecordedBlocks uint64           `json:"lastRecordedBlocks"`
-		FilterRange        uint64           `json:"filterRange"`
-		GoBackRetries      uint64           `json:"goBackRetries"`
-		GoBackFirstStart   bool             `json:"goBackFirstStart"`
-		Status             *filterLogStatus `json:"status"`
+		Name               string `json:"Name"`
+		CurrentBlock       uint64 `json:"currentBlock"`
+		LastRecordedBlocks uint64 `json:"lastRecordedBlocks"`
+		FilterRange        uint64 `json:"filterRange"`
+		MaxRetries         uint64 `json:"goBackRetries"`
+		GoBackFirstStart   bool   `json:"goBackFirstStart"`
+		Reorging           bool   `json:"reorging"`
 	}
 
-	normalStatus := &filterLogStatus{IsReorging: false}
-	reorgingStatus := &filterLogStatus{IsReorging: true}
+	newStatus := func(isReorging bool, fromBlock, toBlock uint64) *filterLogStatus {
+		return &filterLogStatus{
+			IsReorging:   isReorging,
+			FromBlock:    fromBlock,
+			ToBlock:      toBlock,
+			RetriesCount: 1,
+		}
+	}
+
+	reorging := true
+	firstStart := true
 
 	// Maps testCase to fromBlock, toBlock
 	tests := map[testCase]struct{ fromBlock, toBlock uint64 }{
@@ -27,105 +36,95 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       200,
 			LastRecordedBlocks: 10, // Base
 			FilterRange:        10, // FilterRange
-			GoBackRetries:      2,
-			GoBackFirstStart:   false,
-			Status:             normalStatus,
+			MaxRetries:         2,
 		}: {
 			fromBlock: 1,  // (Base+1) + FilterRange
-			toBlock:   21, // fromBlock + FilterRange
+			toBlock:   20, // fromBlock + FilterRange
 		},
 		{
 			Name:               "normal_100",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 100, // Base
 			FilterRange:        10,  // FilterRange
-			GoBackRetries:      2,
-			GoBackFirstStart:   false,
-			Status:             normalStatus,
+			MaxRetries:         2,
 		}: {
 			fromBlock: 91,  // (Base+1) - FilterRange
-			toBlock:   111, // fromBlock + FilterRange
+			toBlock:   110, // fromBlock + FilterRange
 		},
 		{
 			Name:               "reorging_10",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 10, // Base
 			FilterRange:        10, // FilterRange
-			GoBackRetries:      2,
-			GoBackFirstStart:   false,
-			Status:             reorgingStatus, // GoBack
+			MaxRetries:         2,
+			Reorging:           reorging,
 		}: {
-			fromBlock: 1,  // (Base+1) - GoBack
-			toBlock:   11, // fromBlock + FilterRange
+			fromBlock: 0,  // (Base+1) - GoBack
+			toBlock:   10, // fromBlock + FilterRange
 		},
 		{
 			Name:               "reorging_100",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 100, // Base
 			FilterRange:        10,
-			GoBackRetries:      2,
-			GoBackFirstStart:   false,
-			Status:             reorgingStatus, // GoBack
+			MaxRetries:         2,
+			Reorging:           reorging,
 		}: {
-			fromBlock: 81, // (Base+1) - GoBack
-			toBlock:   91, // fromBlock + FilterRange
+			fromBlock: 81,  // (Base+1) - GoBack
+			toBlock:   100, // fromBlock + FilterRange
 		},
 		{
 			Name:               "normal_first_100",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 100, // Base
 			FilterRange:        10,
-			GoBackRetries:      2,
-			GoBackFirstStart:   true, // GoBack
-			Status:             normalStatus,
+			MaxRetries:         2,
+			GoBackFirstStart:   firstStart, // GoBack
 		}: {
 			fromBlock: 81, // (Base+1) - GoBack
-			toBlock:   91, // fromBlock + FilterRange
+			toBlock:   90, // fromBlock + FilterRange
 		},
 		{
 			Name:               "normal_first_50",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 50, // Base
 			FilterRange:        10,
-			GoBackRetries:      2,
-			GoBackFirstStart:   true, // GoBack
-			Status:             normalStatus,
+			MaxRetries:         2,
+			GoBackFirstStart:   firstStart, // GoBack
 		}: {
 			fromBlock: 31, // (Base+1) - GoBack
-			toBlock:   41, // fromBlock + FilterRange
+			toBlock:   40, // Base + FilterRange
 		},
 		{
 			Name:               "reorg_first_100",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 100, // Base
 			FilterRange:        10,
-			GoBackRetries:      2,
-			GoBackFirstStart:   true, // GoBack
-			Status:             normalStatus,
+			MaxRetries:         2,
+			GoBackFirstStart:   firstStart, // GoBack
+			Reorging:           reorging,
 		}: {
 			fromBlock: 81, // (Base+1) - GoBack
-			toBlock:   91, // fromBlock + FilterRange
+			toBlock:   90, // fromBlock + FilterRange
 		},
 		{
 			Name:               "reorg_first_50",
 			CurrentBlock:       200,
 			LastRecordedBlocks: 50, // Base
 			FilterRange:        10,
-			GoBackRetries:      2,
-			GoBackFirstStart:   true, // GoBack
-			Status:             normalStatus,
+			MaxRetries:         2,
+			GoBackFirstStart:   firstStart, // GoBack
+			Reorging:           reorging,
 		}: {
 			fromBlock: 31, // (Base+1) - GoBack
-			toBlock:   41, // fromBlock + FilterRange
+			toBlock:   40, // fromBlock + FilterRange
 		},
 		{
 			Name:               "normal_6999",
 			CurrentBlock:       7000,
 			LastRecordedBlocks: 6999, // Base
 			FilterRange:        10,   // FilterRange
-			GoBackRetries:      2,
-			GoBackFirstStart:   false,
-			Status:             normalStatus,
+			MaxRetries:         2,
 		}: {
 			fromBlock: 6990, // (Base+1) - FilterRange
 			toBlock:   7000, // fromBlock + FilterRange
@@ -135,12 +134,11 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       7000,
 			LastRecordedBlocks: 6999, // Base
 			FilterRange:        10,
-			GoBackRetries:      2,
-			GoBackFirstStart:   true, // GoBack
-			Status:             normalStatus,
+			MaxRetries:         2,
+			GoBackFirstStart:   firstStart,
 		}: {
 			fromBlock: 6980, // (Base+1) - GoBack
-			toBlock:   6990, // fromBlock + FilterRange
+			toBlock:   6989, // fromBlock + FilterRange
 		},
 
 		{
@@ -148,25 +146,31 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       15000,
 			LastRecordedBlocks: 14999, // Base
 			FilterRange:        2000,
-			GoBackRetries:      2,
-			GoBackFirstStart:   true, // GoBack
-			Status:             normalStatus,
+			MaxRetries:         2,
+			GoBackFirstStart:   firstStart,
 		}: {
 			fromBlock: 11000, // (Base+1) - GoBack
-			toBlock:   13000, // fromBlock + FilterRange
+			toBlock:   12999, // fromBlock + FilterRange
 		},
 	}
 
 	for test, expected := range tests {
-		fromBlock, toBlock := computeFromBlockToBlock(
+		prevFromBlock := 1 + test.LastRecordedBlocks - test.FilterRange
+
+		fromBlock, toBlock, err := computeFromBlockToBlock(
 			test.CurrentBlock,
 			test.LastRecordedBlocks,
 			test.FilterRange,
-			test.GoBackRetries,
+			test.MaxRetries,
 			&test.GoBackFirstStart,
-			test.Status,
-			debugger.NewDebugger("testComputeFromBlockToBlock", 2),
+			newStatus(test.Reorging, prevFromBlock, test.LastRecordedBlocks),
+			test.MaxRetries,
+			debugger.NewDebugger("testComputeFromBlockToBlock", 4),
 		)
+
+		if err != nil {
+			t.Error("error from computingFromBlockToBlock", err.Error())
+		}
 
 		var failed bool
 		if fromBlock != expected.fromBlock {
@@ -179,7 +183,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 		}
 
 		if failed {
-			t.Fatalf("unexpected result")
+			t.Error("unexpected result")
 		}
 	}
 }

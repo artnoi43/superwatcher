@@ -2,7 +2,7 @@ package emitter
 
 import "testing"
 
-func TestFromBlockToBlock(t *testing.T) {
+func TestFromBlockToBlockNormal(t *testing.T) {
 	type blocknums struct {
 		current     uint64
 		lastRec     uint64
@@ -20,7 +20,7 @@ func TestFromBlockToBlock(t *testing.T) {
 			filterRange: 300,
 		}: {
 			fromBlock: 0,
-			toBlock:   401,
+			toBlock:   400,
 		},
 		{
 			current:     6000,
@@ -28,18 +28,19 @@ func TestFromBlockToBlock(t *testing.T) {
 			filterRange: 300,
 		}: {
 			fromBlock: 201,
-			toBlock:   801,
+			toBlock:   800,
 		},
 	}
+
 	for input, expected := range tests {
-		from, to := fromBlockToBlock(input.current, input.lastRec, input.filterRange)
+		from, to := fromBlockToBlockNormal(input.current, input.lastRec, input.filterRange)
 		var failed bool
 		if expected.fromBlock != from {
-			t.Fatal("fromBlock not matched")
+			t.Fatalf("fromBlock not matched: expecting %d, got %d", expected.fromBlock, from)
 			failed = true
 		}
 		if expected.toBlock != to {
-			t.Fatal("toBlock not matched")
+			t.Fatalf("toBlock not matched: expecting %d, got %d", expected.toBlock, to)
 			failed = true
 		}
 

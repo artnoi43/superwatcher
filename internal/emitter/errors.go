@@ -13,7 +13,8 @@ var (
 	errFetchLogs   = errors.Wrap(errFetchError, "failed to filter logs")
 	errNoHash      = errors.Wrap(errFetchError, "missing hash for a block")
 
-	ErrEmitterShutdown = errors.New("emitter was told to shutdown - Loop context done")
+	ErrMaxRetriesReached = errors.New("emitter has reached max goBackRetries")
+	ErrEmitterShutdown   = errors.New("emitter was told to shutdown - Loop context done")
 )
 
 // wrapErrBlockNumber wraps err with |sentinelError| (if not nil) and blockNumber

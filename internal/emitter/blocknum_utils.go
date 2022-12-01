@@ -1,26 +1,36 @@
 package emitter
 
-import "github.com/artnoi43/gsl/gslutils"
+import (
+	"github.com/artnoi43/gsl/gslutils"
+)
 
 // * firstBlock = min(current block, lastRecordedBlock+1)
 // * lastBlock = min(current block, firstBlock + filterRange)
 // * FilterLog(firstBlock - filterRange, lastBlock)
 
-// fromBlockToBlock returns fromBlock and toBlock for emitter.filterLogs in **normal** circumstances.
+// fromBlockToBlockNormal returns fromBlock and toBlock for emitter.filterLogs in **normal** circumstances.
 // If the chain is reorging, or if there is any exception, use something else to compute the numbers.
-func fromBlockToBlock(curr, lastRecorded, filterRange uint64) (fromBlock, toBlock uint64) {
-	l := gslutils.Min([]uint64{curr, lastRecorded + 1})
-	r := gslutils.Min([]uint64{curr, l + filterRange})
+func fromBlockToBlockNormal(
+	currentBlock uint64,
+	lastRecordedBlock uint64,
+	filterRange uint64,
+) (
+	fromBlock uint64,
+	toBlock uint64,
+) {
+	firstNewBlock := lastRecordedBlock + 1
+	firstNewBlock = gslutils.Min([]uint64{currentBlock, firstNewBlock})
 
-	// uint can't be negative.
-	// e.g. filterRange 300, currentBlock 100 will lead to uint overflow
-	if filterRange > lastRecorded {
+	toBlock = gslutils.Min([]uint64{currentBlock, lastRecordedBlock + filterRange})
+
+	// Type uint64 can't be negative.
+	// TODO: Check if this is right
+	// e.g. firstNewBlock for next loop is 50, but the range is 100
+	if filterRange > firstNewBlock {
 		fromBlock = 0
 	} else {
-		fromBlock = l - filterRange
+		fromBlock = firstNewBlock - filterRange
 	}
-
-	toBlock = r
 
 	return fromBlock, toBlock
 }

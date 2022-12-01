@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -17,7 +18,9 @@ type filterLogStatus struct {
 	ToBlock           uint64 `json:"toBlock"`
 	CurrentBlock      uint64 `json:"currentBlock"`
 	LastRecordedBlock uint64 `json:"lastRecordedBlock"`
-	IsReorging        bool   `json:"isReorging"`
+
+	IsReorging   bool   `json:"isReorging"`
+	RetriesCount uint64 `json:"goBackRetries"` // Tracks how many times the emitter has to goBack because fromBlock was reorged
 }
 
 func (e *emitter) sleep() {
@@ -67,15 +70,22 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 
 				return errors.Wrap(err, "emitter failed to compute fromBlock and toBlock")
 			}
-
-			toggleStatusIsReorging := func(isReorging bool) {
+			// updateStatus is called after e.filterLogs returned. It updates status to newStatus,
+			// and also increments the counter for tracking retries during reorg.
+			updateStatus := func(isReorging bool) {
 				status = newStatus
 				status.IsReorging = isReorging
+
+				if isReorging {
+					status.RetriesCount++
+				} else {
+					// Reset counter
+					status.RetriesCount = 0
+				}
 			}
 
 			e.debugger.Debug(
-				2,
-				"calling filterLogs",
+				2, "calling filterLogs",
 				zap.Any("current_status", newStatus),
 			)
 
@@ -86,17 +96,16 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			); err != nil {
 				if errors.Is(err, errFromBlockReorged) {
 					// Continue to filter from fromBlock
-					toggleStatusIsReorging(true)
+					updateStatus(true)
 
 					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", newStatus))
 					continue
 
 				}
-
 				return errors.Wrap(err, "unexpected filterLogs error")
 			}
 
-			toggleStatusIsReorging(false)
+			updateStatus(false)
 
 			e.debugger.Debug(
 				1,
@@ -144,7 +153,7 @@ func (e *emitter) computeFromBlockToBlock(
 	status.LastRecordedBlock = lastRecordedBlock
 
 	e.debugger.Debug(
-		1,
+		2,
 		"recent blocks",
 		zap.Uint64("currentChainBlock", currentBlock),
 		zap.Uint64("lastRecordedBlock", lastRecordedBlock),
@@ -157,15 +166,21 @@ func (e *emitter) computeFromBlockToBlock(
 		}
 	}
 
-	fromBlock, toBlock := computeFromBlockToBlock(
+	fromBlock, toBlock, err := computeFromBlockToBlock(
 		currentBlock,
 		lastRecordedBlock,
 		e.conf.FilterRange,
 		e.conf.GoBackRetries,
 		goBackFirstStart,
 		status,
+		e.conf.GoBackRetries,
 		e.debugger,
 	)
+
+	// If fromBlock was too far back, i.e. fromBlock = 0
+	if fromBlock < e.conf.StartBlock && toBlock >= e.conf.StartBlock {
+		fromBlock = e.conf.StartBlock
+	}
 
 	return &filterLogStatus{
 		FromBlock:         fromBlock,
@@ -173,12 +188,19 @@ func (e *emitter) computeFromBlockToBlock(
 		CurrentBlock:      currentBlock,
 		LastRecordedBlock: lastRecordedBlock,
 		IsReorging:        status.IsReorging,
+		RetriesCount:      status.RetriesCount,
 	}, nil
 }
 
 // computeFromBlockToBlock defines a more higher-level computation logic for getting fromBlock and toBlock.
 // It takes into account the emitter's config, the emitter status, chain status, etc.
-// TODO: Test this func
+// There are 3 possible cases when computing fromBlock and toBlock:
+// (1) `goBackFirstStart` - this is when this function call is called when the emitter just started.
+// The emitter will "go back" to `lastRecordedBlock - (filterRange * maxRetries)`
+// (2) `status.IsReorging` - this is when emitter.filterLogs detected that the previous fromBlock was reorged.
+// The emitter will "go back" to `previous fromBlock - filterRange`. This logic continues until fromBlock is no longer reorging.
+// (3) Normal cases - this should be the base case for computing fromBlock and toBlock.
+// The emitter will use `fromBlockToBlockNormal` function to compute the values.
 func computeFromBlockToBlock(
 	currentBlock uint64,
 	lastRecordedBlock uint64,
@@ -186,48 +208,106 @@ func computeFromBlockToBlock(
 	goBackRetries uint64,
 	goBackFirstStart *bool,
 	status *filterLogStatus,
+	maxRetries uint64,
 	debugger *debugger.Debugger,
 ) (
 	uint64,
 	uint64,
+	error,
 ) {
 	var fromBlock, toBlock uint64
 
 	// Special case
-	if *goBackFirstStart || status.IsReorging {
-		// Toggle
+	if *goBackFirstStart {
+		// Start with going back for filterRange * goBackRetries blocks if watcher was restarted
+
 		*goBackFirstStart = false
 
-		// TODO: Implement maxGoBack
-		// Start with going back filterRange * goBackRetries times if watcher was restarted
-		base := lastRecordedBlock + 1
+		// lastRecordedBlock = 80, filterRange = 10, maxRetries = 5
+		// 1st run: from(31), to(40)   [goBackFirstStart] -> lastRecordedBlock = 40 (goBack: range = 5)
+		// 2nd run: from(31), to(50)   [normalCase]       -> lastRecordedBlock = 50 (range = 10)
+		// 3rd run: from(41), to(60)   [normalCase]       -> lastRecordedBlock = 60 (range = 10)
+
+		firstNewBlock := lastRecordedBlock + 1
 		goBack := filterRange * goBackRetries
 
 		// Prevent overflow
-		if goBack > base {
-			fromBlock = 1
-		} else {
-			fromBlock = base - goBack
-		}
-		toBlock = fromBlock + filterRange
-
-		if debugger != nil {
+		if goBack > firstNewBlock {
 			debugger.Debug(
-				1,
-				"emitter: first run, going back",
-				zap.Uint64("lastRecordedBlock", lastRecordedBlock),
+				1, "goBack > firstNewBlock",
+				zap.Uint64("goBack", goBack),
+				zap.Uint64("firstNewBlock", firstNewBlock),
+			)
+
+			fromBlock = 0
+		} else {
+			fromBlock = firstNewBlock - goBack
+		}
+
+		// The range is the same in firstStart
+		toBlock = fromBlock + filterRange - 1
+
+		debugger.Debug(
+			1,
+			"emitter: first run, going back",
+			zap.Uint64("lastRecordedBlock", lastRecordedBlock),
+			zap.Uint64("goBack", goBack),
+			zap.Uint64("fromBlock", fromBlock),
+		)
+
+	} else if status.IsReorging {
+
+		// The lookBack range will grow after each retries, but not the forward range
+		// lastRecordedBlock = 80, filterRange = 10
+		// 71 - 90   # none reorged in this loop       lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80   = 10
+		// 81 - 100  # none reoged in this loop        lastRecordedBlock = 100, lookBack = 10  fwdRange = 100 - 90  = 10
+		// 91 - 110  # 91 reorged in this loop         lastRecordedBlock = 110, lookBack = 10  fwdRange = 110 - 100 = 10
+		// 81 - 110  # 81 reorged in this loop         lastRecordedBlock = 110, lookBack = 15  fwdRange = 110 - 110 = 0
+		// 71 - 110  # 71 reorged in this loop         lastRecordedBlock = 110, lookBack = 20  fwdRange = 110 - 110 = 0
+		// 61 - 110  # none reorged in this loop       lastRecordedBlock = 110, lookBack = 25, fwdRange = 110 - 110 = 0
+		// 101 - 120 # normal case continues           lastRecordedBlock = 120, lookBack = 10, fwdRange = 120 - 110 = 10
+
+		if status.RetriesCount > maxRetries {
+			return status.FromBlock, status.ToBlock, errors.Wrapf(ErrMaxRetriesReached, "%d goBackRetries", status.RetriesCount)
+		}
+
+		// We don't need to do `goBack := filterRange - status.RetriesCount`
+		// because toBlock is fixed and fromBlock goes back by `filterRange` each loop.
+		goBack := filterRange
+
+		// goBack 1500 fromBlock 1050
+		if goBack > status.FromBlock {
+			debugger.Debug(
+				1, "goBack > fromBlock",
 				zap.Uint64("goBack", goBack),
 				zap.Uint64("fromBlock", fromBlock),
+				zap.Uint64("currentRetries", status.RetriesCount),
 			)
+
+			fromBlock = 0
+
+		} else {
+			fromBlock = status.FromBlock - goBack
 		}
 
+		// toBlock does not go back, so we don't update it,
+		// unless currentBlock was shrinked during reorg too.
+		toBlock = gslutils.Min([]uint64{status.ToBlock, currentBlock})
+
 	} else {
-		fromBlock, toBlock = fromBlockToBlock(currentBlock, lastRecordedBlock, filterRange)
+
+		// Call fromBlockToBlock in normal cases
+		// lastRecordedBlock = 80, filterRange = 10
+		// 71 - 90   # none reorged in this loop       lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10
+		// 81 - 100  # none reoged in this loop        lastRecordedBlock = 100, lookBack = 10  fwdRange = 100 - 90   = 10
+		// 91 - 110  # none reoged in this loop        lastRecordedBlock = 110, lookBack = 10  fwdRange = 110 - 100  = 10
+		// 101 - 120 # none reoged in this loop        lastRecordedBlock = 120, lookBack = 10  fwdRange = 120 - 110  = 10
+		fromBlock, toBlock = fromBlockToBlockNormal(currentBlock, lastRecordedBlock, filterRange)
 	}
 
 	// Update status here too
 	status.FromBlock = fromBlock
 	status.ToBlock = toBlock
 
-	return fromBlock, toBlock
+	return fromBlock, toBlock, nil
 }
