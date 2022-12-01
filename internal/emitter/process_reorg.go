@@ -1,22 +1,16 @@
 package emitter
 
 import (
-	"bytes"
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-// mapFreshLogsByHashes collects fresh hashes and logs into 3 maps
+// mapFreshLogsByHashes collects and maps information from the logs filtered.
 func mapFreshLogsByHashes(
 	freshLogs []types.Log,
-	freshHeaders map[uint64]superwatcher.BlockHeader,
 ) (
 	mapFreshHashes map[uint64]common.Hash,
 	mapFreshLogs map[uint64][]*types.Log,
@@ -35,19 +29,6 @@ func mapFreshLogsByHashes(
 		freshLog := freshLogs[i]
 		freshLogBlockNumber := freshLog.BlockNumber
 		freshLogBlockHash := freshLog.BlockHash
-		freshBlockHash := freshHeaders[freshLogBlockNumber].Hash()
-
-		// If the fresh block hash from client.HeaderByNumber differs from client.FilterLogs
-		// Fatal, should not happen
-		if !bytes.Equal(freshBlockHash[:], freshLogBlockHash[:]) {
-			// TODO: How to handle this?
-			logger.Info(
-				"freshBlockHash and freshBlockHashFromLog differ",
-				zap.Uint64("blockNumber", freshLogBlockNumber),
-				zap.String("freshBlockHash", freshBlockHash.String()),
-				zap.String("freshBlockHashFromLog", freshLogBlockHash.String()),
-			)
-		}
 
 		// Check if we saw the block hash
 		if _, ok := mapFreshHashes[freshLogBlockNumber]; !ok {
@@ -63,7 +44,7 @@ func mapFreshLogsByHashes(
 					zap.String("tag", "filterLogs bug"),
 					zap.Uint64("freshBlockNumber", freshLogBlockNumber),
 					zap.Any("known tracker blockHash", mapFreshHashes[freshLogBlockNumber]),
-					zap.Any("fresh blockHash", freshBlockHash))
+					zap.Any("fresh log blockHash", freshLogBlockHash))
 			}
 		}
 
@@ -97,19 +78,23 @@ func mapFreshLogsByHashes(
 	}
 */
 
-// processReorged compares fresh hashes and hashes saved in tracker, and appends reorged blocks to processLogsByBlockNumber.
+// processReorged compares fresh hashes and hashes saved in tracker, and prepends reorged blocks to mapProcessLogs.
 // Note: Go maps are passed by reference, so there's no need to return the map.
 func processReorged(
 	tracker *blockInfoTracker,
 	fromBlock, toBlock uint64,
-	mapFreshHashes map[uint64]common.Hash, // New hashes from *ethclient.Client.HeaderByNumber
-	mapFreshLogs map[uint64][]*types.Log, // New logs from *ethclient.Client.FilterLogs
-	mapProcessLogs map[uint64][]*types.Log, // Concatenated logs from both old and reorged chains
+	// New hashes from *ethclient.Client.HeaderByNumber
+	mapFreshHashes map[uint64]common.Hash,
+	// New logs from *ethclient.Client.FilterLogs
+	mapFreshLogs map[uint64][]*types.Log,
+	// mapProcessLogs initially contains only fresh logs from mapFreshlogs,
+	// but this function will modify (concat) it with tracker logs if it detects a reorg.
+	mapProcessLogs map[uint64][]*types.Log,
 ) (
 	map[uint64]bool,
 	error,
 ) {
-	// This map will be returned to caller. True means the block was reorged and had different hashes.
+	// This map will be returned to caller.
 	wasReorged := make(map[uint64]bool)
 
 	for blockNumber := toBlock; blockNumber >= toBlock; blockNumber-- {
@@ -123,14 +108,15 @@ func processReorged(
 		// If tracker's is the same from recently filtered hash.
 		// i.e. No reorg
 		if h := mapFreshHashes[blockNumber]; h == trackerBlock.Hash {
-			// Mark blockNumber with identical hash (no reorg)
+			// If number of logs did not match - we're really screwed.
 			if len(mapFreshLogs[blockNumber]) == len(trackerBlock.Logs) {
 				continue
 			}
 
-			return wasReorged, fmt.Errorf(
-				"tracker has different number of logs for identical blockHash %s",
-				gslutils.StringerToLowerString(h),
+			// TODO: Should we panic or return an error after POC passed?
+			logger.Panic(
+				"tracker has different number of logs for identical blockHash",
+				zap.String("blockHash", trackerBlock.String()),
 			)
 		}
 
@@ -140,6 +126,7 @@ func processReorged(
 		for _, oldLog := range trackerBlock.Logs {
 			oldLog.Removed = true
 		}
+
 		// Concat logs from the same block, old logs first, into freshLogs
 		mapProcessLogs[blockNumber] = append(trackerBlock.Logs, mapProcessLogs[blockNumber]...)
 	}

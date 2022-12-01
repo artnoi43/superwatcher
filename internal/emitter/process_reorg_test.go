@@ -97,15 +97,13 @@ func testProcessReorg(c testConfig) error {
 	}
 
 	var reorgedLogs []types.Log
-	var reorgedHeader = make(map[uint64]superwatcher.BlockHeader)
-	for blockNumber, block := range reorgedChain {
+	for _, block := range reorgedChain {
 		if logs := block.Logs(); len(logs) != 0 {
 			reorgedLogs = append(reorgedLogs, logs...)
 		}
-		reorgedHeader[blockNumber] = block
 	}
 
-	freshHashes, freshLogs, processLogs := mapFreshLogsByHashes(reorgedLogs, reorgedHeader)
+	freshHashes, freshLogs, processLogs := mapFreshLogsByHashes(reorgedLogs)
 
 	wasReorged, err := processReorged(
 		tracker,

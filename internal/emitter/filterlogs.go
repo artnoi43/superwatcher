@@ -27,34 +27,10 @@ func (e *emitter) filterLogs(
 	toBlock uint64,
 ) error {
 	var wg sync.WaitGroup
-	var mut sync.Mutex
 	var eventLogs []types.Log
 	var err error
 
-	headersByBlockNumber := make(map[uint64]superwatcher.BlockHeader)
 	getErrChan := make(chan error)
-
-	// getHeader gets block header for a blockNumber
-	getHeader := func(blockNumber uint64) {
-		header, err := gslutils.RetryWithReturn(
-			fmt.Sprintf("getHeader %d", blockNumber),
-
-			func() (superwatcher.BlockHeader, error) {
-				return e.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber))) //nolint:wrapcheck
-			},
-
-			gslutils.Attempts(10),
-			gslutils.Delay(4),
-			gslutils.LastErrorOnly(true),
-		)
-		if err != nil {
-			getErrChan <- wrapErrBlockNumber(blockNumber, err, errFetchHeader)
-		}
-
-		mut.Lock()
-		headersByBlockNumber[blockNumber] = header
-		mut.Unlock()
-	}
 
 	// getLogs calls FilterLogs from fromBlock to toBlock
 	getLogs := func() {
@@ -89,14 +65,6 @@ func (e *emitter) filterLogs(
 	go func() {
 		defer wg.Done()
 		getLogs()
-
-		for i := fromBlock; i <= toBlock; i++ {
-			wg.Add(1)
-			go func(blockNumber uint64) {
-				defer wg.Done()
-				getHeader(blockNumber)
-			}(i)
-		}
 	}()
 
 	// Wait here for logs and headers
@@ -115,7 +83,7 @@ func (e *emitter) filterLogs(
 
 	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
-	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogsByHashes(eventLogs, headersByBlockNumber)
+	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogsByHashes(eventLogs)
 
 	// wasReorged maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
 	wasReorged, err := processReorged(
@@ -130,13 +98,8 @@ func (e *emitter) filterLogs(
 		return errors.Wrap(err, "error detecting chain reorg")
 	}
 
-	// If fromBlock was reorged, then return to loopFilterLogs
-	if wasReorged[fromBlock] {
-		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
-	}
-
+	// Fills |filterResult| and saves current data back to tracker first.
 	filterResult := new(superwatcher.FilterResult)
-	// Publish log(s) and reorged block, and add canon block to tracker for the next loop.
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		if wasReorged[blockNumber] {
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
@@ -184,6 +147,14 @@ func (e *emitter) filterLogs(
 		if b.Logs != nil {
 			filterResult.GoodBlocks = append(filterResult.GoodBlocks, b)
 		}
+	}
+
+	// If fromBlock was reorged, then return to loopFilterLogs.
+	// Results will not be published, so the engine will never know that fromBlock is reorging.
+	// **The reorged blocks different hashes have also been saved to tracker,
+	// so if they come back in the next loop, with the same hash here, they'll be marked as non-reorg blocks**.
+	if wasReorged[fromBlock] {
+		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
 	}
 
 	filterResult.FromBlock = fromBlock

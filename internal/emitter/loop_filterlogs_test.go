@@ -12,7 +12,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 		CurrentBlock       uint64 `json:"currentBlock"`
 		LastRecordedBlocks uint64 `json:"lastRecordedBlocks"`
 		FilterRange        uint64 `json:"filterRange"`
-		MaxRetries         uint64 `json:"goBackRetries"`
+		MaxRetries         uint64 `json:"maxRetries"`
 		GoBackFirstStart   bool   `json:"goBackFirstStart"`
 		Reorging           bool   `json:"reorging"`
 	}

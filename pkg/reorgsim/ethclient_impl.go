@@ -3,15 +3,12 @@ package reorgsim
 import (
 	"context"
 	"fmt"
-	"math/big"
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-
-	"github.com/artnoi43/superwatcher"
 )
 
 const (
@@ -56,8 +53,8 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 		switch caller {
 		case filterLogs:
 			n = 1 // reorgSim.FilterLogs returns reorged blocks first
-		case headerByNumber:
-			n = 2
+			// case headerByNumber:
+			// 	n = 2
 		}
 
 		if r.filterLogsCounter[blockNumber] >= n {
@@ -154,15 +151,15 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	return currentBlock, nil
 }
 
-func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
-	blockNumber := number.Uint64()
-
-	b := r.chooseBlock(blockNumber, blockNumber, blockNumber, headerByNumber)
-	if b != nil {
-		return *b, nil
-	}
-
-	return &block{
-		hash: PRandomHash(number.Uint64()),
-	}, nil
-}
+// func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
+// 	blockNumber := number.Uint64()
+//
+// 	b := r.chooseBlock(blockNumber, blockNumber, blockNumber, headerByNumber)
+// 	if b != nil {
+// 		return *b, nil
+// 	}
+//
+// 	return &block{
+// 		hash: PRandomHash(number.Uint64()),
+// 	}, nil
+// }
