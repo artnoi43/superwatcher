@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"sync"
 
-	"github.com/artnoi43/gsl/concurrent"
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,53 +24,27 @@ func (e *emitter) filterLogs(
 	fromBlock uint64,
 	toBlock uint64,
 ) error {
-	var wg sync.WaitGroup
-	var eventLogs []types.Log
-	var err error
 
-	getErrChan := make(chan error)
+	// Filter event logs with retries
+	eventLogs, err := gslutils.RetryWithReturn(
+		fmt.Sprintf("getLogs from %d to %d", fromBlock, toBlock),
 
-	// getLogs calls FilterLogs from fromBlock to toBlock
-	getLogs := func() {
-		eventLogs, err = gslutils.RetryWithReturn(
-			fmt.Sprintf("getLogs from %d to %d", fromBlock, toBlock),
+		func() ([]types.Log, error) {
+			// No error wrap because in retry mode
+			return e.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
+				FromBlock: big.NewInt(int64(fromBlock)),
+				ToBlock:   big.NewInt(int64(toBlock)),
+				Addresses: e.addresses,
+				Topics:    e.topics,
+			})
+		},
 
-			func() ([]types.Log, error) {
-				// No error wrap because in retry mode
-				return e.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
-					FromBlock: big.NewInt(int64(fromBlock)),
-					ToBlock:   big.NewInt(int64(toBlock)),
-					Addresses: e.addresses,
-					Topics:    e.topics,
-				})
-			},
-
-			gslutils.Attempts(10),
-			gslutils.Delay(4),
-			gslutils.LastErrorOnly(true),
-		)
-
-		if err != nil {
-			// TODO: what the actual fuck?
-			getErrChan <- wrapErrBlockNumber(fromBlock, err, errFetchLogs)
-		}
-	}
-
-	// Get fresh logs, and block headers (fromBlock-toBlock)
-	// to compare the headers with that of w.tracker's to detect chain reorg
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		getLogs()
-	}()
+		gslutils.Attempts(10),
+		gslutils.Delay(4),
+		gslutils.LastErrorOnly(true),
+	)
 
 	// Wait here for logs and headers
-	if err := concurrent.WaitAndCollectErrors(&wg, getErrChan); err != nil {
-		e.debugger.Debug(1, "get fresh data from blockchain failed", zap.Error(err))
-		return errors.Wrap(err, "get blockchain data")
-	}
-
 	lenLogs := len(eventLogs)
 	e.debugger.Debug(2, "got headers and logs", zap.Int("logs", lenLogs))
 
@@ -81,7 +53,6 @@ func (e *emitter) filterLogs(
 	e.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
 	e.tracker.clearUntil(until)
 
-	/* Use code from reorg package to manage/handle chain reorg */
 	// Use fresh hashes and fresh logs to populate these 3 maps
 	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogs(eventLogs)
 
