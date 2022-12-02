@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	// superwatcher:${chain}:${service}:${field..}
+	// superwatcher:${serviceKey}:${field..}
 	redisKeyBase                   = "superwatcher:%s"
-	redisKeyState                  = redisKeyBase + ":state"
+	redisKeyState                  = redisKeyBase + ":state" // Unused for now
 	redisKeyStateLastRecordedBlock = redisKeyState + ":lastRecordedBlock"
 )
 

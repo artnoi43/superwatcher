@@ -92,7 +92,10 @@ func main() {
 		conf.SuperWatcherConfig,
 		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
 		ethClient,
-		stateDataGateway,
+		// Both data gateways can be implemented separately by different structs,
+		// but here in the demo it's just using default implementation.
+		superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock), // stateDataGateway alone is fine too
+		superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock), // stateDataGateway alone is fine too
 		emitterAddresses,
 		[][]common.Hash{emitterTopics},
 		demoEngine,

@@ -9,7 +9,6 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -25,7 +24,7 @@ type emitter struct {
 	topics    [][]common.Hash
 
 	// Redis-store for tracking last recorded block
-	stateDataGateway watcherstate.StateDataGateway
+	stateDataGateway superwatcher.GetStateDataGateway
 
 	// These fields are gateways via which
 	// external services interact with emitter
@@ -41,7 +40,7 @@ type emitter struct {
 func New(
 	conf *config.EmitterConfig,
 	client superwatcher.EthClient,
-	stateDataGateway watcherstate.StateDataGateway,
+	stateDataGateway superwatcher.GetStateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
@@ -95,8 +94,6 @@ func (e *emitter) Shutdown() {
 
 func (e *emitter) SyncsWithEngine() {
 	e.debugger.Debug(1, "waiting for engine sync")
-
 	<-e.syncChan
-
 	e.debugger.Debug(1, "synced with engine")
 }

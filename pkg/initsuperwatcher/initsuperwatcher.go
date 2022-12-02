@@ -7,7 +7,6 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/components/emitter"
 	"github.com/artnoi43/superwatcher/pkg/components/engine"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 )
 
 // New returns default implementations of WatcherEmitter and WatcherEngine.
@@ -16,7 +15,8 @@ import (
 func New(
 	conf *config.EmitterConfig,
 	ethClient superwatcher.EthClient,
-	stateDataGateway watcherstate.StateDataGateway,
+	getStateDataGateway superwatcher.GetStateDataGateway,
+	setStateDataGateway superwatcher.SetStateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
 	serviceEngine superwatcher.ServiceEngine,
@@ -31,7 +31,7 @@ func New(
 	watcherEmitter := emitter.New(
 		conf,
 		ethClient,
-		stateDataGateway,
+		getStateDataGateway,
 		addresses,
 		topics,
 		syncChan,
@@ -42,7 +42,7 @@ func New(
 	watcherEngine := engine.NewWithClient(
 		conf,
 		serviceEngine,
-		stateDataGateway,
+		setStateDataGateway,
 		syncChan,
 		filterResultChan,
 		errChan,

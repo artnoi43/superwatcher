@@ -1,21 +1,12 @@
 package watcherstate
 
 import (
-	"context"
 	"errors"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
-
-// StateDataGateway is used by the default emitter to get LastRecordedBlock,
-// and by the default engine to set LastRecordedBlock
-type StateDataGateway interface {
-	GetLastRecordedBlock(context.Context) (uint64, error)
-	SetLastRecordedBlock(context.Context, uint64) error
-
-	Shutdown() error
-}
 
 // NewRedisStateDataGateway returns default implementation of StateDataGateway.
 // It uses |serviceName| to compose a Redis key to independently store multiple
@@ -26,7 +17,7 @@ func NewRedisStateDataGateway(
 	serviceName string,
 	redisClient datagateway.RedisClient,
 ) (
-	StateDataGateway,
+	superwatcher.StateDataGateway,
 	error,
 ) {
 	if redisClient == nil {

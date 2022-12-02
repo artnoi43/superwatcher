@@ -1,12 +1,14 @@
-package servicetest
+package demotest
 
 import (
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/superwatcher"
 
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
@@ -14,20 +16,20 @@ import (
 
 func TestServiceEngineENS(t *testing.T) {
 	logsPath := "../assets/ens"
-	testCases := []testCase{
+	testCases := []servicetest.TestCase{
 		{
-			startBlock: 15984000,
-			reorgBlock: 15984033,
-			exitBlock:  15984100,
-			logsFiles: []string{
+			StartBlock: 15984000,
+			ReorgBlock: 15984033,
+			ExitBlock:  15984100,
+			LogsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
 		},
 		{
-			startBlock: 16054000,
-			reorgBlock: 16054078,
-			exitBlock:  16054100,
-			logsFiles: []string{
+			StartBlock: 16054000,
+			ReorgBlock: 16054078,
+			ExitBlock:  16054100,
+			LogsFiles: []string{
 				logsPath + "/logs_servicetest_16054000_16054100.json",
 			},
 		},
@@ -38,9 +40,10 @@ func TestServiceEngineENS(t *testing.T) {
 		// We'll later use |ensStore| to check for saved results
 		ensStore := datagateway.NewMockDataGatewayENS()
 
-		err := testServiceEngineENS(testCase.startBlock, testCase.reorgBlock, testCase.logsFiles, ensStore)
+		fakeRedis, err := testServiceEngineENS(testCase.StartBlock, testCase.ReorgBlock, testCase.LogsFiles, ensStore)
 		if err != nil {
-			t.Error("error in full servicetest (ens):", err.Error())
+			lastRecordedBlock, _ := fakeRedis.GetLastRecordedBlock(nil)
+			t.Errorf("lastRecordedBlock %d - error in full servicetest (ens): %s", lastRecordedBlock, err.Error())
 		}
 
 		results, err := ensStore.GetENSes(nil)
@@ -49,7 +52,7 @@ func TestServiceEngineENS(t *testing.T) {
 		}
 
 		for _, result := range results {
-			if result.BlockNumber >= testCase.reorgBlock {
+			if result.BlockNumber >= testCase.ReorgBlock {
 				t.Log("checking block", result.BlockNumber)
 				// Since reorged block uses hash from deterministic PRandomHash,
 				// we can check for equality this way
@@ -68,7 +71,15 @@ func TestServiceEngineENS(t *testing.T) {
 	}
 }
 
-func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensStore datagateway.DataGatewayENS) error {
+func testServiceEngineENS(
+	startBlock uint64,
+	reorgedAt uint64,
+	logsFiles []string,
+	ensStore datagateway.DataGatewayENS,
+) (
+	superwatcher.StateDataGateway,
+	error,
+) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		StartBlock:    startBlock,
@@ -80,7 +91,7 @@ func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensS
 
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine
 
-	components, param := initTestComponents(
+	components, param := servicetest.InitTestComponents(
 		conf,
 		ensEngine,
 		logsFiles,
@@ -89,5 +100,5 @@ func testServiceEngineENS(startBlock, reorgedAt uint64, logsFiles []string, ensS
 		reorgedAt+conf.FilterRange*conf.GoBackRetries,
 	)
 
-	return serviceEngineTestTemplate(components, param)
+	return servicetest.RunServiceTestComponents(components, param)
 }

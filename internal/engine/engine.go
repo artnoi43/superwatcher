@@ -6,14 +6,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 type engine struct {
-	emitterClient    superwatcher.EmitterClient    // Interfaces with emitter
-	stateDataGateway watcherstate.StateDataGateway // Saves lastRecordedBlock to Redis
-	metadataTracker  MetadataTracker               // Engine internal state machine
+	emitterClient    superwatcher.EmitterClient       // Interfaces with emitter
+	stateDataGateway superwatcher.SetStateDataGateway // Saves lastRecordedBlock to Redis
+	metadataTracker  MetadataTracker                  // Engine internal state machine
 
 	serviceEngine superwatcher.ServiceEngine // Injected service code
 
@@ -25,7 +24,7 @@ type engine struct {
 func New(
 	client superwatcher.EmitterClient,
 	serviceEngine superwatcher.ServiceEngine,
-	statDataGateway watcherstate.StateDataGateway,
+	stateDataGateway superwatcher.SetStateDataGateway,
 	logLevel uint8,
 ) superwatcher.WatcherEngine {
 	debug := logLevel > 0
@@ -33,7 +32,7 @@ func New(
 	return &engine{
 		emitterClient:    client,
 		serviceEngine:    serviceEngine,
-		stateDataGateway: statDataGateway,
+		stateDataGateway: stateDataGateway,
 		metadataTracker:  NewTracker(logLevel),
 		debugger:         debugger.NewDebugger("engine", logLevel),
 		debug:            debug,

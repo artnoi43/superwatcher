@@ -1,4 +1,4 @@
-package servicetest
+package demotest
 
 import (
 	"testing"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/routerengine"
@@ -14,12 +15,12 @@ import (
 
 func TestServiceEngineRouter(t *testing.T) {
 	logsPath := "../assets/servicetest"
-	testCases := []testCase{
+	testCases := []servicetest.TestCase{
 		{
-			startBlock: 16054000,
-			reorgBlock: 16054078,
-			exitBlock:  16054100,
-			logsFiles: []string{
+			StartBlock: 16054000,
+			ReorgBlock: 16054078,
+			ExitBlock:  16054100,
+			LogsFiles: []string{
 				logsPath + "/logs_servicetest_16054000_16054100.json",
 			},
 		},
@@ -33,23 +34,23 @@ func TestServiceEngineRouter(t *testing.T) {
 
 		conf := &config.EmitterConfig{
 			// We use fakeRedis and fakeEthClient, so no need for token strings.
-			StartBlock:    testCase.startBlock,
+			StartBlock:    testCase.StartBlock,
 			FilterRange:   10,
 			GoBackRetries: 2,
 			LoopInterval:  0,
 			LogLevel:      logLevel,
 		}
 
-		components, param := initTestComponents(
+		components, param := servicetest.InitTestComponents(
 			conf,
 			router,
-			testCase.logsFiles,
-			testCase.startBlock,
-			testCase.reorgBlock,
-			testCase.exitBlock,
+			testCase.LogsFiles,
+			testCase.StartBlock,
+			testCase.ReorgBlock,
+			testCase.ExitBlock,
 		)
 
-		err := serviceEngineTestTemplate(components, param)
+		_, err := servicetest.RunServiceTestComponents(components, param)
 		if err != nil {
 			t.Error("error in full servicetest (ens):", err.Error())
 		}
@@ -76,7 +77,7 @@ func TestServiceEngineRouter(t *testing.T) {
 
 			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockNumber))
 
-			if result.BlockNumber < testCase.reorgBlock {
+			if result.BlockNumber < testCase.ReorgBlock {
 				if result.BlockHash == expectedReorgedHash {
 					t.Errorf("good block resultENS has reorged blockHash: %s", expectedReorgedHash)
 				}
@@ -93,7 +94,7 @@ func TestServiceEngineRouter(t *testing.T) {
 			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
 			resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
 
-			if result.BlockCreated < testCase.reorgBlock {
+			if result.BlockCreated < testCase.ReorgBlock {
 				if resultBlockHash == expectedReorgedHash {
 					t.Errorf("good block resultPoolFactory has reorged blockHash: %s", resultBlockHash)
 				}

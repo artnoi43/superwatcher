@@ -3,14 +3,14 @@ package mockwatcherstate
 import (
 	"context"
 
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
+	"github.com/artnoi43/superwatcher"
 )
 
 type fakeRedis struct {
 	lastRecordedBlock uint64
 }
 
-func New(lastRecordedBlock uint64) watcherstate.StateDataGateway {
+func New(lastRecordedBlock uint64) superwatcher.StateDataGateway {
 	return &fakeRedis{
 		lastRecordedBlock: lastRecordedBlock,
 	}

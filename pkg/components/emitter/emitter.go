@@ -6,14 +6,13 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 )
 
 // New returns a new, default superwatcher.WatcherEmitter.
 func New(
 	conf *config.EmitterConfig,
 	client superwatcher.EthClient,
-	stateDataGateway watcherstate.StateDataGateway,
+	stateDataGateway superwatcher.GetStateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan

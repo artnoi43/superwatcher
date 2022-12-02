@@ -1,10 +1,12 @@
-package servicetest
+package demotest
 
 import (
 	"testing"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
@@ -12,37 +14,39 @@ import (
 
 func TestServiceEnginePoolFactory(t *testing.T) {
 	logsPath := "../assets/poolfactory"
-	testCases := []testCase{
+	testCases := []servicetest.TestCase{
 		{
-			startBlock: 16054000,
-			reorgBlock: 16054066,
-			exitBlock:  16054200,
-			logsFiles: []string{
+			StartBlock: 16054000,
+			ReorgBlock: 16054066,
+			ExitBlock:  16054200,
+			LogsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
 		},
 	}
 
 	for _, testCase := range testCases {
-		dgw := datagateway.NewMockDataGatewayPoolFactory()
-		if err := testServiceEnginePoolFactory(
-			testCase.startBlock,
-			testCase.reorgBlock,
-			testCase.exitBlock,
-			testCase.logsFiles,
-			dgw,
-		); err != nil {
-			t.Errorf("error in full servicetest (poolfactory): %s", err.Error())
+		serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
+		stateDataGateway, err := testServiceEnginePoolFactory(
+			testCase.StartBlock,
+			testCase.ReorgBlock,
+			testCase.ExitBlock,
+			testCase.LogsFiles,
+			serviceDataGateway,
+		)
+		if err != nil {
+			lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
+			t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
 		}
 
-		results, err := dgw.GetPools(nil)
+		results, err := serviceDataGateway.GetPools(nil)
 		if err != nil {
 			t.Errorf("GetPools failed after service returned: %s", err.Error())
 		}
 
 		for _, result := range results {
 			expectedReorgedHash := reorgsim.PRandomHash(result.BlockCreated)
-			if result.BlockCreated >= testCase.reorgBlock {
+			if result.BlockCreated >= testCase.ReorgBlock {
 				if result.BlockHash != expectedReorgedHash {
 					t.Fatalf("blockHash not reorged")
 				}
@@ -63,7 +67,10 @@ func testServiceEnginePoolFactory(
 	exitBlock uint64,
 	logsFiles []string,
 	lpStore datagateway.DataGatewayPoolFactory,
-) error {
+) (
+	superwatcher.StateDataGateway,
+	error,
+) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		StartBlock:    startBlock,
@@ -73,7 +80,7 @@ func testServiceEnginePoolFactory(
 	}
 
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
-	components, param := initTestComponents(
+	components, param := servicetest.InitTestComponents(
 		conf,
 		poolFactoryEngine,
 		logsFiles,
@@ -82,5 +89,5 @@ func testServiceEnginePoolFactory(
 		exitBlock,
 	)
 
-	return serviceEngineTestTemplate(components, param)
+	return servicetest.RunServiceTestComponents(components, param)
 }

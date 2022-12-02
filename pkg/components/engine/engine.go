@@ -5,13 +5,12 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/engine"
 	"github.com/artnoi43/superwatcher/pkg/components/emitterclient"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 )
 
 func New(
 	emitterClient superwatcher.EmitterClient,
 	serviceEngine superwatcher.ServiceEngine,
-	stateDataGateway watcherstate.StateDataGateway,
+	stateDataGateway superwatcher.SetStateDataGateway,
 	logLevel uint8,
 ) superwatcher.WatcherEngine {
 	return engine.New(
@@ -26,7 +25,7 @@ func New(
 func NewWithClient(
 	conf *config.EmitterConfig,
 	serviceEngine superwatcher.ServiceEngine,
-	stateDataGateway watcherstate.StateDataGateway,
+	stateDataGateway superwatcher.SetStateDataGateway,
 	syncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,

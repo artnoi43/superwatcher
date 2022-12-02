@@ -186,7 +186,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 			}
 		}
 
-		testEmitter.(*emitter).stateDataGateway.SetLastRecordedBlock(ctx, result.LastGoodBlock)
+		fakeRedis.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
 	}
 }
