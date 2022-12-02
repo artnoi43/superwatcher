@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
@@ -67,7 +66,6 @@ func testServiceEnginePoolFactory(
 ) error {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		Chain:         string(enums.ChainEthereum),
 		StartBlock:    startBlock,
 		FilterRange:   10,
 		GoBackRetries: 2,

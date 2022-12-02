@@ -60,7 +60,11 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			if err != nil {
 				if errors.Is(err, errNoNewBlock) {
 					// Use zap.String because this is not actually an error
-					e.debugger.Debug(1, "skipping", zap.String("reason", err.Error()))
+					e.debugger.Debug(
+						1, "skipping", zap.String("reason", err.Error()),
+						zap.Uint64("currentBlock", newStatus.CurrentBlock),
+						zap.Uint64("lastRecordedBlock", newStatus.LastRecordedBlock),
+					)
 					continue
 				}
 				if errors.Is(err, errFetchError) {

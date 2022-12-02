@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/gsl/gslutils"
+
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )

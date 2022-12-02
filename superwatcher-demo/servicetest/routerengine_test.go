@@ -6,7 +6,6 @@ import (
 	"github.com/artnoi43/gsl/gslutils"
 
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
@@ -34,7 +33,6 @@ func TestServiceEngineRouter(t *testing.T) {
 
 		conf := &config.EmitterConfig{
 			// We use fakeRedis and fakeEthClient, so no need for token strings.
-			Chain:         string(enums.ChainEthereum),
 			StartBlock:    testCase.startBlock,
 			FilterRange:   10,
 			GoBackRetries: 2,

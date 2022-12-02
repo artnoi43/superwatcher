@@ -6,7 +6,6 @@ import (
 
 	"github.com/artnoi43/superwatcher/internal/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
-	"github.com/artnoi43/superwatcher/pkg/enums"
 )
 
 // StateDataGateway is used by the default emitter to get LastRecordedBlock,
@@ -24,7 +23,6 @@ type StateDataGateway interface {
 // If you only use default `superwatcher.WatcherEmitter` implementation for your service,
 // then **your own code is responsible for calling `SetLastRecordedBlock`**.
 func NewRedisStateDataGateway(
-	chain enums.ChainType,
 	serviceName string,
 	redisClient datagateway.RedisClient,
 ) (
@@ -38,5 +36,5 @@ func NewRedisStateDataGateway(
 		return nil, errors.New("empty serviceName")
 	}
 
-	return watcherstate.NewRedisWatcherStateDataGateway(chain, serviceName, redisClient), nil
+	return watcherstate.NewRedisWatcherStateDataGateway(serviceName, redisClient), nil
 }

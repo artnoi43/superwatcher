@@ -6,18 +6,18 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
-	"github.com/artnoi43/superwatcher/pkg/enums"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
+	"github.com/artnoi43/superwatcher/superwatcher-demo/config"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
@@ -28,31 +28,30 @@ import (
 )
 
 func main() {
-	conf, err := config.ConfigYAML("./config/config.yaml")
+	conf, err := soyutils.ReadFileYAMLPointer[config.Config]("./superwatcher-demo/config/config.yaml")
 	if err != nil {
 		panic("failed to read YAML config: " + err.Error())
 	}
 
-	chain := enums.ChainType(conf.Chain)
-	if !chain.IsValid() {
-		panic("invalid chain: " + conf.Chain)
+	chain := conf.Chain
+	if chain == "" {
+		panic("empty chain")
 	}
 
-	ethClient, err := ethclient.Dial(conf.NodeURL)
+	ethClient, err := ethclient.Dial(conf.SuperWatcherConfig.NodeURL)
 	if err != nil {
 		panic("new ethclient failed: " + err.Error())
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: conf.RedisConnAddr,
+		Addr: conf.SuperWatcherConfig.RedisConnAddr,
 	})
 	if rdb == nil {
 		panic("nil redis")
 	}
 
 	stateDataGateway, err := watcherstate.NewRedisStateDataGateway(
-		chain,
-		"superwatcher-demo",
+		"superwatcher-demo"+":"+chain,
 		rdb,
 	)
 	if err != nil {
@@ -75,7 +74,7 @@ func main() {
 	)
 
 	// Init demo service instances and items with demoContracts
-	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts, rdb, conf.LogLevel)
+	emitterAddresses, emitterTopics, demoRoutes, demoServices := contractsToServices(demoContracts, rdb, conf.SuperWatcherConfig.LogLevel)
 	logger.Debug("init: addresses", zap.Any("emitterAddresses", emitterAddresses))
 	logger.Debug("init: topics", zap.Any("emitterTopics", emitterTopics))
 	logger.Debug("init: demoRoutes", zap.Any("demoRoutes", demoRoutes))
@@ -86,11 +85,11 @@ func main() {
 	demoEngine := routerengine.New(
 		demoRoutes,
 		demoServices,
-		conf.LogLevel,
+		conf.SuperWatcherConfig.LogLevel,
 	)
 
 	watcherEmitter, watcherEngine := initsuperwatcher.New(
-		conf,
+		conf.SuperWatcherConfig,
 		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
 		ethClient,
 		stateDataGateway,

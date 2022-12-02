@@ -9,12 +9,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
-	"github.com/artnoi43/superwatcher/pkg/enums"
 )
 
 const (
 	// superwatcher:${chain}:${service}:${field..}
-	redisKeyBase                   = "superwatcher:%s:%s"
+	redisKeyBase                   = "superwatcher:%s"
 	redisKeyState                  = redisKeyBase + ":state"
 	redisKeyStateLastRecordedBlock = redisKeyState + ":lastRecordedBlock"
 )
@@ -26,15 +25,14 @@ type watcherStateRedisCli struct {
 }
 
 func NewRedisWatcherStateDataGateway(
-	chain enums.ChainType, // Each key for different chain
-	serviceName string, // Each key for different service
+	serviceKey string, // Each key for each different service and chain
 	redisCli datagateway.RedisClient,
 ) *watcherStateRedisCli {
 	return &watcherStateRedisCli{
 		// Format strings now to save CPU costs later
-		keyBase:      fmt.Sprintf(redisKeyBase, chain, serviceName),
-		keyState:     fmt.Sprintf(redisKeyState, chain, serviceName),
-		keyLastBlock: fmt.Sprintf(redisKeyStateLastRecordedBlock, chain, serviceName),
+		keyBase:      fmt.Sprintf(redisKeyBase, serviceKey),
+		keyState:     fmt.Sprintf(redisKeyState, serviceKey),
+		keyLastBlock: fmt.Sprintf(redisKeyStateLastRecordedBlock, serviceKey),
 		redisClient:  redisCli,
 	}
 }

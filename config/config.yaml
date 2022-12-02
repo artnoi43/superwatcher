@@ -1,8 +1,0 @@
-chain: "ethereum"
-node_url: "https://eth-mainnet.g.alchemy.com/v2/Zr3jViEDj-raP2WYoLF1HlwiJIuc86Aq"
-redis_conn_str: "localhost:6379"
-loop_interval: 1
-start_block: 6000000000
-filter_range: 5
-go_back_retries: 2
-log_level: 1

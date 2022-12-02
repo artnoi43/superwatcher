@@ -41,7 +41,7 @@ func (c *emitterClient) Shutdown() {
 		close(c.emitterSyncChan)
 
 	} else {
-		c.debugger.Debug(2, "emitterClient: emitterSyncChan was already closed")
+		c.debugger.Debug(2, "emitterSyncChan was already closed")
 	}
 }
 
@@ -60,7 +60,7 @@ func (c *emitterClient) WatcherResult() *superwatcher.FilterResult {
 		return result
 	}
 
-	c.debugger.Debug(2, "WatcherCurrentLog - filterReorgChan is closed")
+	c.debugger.Debug(2, "filterReorgChan was closed")
 	return nil
 }
 
@@ -70,6 +70,6 @@ func (c *emitterClient) WatcherError() error {
 		return err
 	}
 
-	c.debugger.Debug(2, "WatcherError - errChan is closed")
+	c.debugger.Debug(2, "errChan was closed")
 	return nil
 }

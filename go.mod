@@ -9,7 +9,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/wangjia184/sortedset v0.0.0-20220209072355-af6d6d227aa7
 	go.uber.org/zap v1.23.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -33,4 +32,5 @@ require (
 	golang.org/x/exp v0.0.0-20221126150942-6ab00d035af9 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
