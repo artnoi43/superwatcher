@@ -1,6 +1,7 @@
 package emitter
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -72,6 +73,8 @@ var testCases = []testConfig{
 
 func TestProcessReorg(t *testing.T) {
 	for i, tc := range testCases {
+		b, _ := json.Marshal(tc)
+		t.Logf("testCase: %s", b)
 		err := testProcessReorg(tc)
 		if err != nil {
 			t.Fatalf("Case %d: %s", i, err.Error())
@@ -118,7 +121,14 @@ func testProcessReorg(c testConfig) error {
 		return err
 	}
 
-	for blockNumber, reorged := range wasReorged {
+	for blockNumber := c.FromBlock; blockNumber <= c.ToBlock; blockNumber++ {
+		// Skip blocks without logs
+		if len(hardcodedLogs[blockNumber]) == 0 {
+			continue
+		}
+
+		reorged := wasReorged[blockNumber]
+
 		// Any blocks after c.reorgedAt should be reorged.
 		if blockNumber >= c.ReorgedAt {
 			if reorged {
@@ -126,15 +136,15 @@ func testProcessReorg(c testConfig) error {
 			}
 
 			return fmt.Errorf(
-				"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged",
-				blockNumber, c.ReorgedAt,
+				"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged: %v",
+				blockNumber, c.ReorgedAt, wasReorged,
 			)
 		}
 
 		// And any block before c.reorgedAt should NOT be reorged.
 		if reorged {
-			return fmt.Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged",
-				blockNumber, c.ReorgedAt,
+			return fmt.Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged: %v",
+				blockNumber, c.ReorgedAt, wasReorged,
 			)
 		}
 	}

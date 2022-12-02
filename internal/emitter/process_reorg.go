@@ -98,7 +98,7 @@ func processReorg(
 	// This map will be returned to caller.
 	reorgedChain := make(map[uint64]bool)
 
-	for blockNumber := toBlock; blockNumber >= toBlock; blockNumber-- {
+	for blockNumber := toBlock; blockNumber >= fromBlock; blockNumber-- {
 		// If the block had not been saved into w.tracker (new blocks), it's probably fresh blocks,
 		// which are not yet 'reorged' at the execution time.
 		trackerBlock, foundInTracker := tracker.getTrackerBlockInfo(blockNumber)
