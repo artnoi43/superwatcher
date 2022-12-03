@@ -44,6 +44,10 @@ func (e *emitter) filterLogs(
 		gslutils.LastErrorOnly(true),
 	)
 
+	if err != nil {
+		return errors.Wrap(errFetchError, err.Error())
+	}
+
 	// Wait here for logs and headers
 	lenLogs := len(eventLogs)
 	e.debugger.Debug(2, "got headers and logs", zap.Int("logs", lenLogs))

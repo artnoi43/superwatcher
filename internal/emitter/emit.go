@@ -8,30 +8,33 @@ import (
 )
 
 func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
-	if e.filterResultChan == nil {
-		e.debugger.Debug(2, "emitFilterResult", zap.String("debug", "filterResultChan is nil"))
-		return
-	}
-
 	if result != nil {
 		// Only log if there's some logs
+		var nilChan bool
 		if len(result.GoodBlocks)+len(result.ReorgedBlocks) != 0 {
-			if e.debug {
-				var goodBlocks []uint64
-				for _, b := range result.GoodBlocks {
-					goodBlocks = append(goodBlocks, b.Number)
-				}
-
-				var reorgedBlocks []uint64
-				for _, b := range result.ReorgedBlocks {
-					reorgedBlocks = append(reorgedBlocks, b.Number)
-				}
-
-				e.debugger.Debug(2, "emitFilterResult", zap.Uint64s("goodBlocks", goodBlocks), zap.Uint64s("reorgedBlocks", reorgedBlocks))
+			var goodBlocks []uint64
+			for _, b := range result.GoodBlocks {
+				goodBlocks = append(goodBlocks, b.Number)
 			}
+
+			var reorgedBlocks []uint64
+			for _, b := range result.ReorgedBlocks {
+				reorgedBlocks = append(reorgedBlocks, b.Number)
+			}
+
+			nilChan = e.filterResultChan == nil
+			e.debugger.Debug(
+				2, "emitFilterResult",
+				zap.Uint64s("goodBlocks", goodBlocks),
+				zap.Uint64s("reorgedBlocks", reorgedBlocks),
+				zap.Bool("nil resultChan", nilChan),
+			)
 		}
 
-		e.filterResultChan <- result
+		if !nilChan {
+			e.filterResultChan <- result
+		}
+
 		return
 	}
 
@@ -41,13 +44,12 @@ func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 func (e *emitter) emitError(err error) {
 	e.debugger.Debug(2, "emitError called")
 
-	if e.errChan == nil {
-		e.debugger.Debug(2, "emitError", zap.String("debug", "errChan is nil"))
-		return
-	}
-
 	if err != nil {
-		e.debugger.Debug(2, "blocking in emitError")
+		e.debugger.Debug(
+			2, "blocking in emitError",
+			// Use zap.String here because we don't want to log stack trace here
+			zap.String("error to be sent", err.Error()),
+		)
 		e.errChan <- err
 	}
 }

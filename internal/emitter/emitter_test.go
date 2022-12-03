@@ -13,9 +13,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
-	"github.com/artnoi43/superwatcher/superwatcher-demo/config"
 )
 
 // TODO: verbose does not work
@@ -85,7 +85,11 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	b, _ := json.Marshal(tc)
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
 
-	serviceConf, err := soyutils.ReadFileYAMLPointer[config.Config]("../../superwatcher-demo/config/config.yaml")
+	type serviceConfig struct {
+		SuperWatcherConfig *config.EmitterConfig `yaml:"superwatcher_config" json:"superwatcherConfig"`
+	}
+
+	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig]("../../superwatcher-demo/config/config.yaml")
 	if err != nil {
 		t.Fatal("bad config", err.Error())
 	}

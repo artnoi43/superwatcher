@@ -55,10 +55,12 @@ func (t *blockInfoTracker) getTrackerBlockInfo(blockNumber uint64) (*superwatche
 	if node == nil {
 		return nil, false
 	}
+
 	val, ok := node.Value.(*superwatcher.BlockInfo)
 	if !ok {
 		logger.Panic(fmt.Sprintf("type assertion failed - expecting *BlockInfo, found %s", reflect.TypeOf(node.Value)))
 	}
+
 	return val, true
 }
 
