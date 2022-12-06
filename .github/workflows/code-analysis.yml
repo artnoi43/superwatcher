@@ -22,21 +22,22 @@ jobs:
         with:
           fetch-depth: "0"
 
-      - name: Update Pull Request Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: code-analysis
-          message: |
-            ## 🔍 Running Code Analysis & Testing for 
-            ${{ env.pr_info }}
-            _Please wait for the result before merging this pull request._
-
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
           go-version-file: "go.mod"
           cache: true
+      - run: echo "GOVERSION=$(go version)" >> $GITHUB_ENV
+
+      - name: Update Pull Request Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: code-analysis
+          message: |
+            ## 🔍 Running Code Analysis & Testing (${{ env.GITHUB_SHA_SHORT }})
+            ${{ env.pr_info }}
+            _Please wait for the result before merging this pull request._
 
       - name: Install dependencies
         run: go get ./...
@@ -58,7 +59,7 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Update Pull Request Comment for Success
+      - name: Update Pull Request Comment for Success (${{ matrix.go-version }} ${{ matrix.os }})
         if: ${{ success() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -69,7 +70,7 @@ jobs:
             ${{ env.pr_info }}
             _Merge this pull request if you think it's ready._
 
-      - name: Update Pull Request Comment for Failure
+      - name: Update Pull Request Comment for Failure (${{ matrix.go-version }} ${{ matrix.os }})
         if: ${{ failure() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
