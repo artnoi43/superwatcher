@@ -1,10 +1,10 @@
 package reorgsim
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/core/types"
 )
+
+const NoReorg uint64 = 0
 
 type blockChain map[uint64]block
 
@@ -17,17 +17,6 @@ func NewBlockChainNg(logs []types.Log, reorgedAt uint64) (blockChain, blockChain
 // NewBlockChain returns a tuple of blockChain(s). It takes in |reorgedAt|,
 // and construct the chains based on that number.
 func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {
-	var found bool
-	for blockNumber := range mappedLogs {
-		if blockNumber == reorgedAt {
-			found = true
-		}
-	}
-
-	if !found {
-		panic(fmt.Sprintf("reorgedAt block %d not found in any logs", reorgedAt))
-	}
-
 	// The "good old chain"
 	chain := make(blockChain)
 	for blockNumber, logs := range mappedLogs {
@@ -38,6 +27,11 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 			reorgedHere: blockNumber == reorgedAt,
 			toBeForked:  blockNumber >= reorgedAt,
 		}
+	}
+
+	// No reorg - use the same chain
+	if reorgedAt == NoReorg {
+		return chain, chain
 	}
 
 	// |reorgedChain| will differ from |oldChain| after |reorgedAt|
@@ -51,6 +45,5 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 
 		reorgedChain[blockNumber] = oldBlock.reorg()
 	}
-
 	return chain, reorgedChain
 }
