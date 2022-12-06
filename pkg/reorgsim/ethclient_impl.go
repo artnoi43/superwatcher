@@ -77,7 +77,7 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 	}
 
 	log(">")
-	return &b
+	return b
 }
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
