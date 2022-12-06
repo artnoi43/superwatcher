@@ -9,20 +9,26 @@ import (
 func TestComputeFromBlockToBlock(t *testing.T) {
 	type testCase struct {
 		Name               string `json:"Name"`
+		StartBlock         uint64 `json:"startBlock"`
 		CurrentBlock       uint64 `json:"currentBlock"`
 		LastRecordedBlocks uint64 `json:"lastRecordedBlocks"`
 		FilterRange        uint64 `json:"filterRange"`
-		MaxRetries         uint64 `json:"maxRetries"`
+		RetriesCount       uint64 `json:"maxRetries"`
+		MaxRetries         uint64 `json:"retriesCount"`
 		GoBackFirstStart   bool   `json:"goBackFirstStart"`
 		Reorging           bool   `json:"reorging"`
 	}
 
-	newStatus := func(isReorging bool, fromBlock, toBlock uint64) *filterLogStatus {
+	newStatus := func(
+		goBackFirstStart, isReorging bool,
+		fromBlock, toBlock, maxRetries uint64,
+	) *filterLogStatus {
 		return &filterLogStatus{
-			IsReorging:   isReorging,
-			FromBlock:    fromBlock,
-			ToBlock:      toBlock,
-			RetriesCount: 1,
+			GoBackFirstStart: goBackFirstStart,
+			IsReorging:       isReorging,
+			FromBlock:        fromBlock,
+			ToBlock:          toBlock,
+			RetriesCount:     maxRetries,
 		}
 	}
 
@@ -79,6 +85,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			LastRecordedBlocks: 100, // Base
 			FilterRange:        10,
 			MaxRetries:         2,
+			RetriesCount:       2,
 			GoBackFirstStart:   firstStart, // GoBack
 		}: {
 			fromBlock: 81, // (Base+1) - GoBack
@@ -89,6 +96,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       200,
 			LastRecordedBlocks: 50, // Base
 			FilterRange:        10,
+			RetriesCount:       2,
 			MaxRetries:         2,
 			GoBackFirstStart:   firstStart, // GoBack
 		}: {
@@ -100,6 +108,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       200,
 			LastRecordedBlocks: 100, // Base
 			FilterRange:        10,
+			RetriesCount:       2,
 			MaxRetries:         2,
 			GoBackFirstStart:   firstStart, // GoBack
 			Reorging:           reorging,
@@ -112,6 +121,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       200,
 			LastRecordedBlocks: 50, // Base
 			FilterRange:        10,
+			RetriesCount:       2,
 			MaxRetries:         2,
 			GoBackFirstStart:   firstStart, // GoBack
 			Reorging:           reorging,
@@ -124,7 +134,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       7000,
 			LastRecordedBlocks: 6999, // Base
 			FilterRange:        10,   // FilterRange
-			MaxRetries:         2,
+			RetriesCount:       2,
 		}: {
 			fromBlock: 6990, // (Base+1) - FilterRange
 			toBlock:   7000, // fromBlock + FilterRange
@@ -134,7 +144,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       7000,
 			LastRecordedBlocks: 6999, // Base
 			FilterRange:        10,
-			MaxRetries:         2,
+			RetriesCount:       2,
 			GoBackFirstStart:   firstStart,
 		}: {
 			fromBlock: 6980, // (Base+1) - GoBack
@@ -146,11 +156,12 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			CurrentBlock:       15000,
 			LastRecordedBlocks: 14999, // Base
 			FilterRange:        2000,
+			RetriesCount:       1,
 			MaxRetries:         2,
 			GoBackFirstStart:   firstStart,
 		}: {
-			fromBlock: 11000, // (Base+1) - GoBack
-			toBlock:   12999, // fromBlock + FilterRange
+			fromBlock: 13000, // (Base+1) - GoBack
+			toBlock:   14999, // fromBlock + FilterRange
 		},
 	}
 
@@ -158,13 +169,18 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 		prevFromBlock := 1 + test.LastRecordedBlocks - test.FilterRange
 
 		fromBlock, toBlock, err := computeFromBlockToBlock(
+			newStatus(
+				test.GoBackFirstStart,
+				test.Reorging,
+				prevFromBlock,
+				test.LastRecordedBlocks,
+				test.RetriesCount,
+			),
 			test.CurrentBlock,
 			test.LastRecordedBlocks,
 			test.FilterRange,
 			test.MaxRetries,
-			&test.GoBackFirstStart,
-			newStatus(test.Reorging, prevFromBlock, test.LastRecordedBlocks),
-			test.MaxRetries,
+			test.StartBlock,
 			debugger.NewDebugger("testComputeFromBlockToBlock", 4),
 		)
 

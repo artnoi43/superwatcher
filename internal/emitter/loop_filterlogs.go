@@ -19,8 +19,9 @@ type filterLogStatus struct {
 	CurrentBlock      uint64 `json:"currentBlock"`
 	LastRecordedBlock uint64 `json:"lastRecordedBlock"`
 
-	IsReorging   bool   `json:"isReorging"`
-	RetriesCount uint64 `json:"goBackRetries"` // Tracks how many times the emitter has to goBack because fromBlock was reorged
+	GoBackFirstStart bool   `json:"goBackFirstStart"`
+	IsReorging       bool   `json:"isReorging"`
+	RetriesCount     uint64 `json:"goBackRetries"` // Tracks how many times the emitter has to goBack because fromBlock was reorged
 }
 
 func (e *emitter) sleep() {
@@ -29,15 +30,18 @@ func (e *emitter) sleep() {
 
 // loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
 // and will only returns if (some) errors happened.
-func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) error {
+func (e *emitter) loopFilterLogs(
+	ctx context.Context,
+	status *filterLogStatus,
+) error {
 	// Assume that this is a normal first start (watcher restarted).
-	goBackFirstStart := true
+	status.GoBackFirstStart = true
 
 	// This will keep track of fromBlock/toBlock, as well as reorg status
 	loopCtx := context.Background()
 	for {
 		// Don't sleep or log status on first loop
-		if !goBackFirstStart {
+		if !status.GoBackFirstStart {
 			e.debugger.Debug(1, "new loopFilterLogs loop")
 			e.sleep()
 		}
@@ -50,14 +54,16 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 		default:
 			newStatus, err := e.computeFromBlockToBlock(
 				loopCtx,
-				&goBackFirstStart,
 				status,
 			)
-			if goBackFirstStart && errors.Is(err, errNoNewBlock) {
+
+			// If first run and there's no new block
+			if status.GoBackFirstStart && errors.Is(err, errNoNewBlock) {
 				err = nil
 			}
 
 			if err != nil {
+				// Skip if there's no new block just yet
 				if errors.Is(err, errNoNewBlock) {
 					// Use zap.String because this is not actually an error
 					e.debugger.Debug(
@@ -67,6 +73,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 					)
 					continue
 				}
+
 				if errors.Is(err, errFetchError) {
 					e.debugger.Debug(1, "fetch error", zap.Error(err))
 					continue
@@ -74,6 +81,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 
 				return errors.Wrap(err, "emitter failed to compute fromBlock and toBlock")
 			}
+
 			// updateStatus is called after e.filterLogs returned. It updates status to newStatus,
 			// and also increments the counter for tracking retries during reorg.
 			updateStatus := func(isReorging bool) {
@@ -112,8 +120,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 			updateStatus(false)
 
 			e.debugger.Debug(
-				1,
-				"filterLogs returned successfully",
+				1, "filterLogs returned successfully",
 				zap.Any("emitterStatus", newStatus),
 			)
 		}
@@ -126,8 +133,7 @@ func (e *emitter) loopFilterLogs(ctx context.Context, status *filterLogStatus) e
 // It returns old status with updated values if there was an error, or new status if successful.
 func (e *emitter) computeFromBlockToBlock(
 	ctx context.Context,
-	goBackFirstStart *bool,
-	status *filterLogStatus,
+	prevStatus *filterLogStatus,
 ) (
 	*filterLogStatus,
 	error,
@@ -136,9 +142,8 @@ func (e *emitter) computeFromBlockToBlock(
 	var err error
 	currentBlock, err := e.client.BlockNumber(ctx)
 	if err != nil {
-		return status, errors.Wrap(err, "failed to get current block number from node")
+		return prevStatus, errors.Wrap(err, "failed to get current block number from node")
 	}
-	status.CurrentBlock = currentBlock
 
 	// lastRecordedBlock was saved by engine.
 	// The value to be saved should be superwatcher.FilterResult.LastGoodBlock
@@ -146,15 +151,14 @@ func (e *emitter) computeFromBlockToBlock(
 	if err != nil {
 		// Return error if not datagateway.ErrRecordNotFound
 		if !errors.Is(err, datagateway.ErrRecordNotFound) {
-			return status, errors.Wrap(err, "failed to get last recorded block from Redis")
+			return prevStatus, errors.Wrap(err, "failed to get last recorded block from Redis")
 		}
 
 		// If no lastRecordedBlock, then it means the emitter has never been run on the host: there's no need to look back.
-		*goBackFirstStart = false
+		prevStatus.GoBackFirstStart = false
 		// If no lastRecordedBlock, use startBlock (contract genesis block)
 		lastRecordedBlock = e.conf.StartBlock
 	}
-	status.LastRecordedBlock = lastRecordedBlock
 
 	e.debugger.Debug(
 		2,
@@ -164,20 +168,24 @@ func (e *emitter) computeFromBlockToBlock(
 	)
 
 	// Continue if there's no new block yet
-	if !*goBackFirstStart {
-		if lastRecordedBlock == currentBlock {
-			return status, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
+	if lastRecordedBlock == currentBlock {
+		if !prevStatus.GoBackFirstStart {
+			return prevStatus, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
 		}
 	}
 
+	// Update prevStatus with current states
+	prevStatus.CurrentBlock = currentBlock
+	prevStatus.LastRecordedBlock = lastRecordedBlock
+
+	// And send the updated states to computeFromBlockToBlock
 	fromBlock, toBlock, err := computeFromBlockToBlock(
+		prevStatus,
 		currentBlock,
 		lastRecordedBlock,
 		e.conf.FilterRange,
 		e.conf.GoBackRetries,
-		goBackFirstStart,
-		status,
-		e.conf.GoBackRetries,
+		e.conf.StartBlock,
 		e.debugger,
 	)
 
@@ -191,8 +199,8 @@ func (e *emitter) computeFromBlockToBlock(
 		ToBlock:           toBlock,
 		CurrentBlock:      currentBlock,
 		LastRecordedBlock: lastRecordedBlock,
-		IsReorging:        status.IsReorging,
-		RetriesCount:      status.RetriesCount,
+		IsReorging:        prevStatus.IsReorging,
+		RetriesCount:      prevStatus.RetriesCount,
 	}, nil
 }
 
@@ -206,13 +214,12 @@ func (e *emitter) computeFromBlockToBlock(
 // (3) Normal cases - this should be the base case for computing fromBlock and toBlock.
 // The emitter will use `fromBlockToBlockNormal` function to compute the values.
 func computeFromBlockToBlock(
+	prevStatus *filterLogStatus,
 	currentBlock uint64,
 	lastRecordedBlock uint64,
 	filterRange uint64,
-	goBackRetries uint64,
-	goBackFirstStart *bool,
-	status *filterLogStatus,
 	maxRetries uint64,
+	startBlock uint64,
 	debugger *debugger.Debugger,
 ) (
 	uint64,
@@ -222,19 +229,17 @@ func computeFromBlockToBlock(
 	var fromBlock, toBlock uint64
 
 	// Special case
-	if *goBackFirstStart {
+	if prevStatus.GoBackFirstStart {
 		// Start with going back for filterRange * goBackRetries blocks if watcher was restarted
-
-		*goBackFirstStart = false
-
 		// lastRecordedBlock = 80, filterRange = 10, maxRetries = 5
 		// 1st run: from(31), to(40)   [goBackFirstStart] -> lastRecordedBlock = 40 (goBack: range = 5)
 		// 2nd run: from(31), to(50)   [normalCase]       -> lastRecordedBlock = 50 (range = 10)
 		// 3rd run: from(41), to(60)   [normalCase]       -> lastRecordedBlock = 60 (range = 10)
 
-		firstNewBlock := lastRecordedBlock + 1
-		goBack := filterRange * goBackRetries
+		prevStatus.GoBackFirstStart = false
+		goBack := filterRange * prevStatus.RetriesCount
 
+		firstNewBlock := lastRecordedBlock + 1
 		// Prevent overflow
 		if goBack > firstNewBlock {
 			debugger.Debug(
@@ -243,7 +248,7 @@ func computeFromBlockToBlock(
 				zap.Uint64("firstNewBlock", firstNewBlock),
 			)
 
-			fromBlock = 0
+			fromBlock = startBlock
 		} else {
 			fromBlock = firstNewBlock - goBack
 		}
@@ -259,7 +264,7 @@ func computeFromBlockToBlock(
 			zap.Uint64("fromBlock", fromBlock),
 		)
 
-	} else if status.IsReorging {
+	} else if prevStatus.IsReorging {
 
 		// The lookBack range will grow after each retries, but not the forward range
 		// lastRecordedBlock = 80, filterRange = 10
@@ -271,32 +276,31 @@ func computeFromBlockToBlock(
 		// 61 - 110  # none reorged in this loop       lastRecordedBlock = 110, lookBack = 25, fwdRange = 110 - 110 = 0
 		// 101 - 120 # normal case continues           lastRecordedBlock = 120, lookBack = 10, fwdRange = 120 - 110 = 10
 
-		if status.RetriesCount > maxRetries {
-			return status.FromBlock, status.ToBlock, errors.Wrapf(ErrMaxRetriesReached, "%d goBackRetries", status.RetriesCount)
+		if prevStatus.RetriesCount > maxRetries {
+			return prevStatus.FromBlock, prevStatus.ToBlock, errors.Wrapf(ErrMaxRetriesReached, "%d goBackRetries", prevStatus.RetriesCount)
 		}
 
-		// We don't need to do `goBack := filterRange - status.RetriesCount`
-		// because toBlock is fixed and fromBlock goes back by `filterRange` each loop.
+		// goBack in this case (reorging) is fixed
 		goBack := filterRange
 
-		// goBack 1500 fromBlock 1050
-		if goBack > status.FromBlock {
+		// goBack is 1500, but (prev) fromBlock is 1050
+		if goBack > prevStatus.FromBlock {
 			debugger.Debug(
 				1, "goBack > fromBlock",
 				zap.Uint64("goBack", goBack),
 				zap.Uint64("fromBlock", fromBlock),
-				zap.Uint64("currentRetries", status.RetriesCount),
+				zap.Uint64("currentRetries", prevStatus.RetriesCount),
 			)
 
-			fromBlock = 0
-
+			fromBlock = startBlock
 		} else {
-			fromBlock = status.FromBlock - goBack
+			// goBack from the last fromBlock
+			fromBlock = prevStatus.FromBlock - goBack
 		}
 
 		// toBlock does not go back, so we don't update it,
 		// unless currentBlock was shrinked during reorg too.
-		toBlock = gslutils.Min([]uint64{status.ToBlock, currentBlock})
+		toBlock = gslutils.Min(prevStatus.ToBlock, currentBlock)
 
 	} else {
 
@@ -306,12 +310,13 @@ func computeFromBlockToBlock(
 		// 81 - 100  # none reoged in this loop        lastRecordedBlock = 100, lookBack = 10  fwdRange = 100 - 90   = 10
 		// 91 - 110  # none reoged in this loop        lastRecordedBlock = 110, lookBack = 10  fwdRange = 110 - 100  = 10
 		// 101 - 120 # none reoged in this loop        lastRecordedBlock = 120, lookBack = 10  fwdRange = 120 - 110  = 10
-		fromBlock, toBlock = fromBlockToBlockNormal(currentBlock, lastRecordedBlock, filterRange)
+
+		fromBlock, toBlock = fromBlockToBlockNormal(startBlock, currentBlock, lastRecordedBlock, filterRange)
 	}
 
 	// Update status here too
-	status.FromBlock = fromBlock
-	status.ToBlock = toBlock
+	prevStatus.FromBlock = fromBlock
+	prevStatus.ToBlock = toBlock
 
 	return fromBlock, toBlock, nil
 }

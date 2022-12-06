@@ -4,6 +4,7 @@ import "testing"
 
 func TestFromBlockToBlockNormal(t *testing.T) {
 	type blocknums struct {
+		start       uint64
 		current     uint64
 		lastRec     uint64
 		filterRange uint64
@@ -15,6 +16,7 @@ func TestFromBlockToBlockNormal(t *testing.T) {
 
 	tests := map[blocknums]answers{
 		{
+			start:       69,
 			current:     1000,
 			lastRec:     100,
 			filterRange: 300,
@@ -33,7 +35,8 @@ func TestFromBlockToBlockNormal(t *testing.T) {
 	}
 
 	for input, expected := range tests {
-		from, to := fromBlockToBlockNormal(input.current, input.lastRec, input.filterRange)
+		from, to := fromBlockToBlockNormal(input.start, input.current, input.lastRec, input.filterRange)
+
 		var failed bool
 		if expected.fromBlock != from {
 			t.Fatalf("fromBlock not matched: expecting %d, got %d", expected.fromBlock, from)
