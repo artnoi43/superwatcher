@@ -74,6 +74,7 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: code-analysis
+          recreate: true
           message: |
             ## ❌ Failed to complete Code Analysis & Testing
             ${{ env.pr_info }}
