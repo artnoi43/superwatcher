@@ -59,7 +59,7 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Update Pull Request Comment for Success (${{ matrix.go-version }} ${{ matrix.os }})
+      - name: Update Pull Request Comment for Success (${{ env.GITHUB_SHA_SHORT }})
         if: ${{ success() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -70,7 +70,7 @@ jobs:
             ${{ env.pr_info }}
             _Merge this pull request if you think it's ready._
 
-      - name: Update Pull Request Comment for Failure (${{ matrix.go-version }} ${{ matrix.os }})
+      - name: Update Pull Request Comment for Failure (${{ env.GITHUB_SHA_SHORT }})
         if: ${{ failure() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
