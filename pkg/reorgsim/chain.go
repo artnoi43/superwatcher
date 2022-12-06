@@ -1,6 +1,8 @@
 package reorgsim
 
 import (
+	"fmt"
+
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -54,6 +56,31 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 type MoveLogs struct {
 	newBlock uint64
 	txHashes []common.Hash // txHashes of logs to be moved to newBlock
+}
+
+// NewBlockChainV2 is similar to NewBlockChain, but the reorgedChain (the second return variable)
+// will call blockChain.reorgMoveLogs with |logsMoved|.
+// Calling NewBlockChainV2 with nil |logsMoved| is the same as calling NewBlockChain
+func NewBlockChainV2(
+	mappedLogs map[uint64][]types.Log,
+	reorgedAt uint64,
+	logsMoved map[uint64][]MoveLogs,
+) (
+	blockChain,
+	blockChain,
+) {
+	for blockNumber := range logsMoved {
+		if blockNumber < reorgedAt {
+			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, reorgedAt))
+		}
+	}
+	chain, reorgedChain := NewBlockChain(mappedLogs, reorgedAt)
+
+	if logsMoved != nil {
+		reorgedChain.reorgMoveLogs(logsMoved)
+	}
+
+	return chain, reorgedChain
 }
 
 func (c blockChain) reorgMoveLogs(
