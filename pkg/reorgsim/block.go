@@ -1,6 +1,7 @@
 package reorgsim
 
 import (
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -18,17 +19,17 @@ type block struct {
 // Implements superwatcher.EmitterBlockHeader
 // We'll use block in place of *types.Header,
 // because *types.Header is too packed to mock.
-func (b block) Hash() common.Hash {
+func (b *block) Hash() common.Hash {
 	return b.hash
 }
 
-func (b block) Logs() []types.Log {
+func (b *block) Logs() []types.Log {
 	return b.logs
 }
 
 // reorg takes a block, and simulates chain reorg on that block
 // by changing the hash, and changing the logs' block hashes.
-func (b *block) reorg() block {
+func (b *block) reorg() *block {
 	// TODO: implement
 	newBlockHash := PRandomHash(b.blockNumber)
 
@@ -41,11 +42,23 @@ func (b *block) reorg() block {
 		// logs[i].TxHash = PRandomHash(logs[i].TxHash.Big().Uint64() + 696969)
 	}
 
-	return block{
+	return &block{
 		blockNumber: b.blockNumber,
 		hash:        newBlockHash,
 		logs:        logs,
 		reorgedHere: b.reorgedHere,
 		toBeForked:  true,
 	}
+}
+
+func (b *block) removeLogs(txHashes []common.Hash) {
+	for i, log := range b.logs {
+		if gslutils.Contains(txHashes, log.TxHash) {
+			b.removeLog(i)
+		}
+	}
+}
+
+func (b *block) removeLog(logIdx int) {
+	b.logs = append(b.logs[:logIdx], b.logs[logIdx+1:]...)
 }
