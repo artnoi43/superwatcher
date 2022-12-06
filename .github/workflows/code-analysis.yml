@@ -59,24 +59,24 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Update Pull Request Comment for Success (${{ env.GOVERSION }})
+      - name: Update Pull Request Comment for Success
         if: ${{ success() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: code-analysis
           recreate: true
           message: |
-            ## ✅ Successfully completed Code Analysis & Testing
+            ## ✅ Successfully completed Code Analysis & Testing (${{ env.GOVERSION }})
             ${{ env.pr_info }}
             _Merge this pull request if you think it's ready._
 
-      - name: Update Pull Request Comment for Failure (${{ env.GOVERSION }})
+      - name: Update Pull Request Comment for Failure
         if: ${{ failure() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: code-analysis
           recreate: true
           message: |
-            ## ❌ Failed to complete Code Analysis & Testing
+            ## ❌ Failed to complete Code Analysis & Testing (${{ env.GOVERSION }})
             ${{ env.pr_info }}
             _Please fix the errors before merging this pull request._
