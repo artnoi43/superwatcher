@@ -1,3 +1,13 @@
+# GolangCI-Lint
+# this workspace is using golangci-lint for linting, so you need to install it.
+## MacOS Installation (HomeBrew)
+# $ brew install golangci-lint
+# See more: https://golangci-lint.run/usage/install/
+## VSCode Integrations (for User Settings)
+# 1. Open VSCode Settings (JSON)
+# 2. in configs, add field `go.lintTool` and value `golangci-lint` ("go.lintTool":"golangci-lint")
+# See more: https://golangci-lint.run/usage/integrations/
+
 # See more: https://golangci-lint.run/usage/configuration/#run-configuration
 run:
   # Timeout for analysis, e.g. 30s, 5m.
@@ -10,10 +20,11 @@ run:
   # If false (default) - golangci-lint acquires file lock on start.
   allow-parallel-runners: true
   skip-files:
-    #    - ".*/config/config.go"
+    - ".*/config/config.go"
+    - "config/config.go"
   skip-dirs:
     - "env"
-    - "dist"
+    - "temp.*"
     - "scripts"
 
 # See more: https://golangci-lint.run/usage/linters/
@@ -23,8 +34,8 @@ linters:
     ### Metalinter
     - staticcheck # bugs, metalinter - https://staticcheck.io
     - govet # bugs, metalinter
-    # - gocritic # style, metalinter - https://github.com/go-critic/go-critic
-    # - revive # style, metalinter - https://github.com/mgechev/revive
+    - gocritic # style, metalinter - https://github.com/go-critic/go-critic
+    - revive # style, metalinter - https://github.com/mgechev/revive
     ### Default Linters
     - gosimple # style
     - ineffassign # unused
@@ -47,8 +58,7 @@ linters:
     - prealloc # performance - Find slice declarations that could potentially be pre-allocated, https://github.com/alexkohler/prealloc
     - gosec # bugs - Inspects source code for security problems
     - wrapcheck # style, error - Checks that errors returned from external packages are wrapped, we should wrap the error from external library
-    ### Annoying Linters
-    # - dupl # style - code clone detection
+    - dupl # style - code clone detection
     ### Deprecated Linters
     # - deadcode # unused
     # - varcheck # unused
@@ -71,10 +81,6 @@ issues:
     - text: "copylocks:"
       linters:
         - govet
-    - path: slamm
-      text: "`Cancelled` is a misspelling of `Canceled`"
-      linters:
-        - misspell
 
 linters-settings:
   misspell:
@@ -82,7 +88,6 @@ linters-settings:
     ignore-words: []
   wrapcheck:
     ignorePackageGlobs:
-      - "github.com/pkg/*"
       - "github.com/gofiber/fiber/*"
   goconst:
     ignore-tests: true
