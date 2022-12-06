@@ -37,8 +37,8 @@ linters:
     ### Metalinter
     - staticcheck # bugs, metalinter - https://staticcheck.io
     - govet # bugs, metalinter
-    # - gocritic # style, metalinter - https://github.com/go-critic/go-critic
-    # - revive # style, metalinter - https://github.com/mgechev/revive
+    - gocritic # style, metalinter - https://github.com/go-critic/go-critic
+    - revive # style, metalinter - https://github.com/mgechev/revive
     ### Default Linters
     - gosimple # style
     - ineffassign # unused
@@ -61,8 +61,7 @@ linters:
     - prealloc # performance - Find slice declarations that could potentially be pre-allocated, https://github.com/alexkohler/prealloc
     - gosec # bugs - Inspects source code for security problems
     - wrapcheck # style, error - Checks that errors returned from external packages are wrapped, we should wrap the error from external library
-    ### Annoying Linters
-    # - dupl # style - code clone detection
+    - dupl # style - code clone detection
     ### Deprecated Linters
     # - deadcode # unused
     # - varcheck # unused
