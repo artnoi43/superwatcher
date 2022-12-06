@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
@@ -37,25 +36,11 @@ func NewRedisWatcherStateDataGateway(
 	}
 }
 
-// handleRedisErr checks if err is redis.Nil, and if so,
-// wraps it with datagateway.ErrRecordNotFound.
-func handleRedisErr(err error, action, key string) error {
-	if err == nil {
-		return nil
-	}
-
-	if errors.Is(err, redis.Nil) {
-		err = errors.Wrap(datagateway.ErrRecordNotFound, err.Error())
-		err = datagateway.WrapErrRecordNotFound(err, key)
-	}
-	return errors.Wrapf(err, "action: %s", action)
-}
-
 func (s *watcherStateRedisCli) SetLastRecordedBlock(
 	ctx context.Context,
 	blockNumber uint64,
 ) error {
-	return handleRedisErr(
+	return datagateway.HandleRedisErr(
 		s.redisClient.Set(ctx, s.keyLastBlock, blockNumber, -1).Err(),
 		"set lastRecordedBlock",
 		s.keyLastBlock,
@@ -67,7 +52,7 @@ func (s *watcherStateRedisCli) GetLastRecordedBlock(
 ) (uint64, error) {
 	val, err := s.redisClient.Get(ctx, s.keyLastBlock).Result()
 	if err != nil {
-		return 0, handleRedisErr(err, "get lastRecordedBlock", s.keyLastBlock)
+		return 0, datagateway.HandleRedisErr(err, "get lastRecordedBlock", s.keyLastBlock)
 	}
 
 	lastRecordedBlock, err := strconv.ParseUint(val, 10, 64)
