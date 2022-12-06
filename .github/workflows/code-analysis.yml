@@ -35,7 +35,7 @@ jobs:
         with:
           header: code-analysis
           message: |
-            ## 🔍 Running Code Analysis & Testing (${{ env.GITHUB_SHA_SHORT }})
+            ## 🔍 Running Code Analysis & Testing (${{ env.GOVERSION }})
             ${{ env.pr_info }}
             _Please wait for the result before merging this pull request._
 
@@ -59,7 +59,7 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Update Pull Request Comment for Success (${{ env.GITHUB_SHA_SHORT }})
+      - name: Update Pull Request Comment for Success (${{ env.GOVERSION }})
         if: ${{ success() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -70,7 +70,7 @@ jobs:
             ${{ env.pr_info }}
             _Merge this pull request if you think it's ready._
 
-      - name: Update Pull Request Comment for Failure (${{ env.GITHUB_SHA_SHORT }})
+      - name: Update Pull Request Comment for Failure (${{ env.GOVERSION }})
         if: ${{ failure() }}
         uses: marocchino/sticky-pull-request-comment@v2
         with:
