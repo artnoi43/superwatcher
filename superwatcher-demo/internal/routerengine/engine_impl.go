@@ -3,6 +3,7 @@ package routerengine
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -16,11 +17,11 @@ func (e *routerEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact, // Ignored
 ) (
-	map[string][]superwatcher.Artifact,
+	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	// Artifacts to return - we don't know its size
-	var retArtifacts = make(map[string][]superwatcher.Artifact) //nolint:prealloc
+	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact) //nolint:prealloc
 	logsMap := e.mapLogsToSubEngine(logs)
 
 	// ensLogs := logsMap[subengines.SubEngineENS]
@@ -52,7 +53,7 @@ func (e *routerEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	map[string][]superwatcher.Artifact,
+	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	e.debugger.Debug(
@@ -60,7 +61,7 @@ func (e *routerEngine) HandleReorgedLogs(
 		zap.Any("artifacts", artifacts),
 	)
 
-	var retArtifacts = make(map[string][]superwatcher.Artifact) //nolint:all Artifacts to return - we dont know the size
+	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact) //nolint:all Artifacts to return - we dont know the size
 	logsMap := e.mapLogsToSubEngine(logs)
 
 	for subEngine, logs := range logsMap {

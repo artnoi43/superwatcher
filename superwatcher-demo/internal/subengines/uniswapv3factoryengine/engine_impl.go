@@ -1,11 +1,11 @@
 package uniswapv3factoryengine
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
@@ -27,19 +27,18 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	map[string][]superwatcher.Artifact,
+	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	// New artifact is created for new logs
-	var retArtifacts = make(map[string][]superwatcher.Artifact)
+	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
 		logArtifact, err := e.handleGoodLog(log)
 		if err != nil {
 			return nil, errors.Wrapf(err, "poolfactory.HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 		}
 
-		blockHash := gslutils.StringerToLowerString(log.BlockHash)
-		retArtifacts[blockHash] = append(retArtifacts[blockHash], logArtifact)
+		retArtifacts[log.BlockHash] = append(retArtifacts[log.BlockHash], logArtifact)
 	}
 
 	// poolArtifact is a map, use one instance returned from HandleGoodLog
@@ -50,20 +49,19 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	map[string][]superwatcher.Artifact,
+	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	e.debugger.Debug(1, "poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
-	var retArtifacts = make(map[string][]superwatcher.Artifact)
+	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
 		logArtifact, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {
 			return nil, errors.Wrap(err, "uniswapv3PoolFactoryEngine.handleReorgedLog failed")
 		}
 
-		blockHash := gslutils.StringerToLowerString(log.BlockHash)
-		retArtifacts[blockHash] = append(retArtifacts[blockHash], logArtifact)
+		retArtifacts[log.BlockHash] = append(retArtifacts[log.BlockHash], logArtifact)
 	}
 
 	return retArtifacts, nil

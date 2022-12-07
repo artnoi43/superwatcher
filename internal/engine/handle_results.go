@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -64,7 +65,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 			reorgedBlocks.artifacts = append(reorgedBlocks.artifacts, metadata.artifacts)
 		}
 
-		var reorgedArtifacts map[string][]superwatcher.Artifact
+		var reorgedArtifacts map[common.Hash][]superwatcher.Artifact
 		if shouldCallServiceEngine {
 			var err error
 			reorgedArtifacts, err = e.serviceEngine.HandleReorgedLogs(reorgedBlocks.logs, reorgedBlocks.artifacts)
@@ -86,7 +87,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 		// Update metadata for reorged blocks
 		for _, metadata := range reorgedBlocks.metadata {
 			metadata.state.Fire(EventHandleReorg)
-			metadata.artifacts = reorgedArtifacts[metadata.blockHash]
+			metadata.artifacts = reorgedArtifacts[common.HexToHash(metadata.blockHash)]
 
 			e.debugger.Debug(
 				4, "* saving reorgedBlock metadata",
@@ -124,7 +125,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 			reorgedBlocks.artifacts = append(reorgedBlocks.artifacts, metadata.artifacts)
 		}
 
-		var artifacts map[string][]superwatcher.Artifact
+		var artifacts map[common.Hash][]superwatcher.Artifact
 		if shouldCallServiceEngine {
 			var err error
 			artifacts, err = e.serviceEngine.HandleGoodLogs(goodBlocks.logs, goodBlocks.artifacts)
@@ -135,7 +136,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		for _, metadata := range goodBlocks.metadata {
 			metadata.state.Fire(EventProcess)
-			metadata.artifacts = artifacts[metadata.blockHash]
+			metadata.artifacts = artifacts[common.HexToHash(metadata.blockHash)]
 
 			e.debugger.Debug(
 				3, "* saving goodBlock metadata",
