@@ -112,8 +112,9 @@ func (c blockChain) reorgMoveLogs(
 			b.removeLogs(move.TxHashes)
 
 			// Change log.BlockHash to new BlockHash
-			for _, log := range logsToMove {
-				log.BlockHash = targetBlock.hash
+			for i := range logsToMove {
+				logsToMove[i].BlockNumber = targetBlock.blockNumber
+				logsToMove[i].BlockHash = targetBlock.hash
 			}
 
 			targetBlock.logs = append(targetBlock.logs, logsToMove...)
