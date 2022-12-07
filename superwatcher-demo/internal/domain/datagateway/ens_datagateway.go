@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
@@ -37,9 +38,9 @@ func handleRedisErr(err error, action, key string) error {
 	}
 
 	if errors.Is(err, redis.Nil) {
-		err = errors.Wrap(ErrRecordNotFound, err.Error())
-		err = WrapErrRecordNotFound(err, key)
+		err = datagateway.WrapErrRecordNotFound(err, key)
 	}
+
 	return errors.Wrapf(err, "action: %s", action)
 }
 

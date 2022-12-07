@@ -8,6 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
+
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
@@ -56,7 +58,7 @@ func TestMockDataGatewayENS(t *testing.T) {
 
 		out, err = dgw.GetENS(nil, key)
 		if err != nil {
-			if errors.Is(err, ErrRecordNotFound) {
+			if errors.Is(err, datagateway.ErrRecordNotFound) {
 				if out != nil {
 					t.Fatal("got non-nil ens after call to DelENS")
 				}

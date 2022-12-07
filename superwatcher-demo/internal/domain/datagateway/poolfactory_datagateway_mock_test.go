@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
@@ -51,7 +52,7 @@ func TestMockDataGatewayPoolFactory(t *testing.T) {
 
 		out, err := dgw.GetPool(nil, addr)
 		if err != nil {
-			if errors.Is(err, ErrRecordNotFound) {
+			if errors.Is(err, datagateway.ErrRecordNotFound) {
 				if out != nil {
 					t.Fatalf("got non nil pool %s", addr)
 				}
