@@ -9,6 +9,7 @@ import (
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/gsl/soyutils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -17,6 +18,92 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
+
+type testConfig struct {
+	StartBlock uint64                         `json:"startBlock"`
+	ReorgedAt  uint64                         `json:"reorgedAt"`
+	FromBlock  uint64                         `json:"fromBlock"`
+	ToBlock    uint64                         `json:"toBlock"`
+	LogsFiles  []string                       `json:"logs"`
+	MovedLogs  map[uint64][]reorgsim.MoveLogs `json:"movedLogs"`
+}
+
+var testCases = []testConfig{
+	{
+		StartBlock: 15944390,
+		ReorgedAt:  15944411,
+		FromBlock:  15944400,
+		ToBlock:    15944500,
+		LogsFiles: []string{
+			"./assets/logs_poolfactory.json",
+			"./assets/logs_lp.json",
+		},
+		MovedLogs: nil,
+	},
+	{
+		StartBlock: 15965710,
+		ReorgedAt:  15965730,
+		FromBlock:  15965717,
+		ToBlock:    15965748,
+		LogsFiles: []string{
+			"./assets/logs_lp_2_1.json",
+			"./assets/logs_lp_2_2.json",
+		},
+		MovedLogs: nil,
+	},
+	{
+		StartBlock: 15965800,
+		ReorgedAt:  15965811,
+		FromBlock:  15965802,
+		ToBlock:    15965835,
+		LogsFiles: []string{
+			"./assets/logs_lp_3_1.json",
+			"./assets/logs_lp_3_2.json",
+		},
+		MovedLogs: nil,
+	},
+	{
+		StartBlock: 15966455,
+		ReorgedAt:  15966475,
+		FromBlock:  15966460,
+		ToBlock:    15966479,
+		LogsFiles: []string{
+			"./assets/logs_lp_4.json",
+		},
+		MovedLogs: nil,
+	},
+	{
+		StartBlock: 15966490,
+		ReorgedAt:  15966536,
+		FromBlock:  15966500,
+		ToBlock:    15966536,
+		LogsFiles: []string{
+			"./assets/logs_lp_5.json",
+		},
+		MovedLogs: nil,
+	},
+	{
+		StartBlock: 15966490,
+		ReorgedAt:  15966530, // 0xf3a142
+		FromBlock:  15966500,
+		ToBlock:    15966540,
+		LogsFiles: []string{
+			"./assets/logs_lp_5.json",
+		},
+		// Move logs of 1 txHash to new block
+		MovedLogs: map[uint64][]reorgsim.MoveLogs{
+			15966532: { // 0xf3a144
+				{
+					NewBlock: 15966536,
+					TxHashes: []common.Hash{
+						common.HexToHash("0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7"),
+						// common.HexToHash("0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d"),
+					},
+				},
+			},
+		},
+	},
+}
 
 // TODO: verbose does not work
 func getFlagValues() (caseNumber int, verbose bool) {
@@ -107,7 +194,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		Debug:         true,
 	}
 
-	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2)
+	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2, tc.MovedLogs)
 
 	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 	errChan := make(chan error, 5)

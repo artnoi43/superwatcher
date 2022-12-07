@@ -12,65 +12,6 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-type testConfig struct {
-	StartBlock uint64   `json:"startBlock"`
-	ReorgedAt  uint64   `json:"reorgedAt"`
-	FromBlock  uint64   `json:"fromBlock"`
-	ToBlock    uint64   `json:"toBlock"`
-	LogsFiles  []string `json:"logs"`
-}
-
-var testCases = []testConfig{
-	{
-		StartBlock: 15944390,
-		ReorgedAt:  15944411,
-		FromBlock:  15944400,
-		ToBlock:    15944500,
-		LogsFiles: []string{
-			"./assets/logs_poolfactory.json",
-			"./assets/logs_lp.json",
-		},
-	},
-	{
-		StartBlock: 15965710,
-		ReorgedAt:  15965730,
-		FromBlock:  15965717,
-		ToBlock:    15965748,
-		LogsFiles: []string{
-			"./assets/logs_lp_2_1.json",
-			"./assets/logs_lp_2_2.json",
-		},
-	},
-	{
-		StartBlock: 15965800,
-		ReorgedAt:  15965811,
-		FromBlock:  15965802,
-		ToBlock:    15965835,
-		LogsFiles: []string{
-			"./assets/logs_lp_3_1.json",
-			"./assets/logs_lp_3_2.json",
-		},
-	},
-	{
-		StartBlock: 15966455,
-		ReorgedAt:  15966475,
-		FromBlock:  15966460,
-		ToBlock:    15966479,
-		LogsFiles: []string{
-			"./assets/logs_lp_4.json",
-		},
-	},
-	{
-		StartBlock: 15966490,
-		ReorgedAt:  15966536,
-		FromBlock:  15966500,
-		ToBlock:    15966536,
-		LogsFiles: []string{
-			"./assets/logs_lp_5.json",
-		},
-	},
-}
-
 func TestProcessReorg(t *testing.T) {
 	for i, tc := range testCases {
 		b, _ := json.Marshal(tc)
@@ -82,10 +23,10 @@ func TestProcessReorg(t *testing.T) {
 	}
 }
 
-func testProcessReorg(c testConfig) error {
+func testProcessReorg(tc testConfig) error {
 	tracker := newTracker("testProcessReorg", 3)
-	hardcodedLogs := reorgsim.InitMappedLogsFromFiles(c.LogsFiles)
-	oldChain, reorgedChain := reorgsim.NewBlockChain(hardcodedLogs, c.ReorgedAt)
+	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles)
+	oldChain, reorgedChain := reorgsim.NewBlockChainV2(logs, tc.ReorgedAt, tc.MovedLogs)
 
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
@@ -99,6 +40,7 @@ func testProcessReorg(c testConfig) error {
 		})
 	}
 
+	// Collect reorgedLogs for checking
 	var reorgedLogs []types.Log
 	for _, block := range reorgedChain {
 		if logs := block.Logs(); len(logs) != 0 {
@@ -106,12 +48,23 @@ func testProcessReorg(c testConfig) error {
 		}
 	}
 
+	// Collect movedFrom blockNumbers
+	var movedLogFromBlockNumbers []uint64
+	var movedLogToBlockNumbers []uint64
+	for blockNumber, moves := range tc.MovedLogs {
+		movedLogFromBlockNumbers = append(movedLogFromBlockNumbers, blockNumber)
+		for _, move := range moves {
+			movedLogToBlockNumbers = append(movedLogToBlockNumbers, move.NewBlock)
+		}
+	}
+
+	// Call mapFreshLogs with reorgedLogs
 	freshHashes, freshLogs, processLogs := mapFreshLogs(reorgedLogs)
 
 	wasReorged, err := processReorg(
 		tracker,
-		c.FromBlock,
-		c.ToBlock,
+		tc.FromBlock,
+		tc.ToBlock,
 		freshHashes,
 		freshLogs,
 		processLogs,
@@ -121,31 +74,45 @@ func testProcessReorg(c testConfig) error {
 		return err
 	}
 
-	for blockNumber := c.FromBlock; blockNumber <= c.ToBlock; blockNumber++ {
+	for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
 		// Skip blocks without logs
-		if len(hardcodedLogs[blockNumber]) == 0 {
+		if len(logs[blockNumber]) == 0 {
 			continue
 		}
 
 		reorged := wasReorged[blockNumber]
 
 		// Any blocks after c.reorgedAt should be reorged.
-		if blockNumber >= c.ReorgedAt {
+		if blockNumber >= tc.ReorgedAt {
 			if reorged {
 				continue
 			}
 
 			return fmt.Errorf(
 				"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged: %v",
-				blockNumber, c.ReorgedAt, wasReorged,
+				blockNumber, tc.ReorgedAt, wasReorged,
 			)
 		}
 
 		// And any block before c.reorgedAt should NOT be reorged.
 		if reorged {
 			return fmt.Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged: %v",
-				blockNumber, c.ReorgedAt, wasReorged,
+				blockNumber, tc.ReorgedAt, wasReorged,
 			)
+		}
+	}
+
+	for _, blockNumber := range movedLogFromBlockNumbers {
+		reorged := wasReorged[blockNumber]
+		if !reorged {
+			return fmt.Errorf("movedLogFromBlock %d was not tagged as reorged", blockNumber)
+		}
+	}
+
+	for _, blockNumber := range movedLogToBlockNumbers {
+		reorged := wasReorged[blockNumber]
+		if !reorged {
+			return fmt.Errorf("movedLogTo %d was not tagged as reorged", blockNumber)
 		}
 	}
 

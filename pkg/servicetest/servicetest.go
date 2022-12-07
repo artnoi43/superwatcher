@@ -55,7 +55,7 @@ func InitTestComponents(
 
 	return &TestComponents{
 		conf:          conf,
-		client:        reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel),
+		client:        reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel, nil),
 		serviceEngine: serviceEngine,
 	}, param
 }
