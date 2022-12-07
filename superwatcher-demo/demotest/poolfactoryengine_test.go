@@ -80,7 +80,7 @@ func testServiceEnginePoolFactory(
 	}
 
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
-	components, param := servicetest.InitTestComponents(
+	components, _ := servicetest.InitTestComponents(
 		conf,
 		poolFactoryEngine,
 		logsFiles,
@@ -89,5 +89,5 @@ func testServiceEnginePoolFactory(
 		exitBlock,
 	)
 
-	return servicetest.RunServiceTestComponents(components, param)
+	return servicetest.RunServiceTestComponents(components)
 }

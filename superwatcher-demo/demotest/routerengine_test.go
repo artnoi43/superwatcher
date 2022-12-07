@@ -41,7 +41,7 @@ func TestServiceEngineRouter(t *testing.T) {
 			LogLevel:      logLevel,
 		}
 
-		components, param := servicetest.InitTestComponents(
+		components, _ := servicetest.InitTestComponents(
 			conf,
 			router,
 			testCase.LogsFiles,
@@ -50,7 +50,7 @@ func TestServiceEngineRouter(t *testing.T) {
 			testCase.ExitBlock,
 		)
 
-		_, err := servicetest.RunServiceTestComponents(components, param)
+		_, err := servicetest.RunServiceTestComponents(components)
 		if err != nil {
 			t.Error("error in full servicetest (ens):", err.Error())
 		}

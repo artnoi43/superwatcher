@@ -64,7 +64,7 @@ func InitTestComponents(
 // It does so by setting up superwatcher.WatcherEmitter and superwatcher.WatcherEngine
 // and pass these objects to RunService.
 // StateDataGateway is created within this function and will be returned to caller
-func RunServiceTestComponents(components *TestComponents, param reorgsim.Param) (superwatcher.StateDataGateway, error) {
+func RunServiceTestComponents(components *TestComponents) (superwatcher.StateDataGateway, error) {
 	// Use nil addresses and topics
 	fakeRedis := mockwatcherstate.New(components.conf.StartBlock)
 	emitter, engine := initsuperwatcher.New(

@@ -29,7 +29,7 @@ func fromBlockToBlockNormal(
 	// e.g. firstNewBlock for next loop is 50, but the range is 100
 
 	if filterRange > firstNewBlock {
-		fromBlock = 0
+		fromBlock = emitterStartBlock
 	} else {
 		fromBlock = firstNewBlock - filterRange
 	}
