@@ -12,9 +12,9 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/artnoi43/superwatcher/pkg/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 

@@ -4,8 +4,9 @@ import (
 	"errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/watcherstate"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
+
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/watcherstate"
 )
 
 // NewRedisStateDataGateway returns default implementation of StateDataGateway.

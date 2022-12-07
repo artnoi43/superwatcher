@@ -7,7 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
+	"github.com/artnoi43/superwatcher"
+
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
 )
 
 const (
@@ -26,7 +28,7 @@ type watcherStateRedisCli struct {
 func NewRedisWatcherStateDataGateway(
 	serviceKey string, // Each key for each different service and chain
 	redisCli datagateway.RedisClient,
-) *watcherStateRedisCli {
+) superwatcher.StateDataGateway {
 	return &watcherStateRedisCli{
 		// Format strings now to save CPU costs later
 		keyBase:      fmt.Sprintf(redisKeyBase, serviceKey),

@@ -188,6 +188,9 @@ func (e *emitter) computeFromBlockToBlock(
 		e.conf.StartBlock,
 		e.debugger,
 	)
+	if err != nil {
+		return prevStatus, errors.Wrap(err, "failed to compute fromBlockToBlock")
+	}
 
 	// If fromBlock was too far back, i.e. fromBlock = 0
 	if fromBlock < e.conf.StartBlock && toBlock >= e.conf.StartBlock {
