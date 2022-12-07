@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -22,14 +23,13 @@ func (e *ensEngine) HandleGoodLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	map[string][]superwatcher.Artifact,
+	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	e.debugger.Debug(3, "HandleGoodLogs called")
 
-	var outArtifacts = make(map[string][]superwatcher.Artifact)
+	var outArtifacts = make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
-		blockHash := gslutils.StringerToLowerString(log.BlockHash)
 		logArtifact, err := e.HandleGoodLog(log, artifacts)
 		if err != nil {
 			if errors.Is(err, internal.ErrNoNeedHandle) {
@@ -39,7 +39,7 @@ func (e *ensEngine) HandleGoodLogs(
 		}
 
 		artifacts = append(artifacts, logArtifact)
-		outArtifacts[blockHash] = append(outArtifacts[blockHash], logArtifact)
+		outArtifacts[log.BlockHash] = append(outArtifacts[log.BlockHash], logArtifact)
 	}
 
 	return outArtifacts, nil
@@ -120,24 +120,23 @@ func (e *ensEngine) HandleReorgedLogs(
 	logs []*types.Log,
 	artifacts []superwatcher.Artifact,
 ) (
-	map[string][]superwatcher.Artifact,
+	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	e.debugger.Debug(1, fmt.Sprintf("got %d reorged logs and %d artifacts", len(logs), len(artifacts)), zap.Any("artifacts", artifacts))
 
-	var outputArtifacts = make(map[string][]superwatcher.Artifact)
+	var outputArtifacts = make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
-		blockHash := gslutils.StringerToLowerString(log.BlockHash)
 		ens, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {
 			return nil, errors.Wrap(err, "ensEngine.handleReorgedLog failed")
 		}
 
-		outputArtifacts[blockHash] = append(outputArtifacts[blockHash], ens)
+		outputArtifacts[log.BlockHash] = append(outputArtifacts[log.BlockHash], ens)
 
 		err = e.dataGateway.DelENS(context.Background(), &ens.ENS)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", log.BlockHash.String())
+			return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", gslutils.StringerToLowerString(log.BlockHash))
 		}
 	}
 

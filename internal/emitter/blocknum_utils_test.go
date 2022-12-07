@@ -21,7 +21,7 @@ func TestFromBlockToBlockNormal(t *testing.T) {
 			lastRec:     100,
 			filterRange: 300,
 		}: {
-			fromBlock: 0,
+			fromBlock: 69,
 			toBlock:   400,
 		},
 		{

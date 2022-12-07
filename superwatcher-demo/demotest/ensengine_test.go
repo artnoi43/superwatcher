@@ -91,7 +91,7 @@ func testServiceEngineENS(
 
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine
 
-	components, param := servicetest.InitTestComponents(
+	components, _ := servicetest.InitTestComponents(
 		conf,
 		ensEngine,
 		logsFiles,
@@ -100,5 +100,5 @@ func testServiceEngineENS(
 		reorgedAt+conf.FilterRange*conf.GoBackRetries,
 	)
 
-	return servicetest.RunServiceTestComponents(components, param)
+	return servicetest.RunServiceTestComponents(components)
 }

@@ -2,6 +2,7 @@ package routerengine
 
 import (
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
@@ -58,8 +59,8 @@ func (e *routerEngine) logToService(log *types.Log) superwatcher.ServiceEngine {
 }
 
 func mergeArtifacts(
-	routerArtifacts map[string][]superwatcher.Artifact, // Usually empty
-	subEngineArtifacts map[string][]superwatcher.Artifact,
+	routerArtifacts map[common.Hash][]superwatcher.Artifact, // Usually empty
+	subEngineArtifacts map[common.Hash][]superwatcher.Artifact,
 ) {
 	for blockHash := range subEngineArtifacts {
 		routerArtifacts[blockHash] = append(routerArtifacts[blockHash], subEngineArtifacts[blockHash]...)

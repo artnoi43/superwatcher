@@ -13,12 +13,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/config"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway"
+	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/hardcode"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/routerengine"

@@ -13,6 +13,5 @@ var (
 	errFetchError       = errors.New("fetch from ethclient failed")
 	errProcessReorg     = errors.New("error in emitter reorg detection logic")
 
-	errFetchLogs = errors.Wrap(errFetchError, "failed to filter logs")
-	errNoHash    = errors.Wrap(errProcessReorg, "missing hash for a block")
+	errNoHash = errors.Wrap(errProcessReorg, "missing hash for a block")
 )
