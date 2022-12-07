@@ -54,8 +54,8 @@ func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockCh
 
 // MoveLogs represent a move of logs to a new blockNumber
 type MoveLogs struct {
-	newBlock uint64
-	txHashes []common.Hash // txHashes of logs to be moved to newBlock
+	NewBlock uint64
+	TxHashes []common.Hash // txHashes of logs to be moved to newBlock
 }
 
 // NewBlockChainV2 is similar to NewBlockChain, but the reorgedChain (the second return variable)
@@ -74,9 +74,10 @@ func NewBlockChainV2(
 			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, reorgedAt))
 		}
 	}
+
 	chain, reorgedChain := NewBlockChain(mappedLogs, reorgedAt)
 
-	if logsMoved != nil {
+	if logsMoved != nil || len(logsMoved) != 0 {
 		reorgedChain.reorgMoveLogs(logsMoved)
 	}
 
@@ -94,7 +95,7 @@ func (c blockChain) reorgMoveLogs(
 		}
 
 		for _, move := range moves {
-			targetBlock, ok := c[move.newBlock]
+			targetBlock, ok := c[move.NewBlock]
 			if !ok {
 				panic("logsMoved to non-existent block")
 			}
@@ -102,13 +103,13 @@ func (c blockChain) reorgMoveLogs(
 			// Save logsToMove before removing it from b
 			var logsToMove []types.Log
 			for _, log := range b.logs {
-				if gslutils.Contains(move.txHashes, log.TxHash) {
+				if gslutils.Contains(move.TxHashes, log.TxHash) {
 					logsToMove = append(logsToMove, log)
 				}
 			}
 
 			// Remove logs from the old block
-			b.removeLogs(move.txHashes)
+			b.removeLogs(move.TxHashes)
 
 			// Change log.BlockHash to new BlockHash
 			for _, log := range logsToMove {

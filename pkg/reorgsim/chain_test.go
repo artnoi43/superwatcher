@@ -22,8 +22,8 @@ func TestReorgMoveLogs(t *testing.T) {
 	reorgedChain.reorgMoveLogs(map[uint64][]MoveLogs{
 		moveFrom: {
 			{
-				newBlock: moveTo,
-				txHashes: hashesToRemove,
+				NewBlock: moveTo,
+				TxHashes: hashesToRemove,
 			},
 		},
 	})
