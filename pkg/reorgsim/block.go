@@ -39,7 +39,6 @@ func (b *block) reorg() *block {
 	// Use index to access logs so that the internal array members change value too.
 	for i := range logs {
 		logs[i].BlockHash = newBlockHash
-		// logs[i].TxHash = PRandomHash(logs[i].TxHash.Big().Uint64() + 696969)
 	}
 
 	return &block{
@@ -52,13 +51,15 @@ func (b *block) reorg() *block {
 }
 
 func (b *block) removeLogs(txHashes []common.Hash) {
-	for i, log := range b.logs {
-		if gslutils.Contains(txHashes, log.TxHash) {
-			b.removeLog(i)
+	var resultLogs []types.Log
+	var c int
+
+	for _, log := range b.logs {
+		if !gslutils.Contains(txHashes, log.TxHash) {
+			resultLogs[c] = log
+			c++
 		}
 	}
-}
 
-func (b *block) removeLog(logIdx int) {
-	b.logs = append(b.logs[:logIdx], b.logs[logIdx+1:]...)
+	b.logs = resultLogs
 }
