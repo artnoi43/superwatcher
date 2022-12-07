@@ -102,6 +102,7 @@ func testProcessReorg(tc testConfig) error {
 		}
 	}
 
+	// Blocks from which logs were moved must be tagged as reorged
 	for _, blockNumber := range movedLogFromBlockNumbers {
 		reorged := wasReorged[blockNumber]
 		if !reorged {
@@ -109,6 +110,7 @@ func testProcessReorg(tc testConfig) error {
 		}
 	}
 
+	// Blocks to which logs were moved must be tagged as reorged
 	for _, blockNumber := range movedLogToBlockNumbers {
 		reorged := wasReorged[blockNumber]
 		if !reorged {

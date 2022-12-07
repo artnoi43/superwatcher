@@ -84,20 +84,27 @@ var testCases = []testConfig{
 	},
 	{
 		StartBlock: 15966490,
-		ReorgedAt:  15966530, // 0xf3a142
+		ReorgedAt:  15966512, // 0xf3a130
 		FromBlock:  15966500,
-		ToBlock:    15966540,
+		ToBlock:    15966536,
 		LogsFiles: []string{
 			"./assets/logs_lp_5.json",
 		},
 		// Move logs of 1 txHash to new block
 		MovedLogs: map[uint64][]reorgsim.MoveLogs{
-			15966532: { // 0xf3a144
+			15966522: { // 0xf3a13a
 				{
-					NewBlock: 15966536,
+					NewBlock: 15966527,
 					TxHashes: []common.Hash{
-						common.HexToHash("0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7"),
-						// common.HexToHash("0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d"),
+						common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
+					},
+				},
+			},
+			15966525: { // 0xf3a13d
+				{
+					NewBlock: 15966527, // 0xf3a13f
+					TxHashes: []common.Hash{
+						common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
 					},
 				},
 			},
@@ -151,7 +158,7 @@ func TestEmitterByCase(t *testing.T) {
 		return
 	}
 
-	if len(testCases) > caseNumber {
+	if len(testCases)+1 > caseNumber {
 		testName := fmt.Sprintf("Case:%d", caseNumber)
 		t.Run(testName, func(t *testing.T) {
 			emitterTestTemplate(t, caseNumber, verbose)
@@ -196,6 +203,18 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2, tc.MovedLogs)
 
+	// Collect MovedLogs info
+	var movedFromBlocks []uint64
+	var movedToBlocks []uint64
+	var movedTxHashes []common.Hash
+	for movedFromBlock, moves := range tc.MovedLogs {
+		movedFromBlocks = append(movedFromBlocks, movedFromBlock)
+		for _, move := range moves {
+			movedToBlocks = append(movedToBlocks, move.NewBlock)
+			movedTxHashes = append(movedTxHashes, move.TxHashes...)
+		}
+	}
+
 	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 	errChan := make(chan error, 5)
 	syncChan := make(chan struct{})
@@ -218,6 +237,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 	var seenLogs []*types.Log
 	var latestGoodBlocks = make(map[uint64]*superwatcher.BlockInfo)
+	var movedToCount = make(map[common.Hash]bool)
 
 	for {
 		result := <-filterResultChan
@@ -263,10 +283,29 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		for _, block := range result.GoodBlocks {
 			for _, log := range block.Logs {
 				var ok bool
+
 				// We should only see a good log once
 				seenLogs, ok = appendUnique(seenLogs, log)
 				if !ok {
 					fatalBadLog(t, "duplicate good log in seenLogs", log)
+				}
+
+				// If the block is one of the movedFromBlocks, then it's not supposed to have any logs with movedTxHashes
+				if gslutils.Contains(movedFromBlocks, block.Number) {
+					if gslutils.Contains(movedTxHashes, log.TxHash) {
+						// t.Log("movedBlock from", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
+						fatalBadLog(t, "log was supposed to be removed from this block", log)
+					}
+				}
+
+				// If the block is NOT one of the movedToBlocks, then it's not supposed to have any logs with movedTxHashes
+				if !gslutils.Contains(movedToBlocks, block.Number) {
+					if gslutils.Contains(movedTxHashes, log.TxHash) {
+						// t.Log("movedBlock to", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
+						fatalBadLog(t, "log was supposed to be moved to this block", log)
+					}
+				} else {
+					movedToCount[log.TxHash] = true
 				}
 			}
 
@@ -279,6 +318,14 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 		fakeRedis.SetLastRecordedBlock(ctx, result.LastGoodBlock)
 		syncChan <- struct{}{}
+	}
+
+	for _, txHash := range movedTxHashes {
+		if !movedToCount[txHash] {
+			t.Errorf("txHash %s was not tagged true", txHash.String())
+		}
+
+		t.Log("movedLog", txHash.String())
 	}
 }
 
