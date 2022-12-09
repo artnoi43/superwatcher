@@ -40,8 +40,8 @@ func mapFreshLogs(
 				// If we saw this log's block hash before from the fresh eventLogs
 				// from this loop's previous loop iteration(s), but the hashes are different:
 				// Fatal, should not happen
-				logger.Info("fresh blockHash differs from tracker blockHash",
-					zap.String("tag", "filterLogs bug"),
+				logger.Panic("FATAL: fresh blockHash differs from tracker blockHash",
+					zap.String("tag", "processReorg bug"),
 					zap.Uint64("freshBlockNumber", freshLogBlockNumber),
 					zap.Any("known tracker blockHash", mapFreshHashes[freshLogBlockNumber]),
 					zap.Any("fresh log blockHash", freshLogBlockHash))

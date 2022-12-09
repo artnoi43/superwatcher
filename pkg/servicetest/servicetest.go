@@ -3,17 +3,11 @@ package servicetest
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
-
-	"github.com/artnoi43/gsl/gslutils"
-	"github.com/ethereum/go-ethereum/core/types"
-	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/artnoi43/superwatcher/pkg/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
@@ -111,75 +105,4 @@ func RunService(emitter superwatcher.WatcherEmitter, engine superwatcher.Watcher
 	wg.Wait()
 
 	return retErr
-}
-
-type DebugEngine struct {
-	ReorgedAt          uint64
-	EmitterFilterRange uint64
-
-	// Users can inject these extra debugging functions
-	HandleFuncGoodLog      func(*types.Log)
-	HandleFuncReorgedLog   func(*types.Log)
-	HandleFuncEmitterError func(error)
-
-	debugger *debugger.Debugger
-}
-
-func (e *DebugEngine) HandleGoodLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
-	e.debugger.Debug(2, fmt.Sprintf("HandleGoodLogs: got %d logs", len(logs)))
-	for _, log := range logs {
-		e.debugger.Debug(
-			1, "good log info",
-			zap.Uint64("blockNumber", log.BlockNumber),
-			zap.String("blockHash", gslutils.StringerToLowerString(log.BlockHash)),
-		)
-
-		// Calling injected func
-		if e.HandleFuncGoodLog != nil {
-			e.HandleFuncGoodLog(log)
-		}
-	}
-	return nil, nil
-}
-
-func (e *DebugEngine) HandleReorgedLogs(logs []*types.Log, artifacts []superwatcher.Artifact) ([]superwatcher.Artifact, error) {
-	e.debugger.Debug(
-		1, "GOT REORGED LOG IN SERVICETEST",
-		zap.Int("len(artifacts)", len(artifacts)),
-		zap.Any("artifacts", artifacts),
-	)
-
-	for _, log := range logs {
-		e.debugger.Debug(
-			1, "reorged log info",
-			zap.Uint64("blockNumber", log.BlockNumber),
-			zap.String("blockHash", gslutils.StringerToLowerString(log.BlockHash)),
-		)
-
-		if e.HandleFuncReorgedLog != nil {
-			e.HandleFuncReorgedLog(log)
-		}
-
-		// TODO: Polish test checks
-		if log.BlockNumber != e.ReorgedAt {
-			if log.BlockNumber > e.ReorgedAt+e.EmitterFilterRange {
-				return nil, fmt.Errorf(
-					"reorgedAt is different from logs passed to HandleReorgedLogs: expecting %d, got %d",
-					e.ReorgedAt, log.BlockNumber,
-				)
-			}
-		}
-	}
-
-	return nil, nil
-}
-
-func (e *DebugEngine) HandleEmitterError(err error) error {
-	e.debugger.Debug(1, "got error", zap.Error(err))
-
-	if e.HandleFuncEmitterError != nil {
-		e.HandleFuncEmitterError(err)
-	}
-
-	return err
 }
