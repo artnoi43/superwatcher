@@ -47,6 +47,7 @@ func TestRemoveLogs(t *testing.T) {
 	for _, log := range b.logs {
 		if gslutils.Contains(hashesToRemove, log.TxHash) {
 			foundLogs = true
+			break
 		}
 	}
 
