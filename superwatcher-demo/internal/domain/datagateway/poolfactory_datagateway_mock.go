@@ -16,7 +16,7 @@ type mockDataGatewayPoolFactory struct {
 	m map[string]*entity.Uniswapv3PoolCreated
 }
 
-func NewMockDataGatewayPoolFactory() DataGatewayPoolFactory {
+func NewMockDataGatewayPoolFactory() RepositoryPoolFactory {
 	return &mockDataGatewayPoolFactory{
 		m: make(map[string]*entity.Uniswapv3PoolCreated),
 	}
@@ -50,7 +50,7 @@ func (s *mockDataGatewayPoolFactory) GetPool(
 }
 
 func (s *mockDataGatewayPoolFactory) GetPools(ctx context.Context) ([]*entity.Uniswapv3PoolCreated, error) {
-	var pools []*entity.Uniswapv3PoolCreated
+	var pools []*entity.Uniswapv3PoolCreated //nolint:prealloc
 	for _, pool := range s.m {
 		pools = append(pools, pool)
 	}
@@ -64,7 +64,7 @@ func (s *mockDataGatewayPoolFactory) DelPool(
 ) error {
 	addr := gslutils.StringerToLowerString(pool.Address)
 	fmt.Println("DEL", addr)
-	pool, ok := s.m[addr]
+	pool, ok := s.m[addr] //nolint:staticcheck
 	if !ok {
 		return errors.Wrapf(datagateway.ErrRecordNotFound, "lp %s not found", addr)
 	}

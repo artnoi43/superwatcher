@@ -31,7 +31,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
 	error,
 ) {
 	// New artifact is created for new logs
-	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact)
+	retArtifacts := make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
 		logArtifact, err := e.handleGoodLog(log)
 		if err != nil {
@@ -54,7 +54,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(
 ) {
 	e.debugger.Debug(1, "poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
-	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact)
+	retArtifacts := make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
 		logArtifact, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {

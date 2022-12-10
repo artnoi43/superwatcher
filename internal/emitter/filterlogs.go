@@ -42,7 +42,6 @@ func (e *emitter) filterLogs(
 		gslutils.Delay(4),
 		gslutils.LastErrorOnly(true),
 	)
-
 	if err != nil {
 		return errors.Wrap(errFetchError, err.Error())
 	}

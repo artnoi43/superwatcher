@@ -45,10 +45,9 @@ func New(
 
 func NewMockRouter(
 	logLevel uint8,
-	dataGatewayENS datagateway.DataGatewayENS,
-	dataGatewayPoolFactory datagateway.DataGatewayPoolFactory,
+	dataGatewayENS datagateway.RepositoryENS,
+	dataGatewayPoolFactory datagateway.RepositoryPoolFactory,
 ) superwatcher.ServiceEngine {
-
 	testSuiteENS := ensengine.NewTestSuiteENS(dataGatewayENS, logLevel)
 	testSuitePoolFactory := uniswapv3factoryengine.NewTestSuitePoolFactory(dataGatewayPoolFactory, logLevel)
 

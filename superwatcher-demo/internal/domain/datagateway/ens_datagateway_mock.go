@@ -16,7 +16,7 @@ type mockDataGatewayENS struct {
 	m map[string]*entity.ENS
 }
 
-func NewMockDataGatewayENS() DataGatewayENS {
+func NewMockDataGatewayENS() RepositoryENS {
 	return &mockDataGatewayENS{
 		m: make(map[string]*entity.ENS),
 	}
@@ -36,8 +36,9 @@ func (s *mockDataGatewayENS) GetENS(ctx context.Context, ensID string) (*entity.
 
 	return saved, nil
 }
+
 func (s *mockDataGatewayENS) GetENSes(context.Context) ([]*entity.ENS, error) {
-	var enses []*entity.ENS
+	var enses []*entity.ENS //nolint:prealloc
 	for _, saved := range s.m {
 		enses = append(enses, saved)
 	}

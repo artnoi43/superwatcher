@@ -35,7 +35,6 @@ func (e *routerEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum,
 				}
 			}
 		}
-
 	}
 
 	return subengines.SubEngineInvalid, false

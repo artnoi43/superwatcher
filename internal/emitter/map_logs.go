@@ -24,9 +24,9 @@ func mapLogs(
 ) {
 	// We can actually just return |mapRemovedBlocks|, but we will have to iterate the logs anyway,
 	// so we collect the data into maps here to save costs later.
-	var mapRemovedBlocks = make(map[uint64]bool)
-	var mapFreshHashes = make(map[uint64]common.Hash)
-	var mapFreshLogs = make(map[uint64][]*types.Log)
+	mapRemovedBlocks := make(map[uint64]bool)
+	mapFreshHashes := make(map[uint64]common.Hash)
+	mapFreshLogs := make(map[uint64][]*types.Log)
 
 	// Collect mapFreshLogs and mapFreshHashes. All new logs will be collected,
 	// and each log's blockHash will be compare with its neighbors in the same block
@@ -37,7 +37,6 @@ func mapLogs(
 		// Add new blockNumber hash
 		if h, ok := mapFreshHashes[number]; !ok {
 			mapFreshHashes[number] = log.BlockHash
-
 		} else {
 			if h != log.BlockHash {
 				logger.Panic(

@@ -1,14 +1,17 @@
 package thinengine
 
-import "context"
+import (
+	"context"
 
-func (e *thinEngine) handleResults(ctx context.Context) error {
+	"github.com/pkg/errors"
+)
+
+func (e *thinEngine) handleResults(ctx context.Context) error { //nolint:unused
 	for {
 		result := e.emitterClient.WatcherResult()
 		err := e.serviceEngine.HandleFilterResult(result)
-
 		if err != nil {
-			return err
+			return errors.Wrap(errors.WithStack(err), "serviceEngine returned error")
 		}
 	}
 }

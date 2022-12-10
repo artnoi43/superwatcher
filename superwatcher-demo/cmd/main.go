@@ -159,8 +159,7 @@ func contractsToServices(
 	var emitterTopics []common.Hash
 	var emitterAddresses []common.Address //nolint:prealloc
 	for contractName, demoContract := range demoContracts {
-
-		var contractTopics = make([]common.Hash, len(demoContract.ContractEvents))
+		contractTopics := make([]common.Hash, len(demoContract.ContractEvents))
 		var subEngine subengines.SubEngineEnum
 
 		switch contractName {

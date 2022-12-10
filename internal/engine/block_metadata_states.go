@@ -9,19 +9,19 @@ import (
 )
 
 type (
-	EngineBlockState uint8
-	EngineBlockEvent uint8
+	BlockState uint8
+	BlockEvent uint8
 )
 
 const (
-	StateNull EngineBlockState = iota
+	StateNull BlockState = iota
 	StateSeen
 	StateProcessed
 	StateReorged
 	StateReorgHandled
 	StateInvalid
 
-	EventInvalid EngineBlockEvent = iota
+	EventInvalid BlockEvent = iota
 	EventGotLog
 	EventProcess
 	EventReorg
@@ -29,11 +29,11 @@ const (
 )
 
 type stateEvent = struct {
-	state EngineBlockState
-	event EngineBlockEvent
+	state BlockState
+	event BlockEvent
 }
 
-var engineStateTransitionTable = map[stateEvent]EngineBlockState{
+var engineStateTransitionTable = map[stateEvent]BlockState{
 	{state: StateNull, event: EventGotLog}:      StateSeen,
 	{state: StateNull, event: EventProcess}:     StateInvalid,
 	{state: StateNull, event: EventReorg}:       StateReorged,
@@ -65,7 +65,7 @@ var engineStateTransitionTable = map[stateEvent]EngineBlockState{
 	{state: StateInvalid, event: EventHandleReorg}: StateInvalid,
 }
 
-func (state *EngineBlockState) Fire(event EngineBlockEvent) {
+func (state *BlockState) Fire(event BlockEvent) {
 	if !event.IsValid() {
 		logger.Panic("invalid event", zap.String("event", event.String()))
 	}
@@ -75,7 +75,7 @@ func (state *EngineBlockState) Fire(event EngineBlockEvent) {
 	*state = newState
 }
 
-func (state EngineBlockState) String() string {
+func (state BlockState) String() string {
 	switch state {
 	case StateNull:
 		return "NULL"
@@ -94,7 +94,7 @@ func (state EngineBlockState) String() string {
 	panic(fmt.Sprintf("unexpected invalid state: %d", state))
 }
 
-func (state EngineBlockState) IsValid() bool {
+func (state BlockState) IsValid() bool {
 	switch state {
 	case StateInvalid:
 		return false
@@ -110,7 +110,7 @@ func (state EngineBlockState) IsValid() bool {
 	panic(fmt.Sprintf("unexpected invalid state: %d", state))
 }
 
-func (event EngineBlockEvent) String() string {
+func (event BlockEvent) String() string {
 	switch event {
 	case EventGotLog:
 		return "Got Log"
@@ -125,7 +125,7 @@ func (event EngineBlockEvent) String() string {
 	panic(fmt.Sprintf("unexpected invalid event: %d", event))
 }
 
-func (event EngineBlockEvent) IsValid() bool {
+func (event BlockEvent) IsValid() bool {
 	switch event {
 	case EventInvalid:
 		return false

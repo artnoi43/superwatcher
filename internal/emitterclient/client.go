@@ -39,7 +39,6 @@ func (c *emitterClient) Shutdown() {
 	if c.emitterSyncChan != nil {
 		c.debugger.Debug(2, "closing emitterClient.emitterSyncChan")
 		close(c.emitterSyncChan)
-
 	} else {
 		c.debugger.Debug(2, "emitterSyncChan was already closed")
 	}
