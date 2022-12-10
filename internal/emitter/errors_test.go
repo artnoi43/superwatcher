@@ -17,6 +17,11 @@ func TestWrapErrBlockNumber(t *testing.T) {
 	if !errors.Is(err, errProcessReorg) {
 		t.Error("err is not errProcessReorg")
 	}
+
+	err = mockErrFromBlockReorged()
+	if !errors.Is(err, errFromBlockReorged) {
+		t.Error("err is not errFromBlockReorged")
+	}
 }
 
 func wrapErrFetchError(err error) error {
@@ -25,4 +30,8 @@ func wrapErrFetchError(err error) error {
 
 func mockErrNoHash() error {
 	return errors.Wrapf(errNoHash, "blockNumber %d", 69)
+}
+
+func mockErrFromBlockReorged() error {
+	return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", 69)
 }

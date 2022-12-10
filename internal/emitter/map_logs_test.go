@@ -12,26 +12,30 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-func TestProcessReorg(t *testing.T) {
+func TestMapLogs(t *testing.T) {
 	for i, tc := range testCases {
 		b, _ := json.Marshal(tc)
 		t.Logf("testCase: %s", b)
-		err := testProcessReorg(tc)
+		err := testMapLogs(&tc)
 		if err != nil {
 			t.Fatalf("Case %d: %s", i, err.Error())
 		}
 	}
 }
 
-func testProcessReorg(tc testConfig) error {
+func testMapLogs(tc *testConfig) error {
 	tracker := newTracker("testProcessReorg", 3)
 	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles)
 	oldChain, reorgedChain := reorgsim.NewBlockChainV2(logs, tc.ReorgedAt, tc.MovedLogs)
+
+	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
+	var concatLogs = make(map[uint64][]*types.Log)
 
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
 		blockLogs := block.Logs()
 		logs := gslutils.CollectPointers(blockLogs)
+		concatLogs[blockNumber] = append(concatLogs[blockNumber], logs...)
 
 		tracker.addTrackerBlockInfo(&superwatcher.BlockInfo{
 			Logs:   logs,
@@ -42,9 +46,10 @@ func testProcessReorg(tc testConfig) error {
 
 	// Collect reorgedLogs for checking
 	var reorgedLogs []types.Log
-	for _, block := range reorgedChain {
+	for blockNumber, block := range reorgedChain {
 		if logs := block.Logs(); len(logs) != 0 {
 			reorgedLogs = append(reorgedLogs, logs...)
+			concatLogs[blockNumber] = append(concatLogs[blockNumber], gslutils.CollectPointers(logs)...)
 		}
 	}
 
@@ -59,24 +64,16 @@ func testProcessReorg(tc testConfig) error {
 	}
 
 	// Call mapFreshLogs with reorgedLogs
-	freshHashes, freshLogs, processLogs := mapFreshLogs(reorgedLogs)
-
-	wasReorged, err := processReorg(
-		tracker,
+	wasReorged, _, _ := mapLogs(
 		tc.FromBlock,
 		tc.ToBlock,
-		freshHashes,
-		freshLogs,
-		processLogs,
+		gslutils.CollectPointers(reorgedLogs),
+		tracker,
 	)
-
-	if err != nil {
-		return err
-	}
 
 	for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
 		// Skip blocks without logs
-		if len(logs[blockNumber]) == 0 {
+		if len(concatLogs[blockNumber]) == 0 {
 			continue
 		}
 
