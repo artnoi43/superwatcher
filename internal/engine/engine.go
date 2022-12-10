@@ -11,13 +11,13 @@ import (
 
 type engine struct {
 	emitterClient    superwatcher.EmitterClient       // Interfaces with emitter
-	stateDataGateway superwatcher.SetStateDataGateway // Saves lastRecordedBlock to Redis
-	metadataTracker  MetadataTracker                  // Engine internal state machine
+	serviceEngine    superwatcher.ServiceEngine       // Injected service code
+	stateDataGateway superwatcher.SetStateDataGateway // Saves lastRecordedBlock to persistent storage
 
-	serviceEngine superwatcher.ServiceEngine // Injected service code
+	metadataTracker metadataTracker // Engine internal state machine
 
+	debug    bool
 	debugger *debugger.Debugger
-	debug    bool // In case we need to debug within a loop with multiple
 }
 
 // newWatcherEngine returns default implementation of WatcherEngine

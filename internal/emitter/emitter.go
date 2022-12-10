@@ -17,21 +17,29 @@ import (
 // to facil mock testing.
 type emitter struct {
 	// These fields are used for filtering event logs
-	conf      *config.EmitterConfig
-	client    superwatcher.EthClient
-	tracker   *blockInfoTracker
-	addresses []common.Address
-	topics    [][]common.Hash
+	conf *config.EmitterConfig
 
+	// Ethereum client for filtering logs
+	client superwatcher.EthClient
+
+	// Addresses passed to client.FilterLogs
+	addresses []common.Address
+	// Topics passed to client.FilterLogs
+	topics [][]common.Hash
 	// Redis-store for tracking last recorded block
 	stateDataGateway superwatcher.GetStateDataGateway
+	// Tracker tracks known block hashes to detect chain reorgs
+	tracker *blockInfoTracker
 
 	// These fields are gateways via which
 	// external services interact with emitter
+
 	filterResultChan chan<- *superwatcher.FilterResult
 	errChan          chan<- error
 	syncChan         <-chan struct{}
 
+	// emitter.debug allows us to check if we should calls debugger
+	// when debugging in a large for loop. This should save some CPU time.
 	debug    bool
 	debugger *debugger.Debugger
 }
@@ -66,12 +74,11 @@ func New(
 }
 
 // Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.
-// When ctx is camcled else where, Loop calls *emitter.shutdown and returns ctx.Err()
+// When |ctx| is canceled elsewhere, Loop calls *emitter.shutdown and returns value of ctx.Err()
 func (e *emitter) Loop(ctx context.Context) error {
 	status := new(filterLogStatus)
 
 	for {
-		// NOTE: this is not clean, but a workaround to prevent infinity loop
 		select {
 		case <-ctx.Done():
 			e.debugger.Debug(1, "shutting down emitter", zap.Any("emitterStatus", status))

@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/domain/entity"
 )
 
@@ -42,7 +43,7 @@ func (s *mockDataGatewayPoolFactory) GetPool(
 	fmt.Println("SET", addr)
 	pool, ok := s.m[addr]
 	if !ok {
-		return nil, errors.Wrapf(ErrRecordNotFound, "lp %s not found", addr)
+		return nil, errors.Wrapf(datagateway.ErrRecordNotFound, "lp %s not found", addr)
 	}
 
 	return pool, nil
@@ -65,7 +66,7 @@ func (s *mockDataGatewayPoolFactory) DelPool(
 	fmt.Println("DEL", addr)
 	pool, ok := s.m[addr]
 	if !ok {
-		return errors.Wrapf(ErrRecordNotFound, "lp %s not found", addr)
+		return errors.Wrapf(datagateway.ErrRecordNotFound, "lp %s not found", addr)
 	}
 
 	s.m[addr] = nil

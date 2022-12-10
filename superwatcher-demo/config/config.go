@@ -5,6 +5,7 @@ import (
 )
 
 type Config struct {
-	SuperWatcherConfig *superwatcherConfig.EmitterConfig `yaml:"superwatcher_config" json:"superwatcherConfig"`
-	Chain              string                            `yaml:"chain" json:"chain"`
+	SuperWatcherConfig *superwatcherConfig.EmitterConfig `mapstructure:"superwatcher_config" yaml:"superwatcher_config" json:"superwatcherConfig"`
+	RedisConnAddr      string                            `mapstructure:"redis_conn_addr" yaml:"redis_conn_addr" json:"redisConnAddr"`
+	Chain              string                            `mapstructure:"chain" yaml:"chain" json:"chain"`
 }

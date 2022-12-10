@@ -9,9 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// BlockInfo represents the bare minimum info needed for superwatcher.
-// It is used in WatcherEngine to detect chain reorgs, and is embedded
-// in FilterResult.
+// BlockInfo represents the minimum block info needed for superwatcher.
 type BlockInfo struct {
 	Number uint64
 	Hash   common.Hash

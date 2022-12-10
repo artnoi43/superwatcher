@@ -61,6 +61,7 @@ func (e *emitter) filterLogs(
 	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogs(eventLogs)
 
 	// reorgedBlocks maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
+	// mapProcessLogs will also be changed in |processReorg|.
 	reorgedBlocks, err := processReorg(
 		e.tracker,
 		fromBlock,
@@ -76,7 +77,6 @@ func (e *emitter) filterLogs(
 	// Fills |filterResult| and saves current data back to tracker first.
 	filterResult := new(superwatcher.FilterResult)
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
-
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
 		if reorgedBlocks[blockNumber] {
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)

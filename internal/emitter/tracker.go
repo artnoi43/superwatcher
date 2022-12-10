@@ -44,7 +44,7 @@ func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
 		zap.Int("lenLogs", len(b.Logs)),
 	)
 
-	k := strconv.FormatInt(int64(b.Number), 10)
+	k := strconv.FormatUint(b.Number, 10)
 	t.sortedSet.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }
 

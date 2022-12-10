@@ -20,15 +20,15 @@ const (
 	callerReorgedLogs = "callerReorgedLogs"
 )
 
-type MetadataTracker interface {
+type metadataTracker interface {
 	ClearUntil(blockNumber uint64)
 	SetBlockMetadata(callerMethod, *blockMetadata)
 	GetBlockMetadata(callerMethod, uint64, string) *blockMetadata
 }
 
-// metadataTracker is an in-memory store for keeping engine internal states.
+// metadataTrackerImpl is an in-memory store for keeping engine internal states.
 // It is used to decide whether or not to pass the logs to service engine.
-type metadataTracker struct {
+type metadataTrackerImpl struct {
 	sync.RWMutex
 
 	// Field `Tracker.sortedSet` maps txHash to blockMetadata.
@@ -37,8 +37,8 @@ type metadataTracker struct {
 	debugger  *debugger.Debugger
 }
 
-func NewTracker(debugLevel uint8) *metadataTracker {
-	return &metadataTracker{
+func NewTracker(debugLevel uint8) *metadataTrackerImpl {
+	return &metadataTrackerImpl{
 		sortedSet: sortedset.New(),
 		debugger:  debugger.NewDebugger("metadataTracker", debugLevel),
 	}
@@ -46,7 +46,7 @@ func NewTracker(debugLevel uint8) *metadataTracker {
 
 // ClearUntil removes items in t from left to right.
 // TODO: Currently broken
-func (t *metadataTracker) ClearUntil(blockNumber uint64) {
+func (t *metadataTrackerImpl) ClearUntil(blockNumber uint64) {
 	t.Lock()
 	defer t.Unlock()
 
@@ -65,7 +65,7 @@ func (t *metadataTracker) ClearUntil(blockNumber uint64) {
 	}
 }
 
-func (t *metadataTracker) SetBlockMetadata(
+func (t *metadataTrackerImpl) SetBlockMetadata(
 	caller callerMethod,
 	metadata *blockMetadata,
 ) {
@@ -83,7 +83,7 @@ func (t *metadataTracker) SetBlockMetadata(
 	t.sortedSet.AddOrUpdate(metadata.blockHash, sortedset.SCORE(metadata.blockNumber), metadata)
 }
 
-func (t *metadataTracker) GetBlockMetadata(
+func (t *metadataTrackerImpl) GetBlockMetadata(
 	caller callerMethod,
 	blockNumber uint64,
 	blockHash string,
@@ -118,7 +118,7 @@ func (t *metadataTracker) GetBlockMetadata(
 	return metadata
 }
 
-func (t *metadataTracker) Len() int {
+func (t *metadataTrackerImpl) Len() int {
 	t.RLock()
 	defer t.RUnlock()
 
