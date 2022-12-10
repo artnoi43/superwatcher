@@ -44,7 +44,7 @@ func main() {
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: conf.SuperWatcherConfig.RedisConnAddr,
+		Addr: conf.RedisConnAddr,
 	})
 	if rdb == nil {
 		panic("nil redis")
@@ -157,7 +157,7 @@ func contractsToServices(
 	var ensRegistrar, ensController contracts.BasicContract
 	// Topics and addresses to be used by watcher emitter
 	var emitterTopics []common.Hash
-	var emitterAddresses []common.Address
+	var emitterAddresses []common.Address //nolint:prealloc
 	for contractName, demoContract := range demoContracts {
 
 		var contractTopics = make([]common.Hash, len(demoContract.ContractEvents))

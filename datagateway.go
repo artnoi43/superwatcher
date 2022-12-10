@@ -25,15 +25,15 @@ type StateDataGateway interface {
 // Services can also inject functions or method into superwatcher components by wrapping the methods
 // with GetStateDataGatewayFunc and SetStateDataGatewayFunc.
 
-type FuncGetLastRecordedBlock func(context.Context) (uint64, error)
-type FuncSetLastRecordedBlock func(context.Context, uint64) error
+type (
+	FuncGetLastRecordedBlock func(context.Context) (uint64, error)
+	FuncSetLastRecordedBlock func(context.Context, uint64) error
+)
 
 // Note: As of this writing, the emitter and engine implementations do not have fields for function types
 // FuncGetLastRecordedBlock and FuncSetLastRecordedBlock.
-
-// If you want to inject a function (not a whole struct),
-// use the wrapper functions below.
-
+// If you want to inject a function (not a whole struct), use the wrapper functions below
+// to wrap your functions or methods with dataGatewayWrapper.
 // Example usage:
 // ```
 //  emitter := emitter.New(
@@ -49,21 +49,17 @@ type FuncSetLastRecordedBlock func(context.Context, uint64) error
 //
 // ```
 
-func GetStateDataGatewayFunc(f FuncGetLastRecordedBlock) GetStateDataGateway {
-	return &dataGatewayWrapper{
-		getFunc: f,
-	}
-}
-
-func SetStateDataGatewayFunc(f FuncSetLastRecordedBlock) SetStateDataGateway {
-	return &dataGatewayWrapper{
-		setFunc: f,
-	}
-}
-
 type dataGatewayWrapper struct {
 	getFunc FuncGetLastRecordedBlock
 	setFunc FuncSetLastRecordedBlock
+}
+
+func GetStateDataGatewayFunc(f FuncGetLastRecordedBlock) GetStateDataGateway {
+	return &dataGatewayWrapper{getFunc: f}
+}
+
+func SetStateDataGatewayFunc(f FuncSetLastRecordedBlock) SetStateDataGateway {
+	return &dataGatewayWrapper{setFunc: f}
 }
 
 func (w *dataGatewayWrapper) GetLastRecordedBlock(ctx context.Context) (uint64, error) {
