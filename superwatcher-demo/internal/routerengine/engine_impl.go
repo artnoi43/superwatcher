@@ -21,7 +21,7 @@ func (e *routerEngine) HandleGoodLogs(
 	error,
 ) {
 	// Artifacts to return - we don't know its size
-	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact) //nolint:prealloc
+	retArtifacts := make(map[common.Hash][]superwatcher.Artifact) //nolint:prealloc
 	logsMap := e.mapLogsToSubEngine(logs)
 
 	// ensLogs := logsMap[subengines.SubEngineENS]

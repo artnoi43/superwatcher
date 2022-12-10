@@ -10,7 +10,7 @@ import (
 type blockMetadata struct {
 	blockNumber uint64
 	blockHash   string // Must be all lowercase
-	state       EngineBlockState
+	state       BlockState
 
 	// artifacts maybe removed - I see no use case yet
 	artifacts []superwatcher.Artifact

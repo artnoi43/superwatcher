@@ -28,7 +28,7 @@ func (e *ensEngine) HandleGoodLogs(
 ) {
 	e.debugger.Debug(3, "HandleGoodLogs called")
 
-	var outArtifacts = make(map[common.Hash][]superwatcher.Artifact)
+	outArtifacts := make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
 		logArtifact, err := e.HandleGoodLog(log, artifacts)
 		if err != nil {
@@ -125,7 +125,7 @@ func (e *ensEngine) HandleReorgedLogs(
 ) {
 	e.debugger.Debug(1, fmt.Sprintf("got %d reorged logs and %d artifacts", len(logs), len(artifacts)), zap.Any("artifacts", artifacts))
 
-	var outputArtifacts = make(map[common.Hash][]superwatcher.Artifact)
+	outputArtifacts := make(map[common.Hash][]superwatcher.Artifact)
 	for _, log := range logs {
 		ens, err := e.handleReorgedLog(log, artifacts)
 		if err != nil {

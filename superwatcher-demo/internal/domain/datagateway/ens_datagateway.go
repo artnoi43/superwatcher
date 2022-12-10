@@ -14,19 +14,19 @@ import (
 // Use Redis Hash Map to store entity.ENS, with ID as field (sub-key)
 const EnsRedisKey = "demo:ens"
 
-type DataGatewayENS interface {
+type RepositoryENS interface {
 	SetENS(context.Context, *entity.ENS) error
 	GetENS(context.Context, string) (*entity.ENS, error)
 	GetENSes(context.Context) ([]*entity.ENS, error)
 	DelENS(context.Context, *entity.ENS) error
 }
 
-type dataGatewayENS struct {
+type repositoryENS struct {
 	redisCli *redis.Client
 }
 
-func NewEnsDataGateway(redisCli *redis.Client) *dataGatewayENS {
-	return &dataGatewayENS{
+func NewEnsDataGateway(redisCli *redis.Client) RepositoryENS {
+	return &repositoryENS{
 		redisCli: redisCli,
 	}
 }
@@ -44,7 +44,7 @@ func handleRedisErr(err error, action, key string) error {
 	return errors.Wrapf(err, "action: %s", action)
 }
 
-func (s *dataGatewayENS) SetENS(
+func (s *repositoryENS) SetENS(
 	ctx context.Context,
 	ens *entity.ENS,
 ) error {
@@ -59,7 +59,7 @@ func (s *dataGatewayENS) SetENS(
 	return handleRedisErr(err, "HSET ens", id)
 }
 
-func (s *dataGatewayENS) GetENS(
+func (s *repositoryENS) GetENS(
 	ctx context.Context,
 	ensID string,
 ) (
@@ -79,7 +79,7 @@ func (s *dataGatewayENS) GetENS(
 	return &ens, nil
 }
 
-func (s *dataGatewayENS) GetENSes(
+func (s *repositoryENS) GetENSes(
 	ctx context.Context,
 ) (
 	[]*entity.ENS,
@@ -90,7 +90,7 @@ func (s *dataGatewayENS) GetENSes(
 		return nil, handleRedisErr(err, "HGETALL ens", "null")
 	}
 
-	var enses []*entity.ENS
+	var enses []*entity.ENS //nolint:prealloc
 	for ensID, ensJSON := range resultMap {
 		var ens entity.ENS
 		if err := json.Unmarshal([]byte(ensJSON), &ens); err != nil {
@@ -103,7 +103,7 @@ func (s *dataGatewayENS) GetENSes(
 	return enses, nil
 }
 
-func (s *dataGatewayENS) DelENS(
+func (s *repositoryENS) DelENS(
 	ctx context.Context,
 	ens *entity.ENS,
 ) error {
@@ -116,6 +116,6 @@ func (s *dataGatewayENS) DelENS(
 	return nil
 }
 
-func (s *dataGatewayENS) Shutdown() error {
-	return s.redisCli.Close()
+func (s *repositoryENS) Shutdown() error {
+	return errors.Wrap(s.redisCli.Close(), "error shutting down RepositoryENS")
 }

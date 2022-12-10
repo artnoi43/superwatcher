@@ -14,7 +14,7 @@ import (
 
 type uniswapv3PoolFactoryEngine struct {
 	poolFactoryContract contracts.BasicContract
-	dataGateway         datagateway.DataGatewayPoolFactory
+	dataGateway         datagateway.RepositoryPoolFactory
 	debugger            *debugger.Debugger
 }
 
@@ -26,7 +26,7 @@ type TestSuitePoolFactory struct {
 
 func New(
 	pooFactoryContract contracts.BasicContract,
-	dgw datagateway.DataGatewayPoolFactory,
+	dgw datagateway.RepositoryPoolFactory,
 	logLevel uint8,
 ) superwatcher.ServiceEngine {
 	return &uniswapv3PoolFactoryEngine{
@@ -37,7 +37,7 @@ func New(
 }
 
 // NewTestSuitePoolFactory returns a convenient struct for injecting into routerengine.routerEngine
-func NewTestSuitePoolFactory(dgw datagateway.DataGatewayPoolFactory, logLevel uint8) *TestSuitePoolFactory {
+func NewTestSuitePoolFactory(dgw datagateway.RepositoryPoolFactory, logLevel uint8) *TestSuitePoolFactory {
 	poolFactoryContract := hardcode.DemoContracts(hardcode.Uniswapv3Factory)[hardcode.Uniswapv3Factory]
 	poolFactoryTopics := contracts.CollectEventHashes(poolFactoryContract.ContractEvents)
 	poolFactoryEngine := New(poolFactoryContract, dgw, logLevel)

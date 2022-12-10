@@ -55,6 +55,8 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 			n = 1 // reorgSim.FilterLogs returns reorged blocks first
 			// case headerByNumber:
 			// 	n = 2
+		default:
+			panic("unexpected call to chooseBlock by \"" + caller + "\"")
 		}
 
 		if r.filterLogsCounter[blockNumber] >= n {
@@ -123,7 +125,6 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 				}
 			}
 		}
-
 	}
 
 	return logs, nil

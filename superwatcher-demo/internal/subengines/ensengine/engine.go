@@ -22,7 +22,7 @@ var ensEngineEvents = []string{eventNameRegistered}
 type ensEngine struct {
 	ensRegistrar  contracts.BasicContract
 	ensController contracts.BasicContract
-	dataGateway   datagateway.DataGatewayENS
+	dataGateway   datagateway.RepositoryENS
 	debugger      *debugger.Debugger
 }
 
@@ -35,7 +35,7 @@ type TestSuiteENS struct {
 func New(
 	registrarContract contracts.BasicContract,
 	controllerContract contracts.BasicContract,
-	dgwENS datagateway.DataGatewayENS,
+	dgwENS datagateway.RepositoryENS,
 	logLevel uint8,
 ) superwatcher.ServiceEngine {
 	return &ensEngine{
@@ -47,7 +47,7 @@ func New(
 }
 
 // NewTestSuiteENS returns a convenient struct for injecting into routerengine.routerEngine
-func NewTestSuiteENS(dgwENS datagateway.DataGatewayENS, logLevel uint8) *TestSuiteENS {
+func NewTestSuiteENS(dgwENS datagateway.RepositoryENS, logLevel uint8) *TestSuiteENS {
 	registrarContract := contracts.NewBasicContract(
 		"ENSRegistrar",
 		ensregistrar.EnsRegistrarABI,

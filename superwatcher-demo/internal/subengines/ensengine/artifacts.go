@@ -1,7 +1,6 @@
 package ensengine
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -93,12 +92,7 @@ func filterRegistrarArtifact(log *types.Log, artifacts []ENSArtifact) ENSArtifac
 		if artifact.ENS.TxHash == txHash {
 			return artifact
 		}
-
 	}
 
 	panic(fmt.Sprintf("no such artifact for txHash %s", log.TxHash.String()))
-}
-
-func getPrevArtifactFromLogEntity(artifacts []ENSArtifact, ens entity.ENS) (*ENSArtifact, error) {
-	return nil, errors.New("not implemented")
 }

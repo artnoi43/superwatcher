@@ -75,7 +75,7 @@ func testServiceEngineENS(
 	startBlock uint64,
 	reorgedAt uint64,
 	logsFiles []string,
-	ensStore datagateway.DataGatewayENS,
+	ensStore datagateway.RepositoryENS,
 ) (
 	superwatcher.StateDataGateway,
 	error,

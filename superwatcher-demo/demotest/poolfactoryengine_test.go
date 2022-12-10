@@ -66,7 +66,7 @@ func testServiceEnginePoolFactory(
 	reorgedAt uint64,
 	exitBlock uint64,
 	logsFiles []string,
-	lpStore datagateway.DataGatewayPoolFactory,
+	lpStore datagateway.RepositoryPoolFactory,
 ) (
 	superwatcher.StateDataGateway,
 	error,

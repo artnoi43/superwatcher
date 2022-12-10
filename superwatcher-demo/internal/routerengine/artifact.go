@@ -26,7 +26,6 @@ func filterArtifacts(
 	subEngine subengines.SubEngineEnum,
 	artifacts []superwatcher.Artifact,
 ) []superwatcher.Artifact {
-
 	// Each sub-engine already returns `[]superwatcher.Artifact`,
 	// and method routerEngine.HandleLogs treats each returned `[]superwatcher.Artifact` as `superwatcher.Artifact`,
 	// i.e. if we have 3 sub-engines A, B, and C -- then the artifacts returned by routerEngine.HandleLogs

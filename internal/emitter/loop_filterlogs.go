@@ -112,7 +112,6 @@ func (e *emitter) loopFilterLogs(
 
 					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", newStatus))
 					continue
-
 				}
 				return errors.Wrap(err, "unexpected filterLogs error")
 			}
@@ -266,9 +265,7 @@ func computeFromBlockToBlock(
 			zap.Uint64("goBack", goBack),
 			zap.Uint64("fromBlock", fromBlock),
 		)
-
 	} else if prevStatus.IsReorging {
-
 		// The lookBack range will grow after each retries, but not the forward range
 		// lastRecordedBlock = 80, filterRange = 10
 		// 71 - 90   # none reorged in this loop       lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80   = 10
@@ -302,11 +299,9 @@ func computeFromBlockToBlock(
 		}
 
 		// toBlock does not go back, so we don't update it,
-		// unless currentBlock was shrinked during reorg too.
+		// unless currentBlock was shrunk during reorg too.
 		toBlock = gslutils.Min(prevStatus.ToBlock, currentBlock)
-
 	} else {
-
 		// Call fromBlockToBlock in normal cases
 		// lastRecordedBlock = 80, filterRange = 10
 		// 71 - 90   # none reorged in this loop       lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10

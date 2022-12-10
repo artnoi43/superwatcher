@@ -20,7 +20,7 @@ func RandomHash(i uint64) common.Hash {
 	return common.BigToHash(b)
 }
 
-// PRandomHash returns a deterministic, psuedo-random hash for i
+// PRandomHash returns a deterministic, pseudo-random hash for i
 func PRandomHash(i uint64) common.Hash {
 	return common.BigToHash(big.NewInt(int64(i)))
 }

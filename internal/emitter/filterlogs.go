@@ -24,7 +24,6 @@ func (e *emitter) filterLogs(
 	fromBlock uint64,
 	toBlock uint64,
 ) error {
-
 	// Filter event logs with retries
 	eventLogs, err := gslutils.RetryWithReturn(
 		fmt.Sprintf("getLogs from %d to %d", fromBlock, toBlock),
@@ -43,7 +42,6 @@ func (e *emitter) filterLogs(
 		gslutils.Delay(4),
 		gslutils.LastErrorOnly(true),
 	)
-
 	if err != nil {
 		return errors.Wrap(errFetchError, err.Error())
 	}
@@ -57,19 +55,13 @@ func (e *emitter) filterLogs(
 	e.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
 	e.tracker.clearUntil(until)
 
-	// Use fresh hashes and fresh logs to populate these 3 maps
-	mapFreshHashes, mapFreshLogs, mapProcessLogs := mapFreshLogs(eventLogs)
-
-	// reorgedBlocks maps block numbers whose fresh hash and tracker hash differ, i.e. reorged blocks
-	// mapProcessLogs will also be changed in |processReorg|.
-	reorgedBlocks, err := processReorg(
-		e.tracker,
+	removedBlocks, mapFreshHashes, mapFreshLogs := mapLogs(
 		fromBlock,
 		toBlock,
-		mapFreshHashes,
-		mapFreshLogs,
-		mapProcessLogs,
+		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
+		e.tracker,
 	)
+
 	if err != nil {
 		return errors.Wrap(err, "error detecting chain reorg")
 	}
@@ -78,7 +70,7 @@ func (e *emitter) filterLogs(
 	filterResult := new(superwatcher.FilterResult)
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
-		if reorgedBlocks[blockNumber] {
+		if removedBlocks[blockNumber] {
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
 				logger.Panic(
@@ -131,46 +123,20 @@ func (e *emitter) filterLogs(
 	// Results will not be published, so the engine will never know that fromBlock is reorging.
 	// **The reorged blocks different hashes have also been saved to tracker,
 	// so if they come back in the next loop, with the same hash here, they'll be marked as non-reorg blocks**.
-	if reorgedBlocks[fromBlock] {
-		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", fromBlock)
-	}
-
-	filterResult.FromBlock = fromBlock
-	filterResult.ToBlock = toBlock
-
-	// TODO: Test this
-	// Decide result.LastGoodBlock
-	if len(reorgedBlocks) == 0 {
-		// If no reorg, just use toBlock
-		filterResult.LastGoodBlock = toBlock
-
-		// If reorg (there should be goodBlocks too)
-	} else {
-		// If there's also goodBlocks during reorg
-		if l := len(filterResult.GoodBlocks); l != 0 {
-			// Use last good block's number as LastGoodBlock
-			lastGood := filterResult.GoodBlocks[l-1].Number
-			firstReorg := filterResult.ReorgedBlocks[0].Number
-
-			if lastGood > firstReorg {
-				lastGood = firstReorg - 1
-			}
-
-			filterResult.LastGoodBlock = lastGood
-
-		} else {
-			filterResult.LastGoodBlock = fromBlock
-		}
+	if removedBlocks[fromBlock] {
+		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock)
 	}
 
 	// Publish filterResult via e.filterResultChan
+	filterResult.FromBlock = fromBlock
+	filterResult.ToBlock = toBlock
+	filterResult.LastGoodBlock = lastGoodBlock(filterResult)
 	e.emitFilterResult(filterResult)
 
 	// End loop
 	e.debugger.Debug(
 		1, "number of logs published by filterLogs",
 		zap.Int("eventLogs (filtered)", lenLogs),
-		zap.Int("processLogs (all logs processed)", len(mapProcessLogs)),
 		zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
 		zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
 		zap.Uint64("lastGoodBlock", filterResult.LastGoodBlock),
@@ -180,4 +146,29 @@ func (e *emitter) filterLogs(
 	e.SyncsWithEngine()
 
 	return nil
+}
+
+// TODO: Finalize or just remove FilterResult.LastGoodBlock altogether.
+func lastGoodBlock(
+	result *superwatcher.FilterResult,
+) uint64 {
+	if len(result.ReorgedBlocks) != 0 {
+		// If there's also goodBlocks during reorg
+		if l := len(result.GoodBlocks); l != 0 {
+			// Use last good block's number as LastGoodBlock
+			lastGood := result.GoodBlocks[l-1].Number
+			firstReorg := result.ReorgedBlocks[0].Number
+
+			if lastGood > firstReorg {
+				lastGood = firstReorg - 1
+			}
+
+			return lastGood
+		}
+
+		// If there's no goodBlocks, then we should re-filter the whole range
+		return result.FromBlock - 1
+	}
+
+	return result.ToBlock
 }

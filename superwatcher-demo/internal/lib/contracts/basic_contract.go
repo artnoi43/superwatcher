@@ -16,8 +16,8 @@ type BasicContract struct {
 	ContractEvents []abi.Event
 }
 
-func NewBasicContract(name string, contractJsonABI string, addrString string, eventKeys ...string) BasicContract {
-	contractABI, err := abi.JSON(strings.NewReader(contractJsonABI))
+func NewBasicContract(name string, contractJSONABI string, addrString string, eventKeys ...string) BasicContract {
+	contractABI, err := abi.JSON(strings.NewReader(contractJSONABI))
 	if err != nil {
 		panic("error parsing contract ABI: " + err.Error())
 	}
