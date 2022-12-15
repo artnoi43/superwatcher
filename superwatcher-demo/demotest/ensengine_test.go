@@ -24,6 +24,7 @@ func TestServiceEngineENS(t *testing.T) {
 			LogsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
+			DataGatewayFirstRun: false, // Normal run
 		},
 		{
 			StartBlock: 16054000,
@@ -32,6 +33,7 @@ func TestServiceEngineENS(t *testing.T) {
 			LogsFiles: []string{
 				logsPath + "/logs_servicetest_16054000_16054100.json",
 			},
+			DataGatewayFirstRun: false,
 		},
 	}
 
@@ -40,7 +42,7 @@ func TestServiceEngineENS(t *testing.T) {
 		// We'll later use |ensStore| to check for saved results
 		ensStore := datagateway.NewMockDataGatewayENS()
 
-		fakeRedis, err := testServiceEngineENS(testCase.StartBlock, testCase.ReorgBlock, testCase.LogsFiles, ensStore)
+		fakeRedis, err := testServiceEngineENS(testCase, ensStore)
 		if err != nil {
 			lastRecordedBlock, _ := fakeRedis.GetLastRecordedBlock(nil)
 			t.Errorf("lastRecordedBlock %d - error in full servicetest (ens): %s", lastRecordedBlock, err.Error())
@@ -72,17 +74,15 @@ func TestServiceEngineENS(t *testing.T) {
 }
 
 func testServiceEngineENS(
-	startBlock uint64,
-	reorgedAt uint64,
-	logsFiles []string,
+	testCase servicetest.TestCase,
 	ensStore datagateway.RepositoryENS,
 ) (
-	superwatcher.StateDataGateway,
+	superwatcher.GetStateDataGateway,
 	error,
 ) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:    startBlock,
+		StartBlock:    testCase.StartBlock,
 		FilterRange:   10,
 		GoBackRetries: 2,
 		LoopInterval:  0,
@@ -94,10 +94,11 @@ func testServiceEngineENS(
 	components, _ := servicetest.InitTestComponents(
 		conf,
 		ensEngine,
-		logsFiles,
-		conf.StartBlock,
-		reorgedAt,
-		reorgedAt+conf.FilterRange*conf.GoBackRetries,
+		testCase.LogsFiles,
+		testCase.StartBlock,
+		testCase.ReorgBlock,
+		testCase.ReorgBlock+conf.FilterRange*conf.GoBackRetries,
+		testCase.DataGatewayFirstRun,
 	)
 
 	return servicetest.RunServiceTestComponents(components)

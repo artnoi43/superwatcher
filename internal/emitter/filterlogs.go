@@ -62,10 +62,6 @@ func (e *emitter) filterLogs(
 		e.tracker,
 	)
 
-	if err != nil {
-		return errors.Wrap(err, "error detecting chain reorg")
-	}
-
 	// Fills |filterResult| and saves current data back to tracker first.
 	filterResult := new(superwatcher.FilterResult)
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
