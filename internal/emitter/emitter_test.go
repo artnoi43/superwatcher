@@ -15,7 +15,7 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
-	"github.com/artnoi43/superwatcher/pkg/mockwatcherstate"
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
@@ -144,8 +144,10 @@ func TestEmitterAllCases(t *testing.T) {
 // go test -v ./internal/emitter -run TestEmitterByCase -case 69
 // Go test binary already called `flag.Parse`, so we just simply
 // need to name our flag so that the flag package knows to parse it too.
-var flagCase = flag.Int("case", -1, "Emitter test case")
-var verboseFlag = flag.Bool("v", false, "Verbose emitter output")
+var (
+	flagCase    = flag.Int("case", -1, "Emitter test case")
+	verboseFlag = flag.Bool("v", false, "Verbose emitter output")
+)
 
 func TestEmitterByCase(t *testing.T) {
 	if allCasesAlreadyRun {
@@ -191,7 +193,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	conf := serviceConf.SuperWatcherConfig
 	conf.LoopInterval = 0
 
-	fakeRedis := mockwatcherstate.New(tc.FromBlock - 1)
+	fakeRedis := datagateway.NewMock(tc.FromBlock-1, true)
 
 	param := reorgsim.Param{
 		StartBlock:    tc.FromBlock,
@@ -236,8 +238,8 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	}()
 
 	var seenLogs []*types.Log
-	var latestGoodBlocks = make(map[uint64]*superwatcher.BlockInfo)
-	var movedToCount = make(map[common.Hash]bool)
+	latestGoodBlocks := make(map[uint64]*superwatcher.BlockInfo)
+	movedToCount := make(map[common.Hash]bool)
 
 	for {
 		result := <-filterResultChan

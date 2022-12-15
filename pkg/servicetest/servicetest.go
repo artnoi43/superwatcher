@@ -7,26 +7,29 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
-	"github.com/artnoi43/superwatcher/pkg/mockwatcherstate"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
 // TestCase will be converted into config.EmitterConfig and reorgsim.Param
 // to cerate TestComponents
 type TestCase struct {
-	StartBlock uint64   `json:"startBlock"`
-	ReorgBlock uint64   `json:"reorgBlock"`
-	ExitBlock  uint64   `json:"exitBlock"`
-	LogsFiles  []string `json:"logFiles"`
+	StartBlock          uint64   `json:"startBlock"`          // Maps to EmitterConfig.StartBlock and is also used to init mock superwatcher.StateDataGateway
+	ReorgBlock          uint64   `json:"reorgBlock"`          // Block that reorgSim will use as the reorging point
+	ExitBlock           uint64   `json:"exitBlock"`           // Block for reorgSim to exit cleanly (in servicetest only)
+	LogsFiles           []string `json:"logFiles"`            // JSON logs files for initializing reorgSim
+	DataGatewayFirstRun bool     `json:"dataGatewayFirstRun"` // If set to true, the emitter will go back due to datagateway.ErrRecordNotFound
 }
 
 // TestComponents is used by RunServiceTestComponents to instantiate
 // superwatcher.WatcherEmitter and superwatcher.WatcherEngine for RunService
 type TestComponents struct {
-	conf          *config.EmitterConfig
-	client        superwatcher.EthClient
-	serviceEngine superwatcher.ServiceEngine
+	conf           *config.EmitterConfig
+	client         superwatcher.EthClient
+	serviceEngine  superwatcher.ServiceEngine
+	dataGatewayGet superwatcher.GetStateDataGateway
+	dataGatewaySet superwatcher.SetStateDataGateway
 }
 
 func InitTestComponents(
@@ -36,6 +39,7 @@ func InitTestComponents(
 	start uint64,
 	reorgAt uint64,
 	exit uint64,
+	firstRun bool, // If true, then the mock datagateway will return `ErrRecordNotFound` until `SetLastRecordedBlock`` is called
 ) (
 	*TestComponents,
 	reorgsim.Param, // For logging
@@ -47,10 +51,13 @@ func InitTestComponents(
 		ExitBlock:     exit,
 	}
 
+	fakeRedis := datagateway.NewMock(conf.StartBlock, !firstRun)
 	return &TestComponents{
-		conf:          conf,
-		client:        reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel, nil),
-		serviceEngine: serviceEngine,
+		conf:           conf,
+		client:         reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel, nil),
+		serviceEngine:  serviceEngine,
+		dataGatewayGet: fakeRedis,
+		dataGatewaySet: fakeRedis,
 	}, param
 }
 
@@ -58,20 +65,22 @@ func InitTestComponents(
 // It does so by setting up superwatcher.WatcherEmitter and superwatcher.WatcherEngine
 // and pass these objects to RunService.
 // StateDataGateway is created within this function and will be returned to caller
-func RunServiceTestComponents(components *TestComponents) (superwatcher.StateDataGateway, error) {
+func RunServiceTestComponents(components *TestComponents) (
+	superwatcher.GetStateDataGateway, // Return this out so test code can read from dataGateway
+	error,
+) {
 	// Use nil addresses and topics
-	fakeRedis := mockwatcherstate.New(components.conf.StartBlock)
 	emitter, engine := initsuperwatcher.New(
 		components.conf,
 		components.client,
-		fakeRedis,
-		fakeRedis,
+		components.dataGatewayGet,
+		components.dataGatewaySet,
 		nil,
 		nil,
 		components.serviceEngine,
 	)
 
-	return fakeRedis, RunService(emitter, engine)
+	return components.dataGatewayGet, RunService(emitter, engine)
 }
 
 // RunService executes the most basic emitter and engine logic, and returns an error from these components.

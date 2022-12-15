@@ -11,9 +11,12 @@ The code in this project is organized into the following packages:
 
 2. `pkg` (public)
 
-   This package defines extra (non-core) interfaces and some implementations
-   deemed not central to the business logic of the services, e.g. enums, data gateway,
-   and superwatcher components' initialization helper functions.
+   This package defines extra (non-core) interfaces and some implementations that would help
+   superwatcher user during their development. Most code there provides wrapper for `internal`,
+   or offers other convenient functions and examples.
+
+   Some development facility code like a full integrated test building block package `servicetest`,
+   or the chain reorg simulation package `reorgsim`, or the mocked `StateDataGateway` types, are provided in `pkg`.
 
 3. `config` (public)
 
@@ -23,6 +26,11 @@ The code in this project is organized into the following packages:
 
    This _private_ package defines the actual implementations of interfaces defined in
    the top-level package. User are _not_ expected to directly interact with the code here.
+
+5. `superwatcher-demo` (public)
+
+   This package provides some context and examples of how to use superwatcher to build services. You can try
+   running the service with a `main.go` in `superwatcher-demo/cmd/main.go`.
 
 ## superwatcher components
 

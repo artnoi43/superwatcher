@@ -22,18 +22,13 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 			LogsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
+			DataGatewayFirstRun: false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
-		stateDataGateway, err := testServiceEnginePoolFactory(
-			testCase.StartBlock,
-			testCase.ReorgBlock,
-			testCase.ExitBlock,
-			testCase.LogsFiles,
-			serviceDataGateway,
-		)
+		stateDataGateway, err := testServiceEnginePoolFactory(testCase, serviceDataGateway)
 		if err != nil {
 			lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
 			t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
@@ -62,18 +57,15 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 }
 
 func testServiceEnginePoolFactory(
-	startBlock uint64,
-	reorgedAt uint64,
-	exitBlock uint64,
-	logsFiles []string,
+	testCase servicetest.TestCase,
 	lpStore datagateway.RepositoryPoolFactory,
 ) (
-	superwatcher.StateDataGateway,
+	superwatcher.GetStateDataGateway,
 	error,
 ) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:    startBlock,
+		StartBlock:    testCase.StartBlock,
 		FilterRange:   10,
 		GoBackRetries: 2,
 		LoopInterval:  0,
@@ -83,10 +75,11 @@ func testServiceEnginePoolFactory(
 	components, _ := servicetest.InitTestComponents(
 		conf,
 		poolFactoryEngine,
-		logsFiles,
-		conf.StartBlock,
-		reorgedAt,
-		exitBlock,
+		testCase.LogsFiles,
+		testCase.StartBlock,
+		testCase.ReorgBlock,
+		testCase.ExitBlock,
+		testCase.DataGatewayFirstRun,
 	)
 
 	return servicetest.RunServiceTestComponents(components)

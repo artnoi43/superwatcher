@@ -48,6 +48,7 @@ func TestServiceEngineRouter(t *testing.T) {
 			testCase.StartBlock,
 			testCase.ReorgBlock,
 			testCase.ExitBlock,
+			testCase.DataGatewayFirstRun,
 		)
 
 		_, err := servicetest.RunServiceTestComponents(components)
