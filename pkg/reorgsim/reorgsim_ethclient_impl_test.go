@@ -11,10 +11,15 @@ import (
 )
 
 func TestFilterLogs(t *testing.T) {
-	param := Param{
-		StartBlock:   startBlock,
-		ReorgedBlock: reorgedAt,
-		MovedLogs:    nil,
+	param := ParamV1{
+		BaseParam: BaseParam{
+			StartBlock:    startBlock,
+			BlockProgress: 20,
+		},
+		ReorgEvent: ReorgEvent{
+			ReorgedBlock: reorgedAt,
+			MovedLogs:    nil,
+		},
 	}
 	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1)
 	ctx := context.Background()
@@ -50,10 +55,15 @@ func TestFilterLogsReorg(t *testing.T) {
 		logsPath + "/logs_poolfactory.json",
 	}
 
-	param := Param{
-		StartBlock:   reorgedAt,
-		ReorgedBlock: reorgedAt,
-		MovedLogs:    nil,
+	param := ParamV1{
+		BaseParam: BaseParam{
+			StartBlock:    reorgedAt,
+			BlockProgress: 20,
+		},
+		ReorgEvent: ReorgEvent{
+			ReorgedBlock: reorgedAt,
+			MovedLogs:    nil,
+		},
 	}
 
 	rSim := NewReorgSimFromLogsFiles(param, logsFiles, 1).(*ReorgSim)
@@ -95,12 +105,16 @@ func TestExitBlock(t *testing.T) {
 	exitBlock := reorgedAt + 100
 	t.Log("exit block", exitBlock)
 
-	param := Param{
-		StartBlock:    startBlock,
-		BlockProgress: 5,
-		ReorgedBlock:  reorgedAt,
-		MovedLogs:     nil,
-		ExitBlock:     exitBlock,
+	param := ParamV1{
+		BaseParam: BaseParam{
+			StartBlock:    startBlock,
+			BlockProgress: 5,
+			ExitBlock:     exitBlock,
+		},
+		ReorgEvent: ReorgEvent{
+			ReorgedBlock: reorgedAt,
+			MovedLogs:    nil,
+		},
 	}
 
 	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1)

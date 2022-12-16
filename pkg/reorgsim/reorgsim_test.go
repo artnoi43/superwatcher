@@ -92,11 +92,15 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	param := Param{
-		StartBlock:    startBlock,
-		BlockProgress: 3,
-		ReorgedBlock:  reorgedAt,
-		ExitBlock:     reorgedAt + 100,
+	param := ParamV1{
+		BaseParam: BaseParam{
+			StartBlock:    startBlock,
+			BlockProgress: 3,
+			ExitBlock:     reorgedAt + 100,
+		},
+		ReorgEvent: ReorgEvent{
+			ReorgedBlock: reorgedAt,
+		},
 	}
 
 	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 3)
