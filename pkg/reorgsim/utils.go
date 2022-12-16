@@ -20,7 +20,7 @@ func InitLogsFromFiles(filenames ...string) []types.Log {
 
 // InitMappedLogsFromFiles returns unmarshaled hard-coded logs.
 // It is export for use in internal/emitter testing.
-func InitMappedLogsFromFiles(filenames []string) map[uint64][]types.Log {
+func InitMappedLogsFromFiles(filenames ...string) map[uint64][]types.Log {
 	hardcodedLogs := []types.Log{}
 	for _, filename := range filenames {
 		logs := readJsonLogs(filename)

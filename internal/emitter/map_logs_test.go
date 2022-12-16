@@ -25,8 +25,8 @@ func TestMapLogs(t *testing.T) {
 
 func testMapLogs(tc *testConfig) error {
 	tracker := newTracker("testProcessReorg", 3)
-	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles)
-	oldChain, reorgedChain := reorgsim.NewBlockChainV2(logs, tc.ReorgedAt, tc.MovedLogs)
+	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
+	oldChain, reorgedChain := reorgsim.NewBlockChainWithMovedLogs(logs, tc.ReorgedAt, tc.MovedLogs)
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
 	var concatLogs = make(map[uint64][]*types.Log)

@@ -14,8 +14,9 @@ func TestFilterLogs(t *testing.T) {
 	param := Param{
 		StartBlock:   startBlock,
 		ReorgedBlock: reorgedAt,
+		MovedLogs:    nil,
 	}
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1, nil)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1)
 	ctx := context.Background()
 	logs, err := sim.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: big.NewInt(69),
@@ -52,9 +53,10 @@ func TestFilterLogsReorg(t *testing.T) {
 	param := Param{
 		StartBlock:   reorgedAt,
 		ReorgedBlock: reorgedAt,
+		MovedLogs:    nil,
 	}
 
-	rSim := NewReorgSimFromLogsFiles(param, logsFiles, 1, nil).(*ReorgSim)
+	rSim := NewReorgSimFromLogsFiles(param, logsFiles, 1).(*ReorgSim)
 
 	block := rSim.Chain()[reorgedAt]
 	rBlock := rSim.ReorgedChain()[reorgedAt]
@@ -97,9 +99,11 @@ func TestExitBlock(t *testing.T) {
 		StartBlock:    startBlock,
 		BlockProgress: 5,
 		ReorgedBlock:  reorgedAt,
+		MovedLogs:     nil,
 		ExitBlock:     exitBlock,
 	}
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1, nil)
+
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1)
 
 	ctx := context.Background()
 	for {

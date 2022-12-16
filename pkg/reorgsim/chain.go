@@ -12,15 +12,14 @@ const NoReorg uint64 = 0
 
 type blockChain map[uint64]*block
 
-// NewBlockChainNg returns a tuple of blockChain(s). It takes in |reorgedAt|,
-// and construct the chains based on that number.
-func NewBlockChainNg(logs []types.Log, reorgedAt uint64) (blockChain, blockChain) {
-	return NewBlockChain(mapLogsToNumber(logs), reorgedAt)
+// NewBlockChain
+func NewBlockChain(reorgedAt uint64, logs ...types.Log) (blockChain, blockChain) {
+	return newBlockChain(mapLogsToNumber(logs), reorgedAt)
 }
 
-// NewBlockChain returns a tuple of blockChain(s). It takes in |reorgedAt|,
+// newBlockChain returns a tuple of blockChain(s) for reorgSim. It takes in |reorgedAt|,
 // and construct the chains based on that number.
-func NewBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {
+func newBlockChain(mappedLogs map[uint64][]types.Log, reorgedAt uint64) (blockChain, blockChain) {
 	// The "good old chain"
 	chain := make(blockChain)
 	for blockNumber, logs := range mappedLogs {
@@ -58,27 +57,27 @@ type MoveLogs struct {
 	TxHashes []common.Hash // txHashes of logs to be moved to newBlock
 }
 
-// NewBlockChainV2 is similar to NewBlockChain, but the reorgedChain (the second return variable)
-// will call blockChain.reorgMoveLogs with |logsMoved|.
-// Calling NewBlockChainV2 with nil |logsMoved| is the same as calling NewBlockChain
-func NewBlockChainV2(
+// NewBlockChainWithMovedLogs is similar to NewBlockChain, but the reorgedChain (the 2nd returned variable)
+// will call blockChain.reorgMoveLogs with |movedLogs|.
+// Calling NewBlockChainWithMovedLogs with nil |movedLogs| is the same as calling NewBlockChain
+func NewBlockChainWithMovedLogs(
 	mappedLogs map[uint64][]types.Log,
 	reorgedAt uint64,
-	logsMoved map[uint64][]MoveLogs,
+	movedLogs map[uint64][]MoveLogs,
 ) (
 	blockChain,
 	blockChain,
 ) {
-	for blockNumber := range logsMoved {
+	for blockNumber := range movedLogs {
 		if blockNumber < reorgedAt {
 			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, reorgedAt))
 		}
 	}
 
-	chain, reorgedChain := NewBlockChain(mappedLogs, reorgedAt)
+	chain, reorgedChain := newBlockChain(mappedLogs, reorgedAt)
 
-	if logsMoved != nil || len(logsMoved) != 0 {
-		reorgedChain.reorgMoveLogs(logsMoved)
+	if movedLogs != nil || len(movedLogs) != 0 {
+		reorgedChain.reorgMoveLogs(movedLogs)
 	}
 
 	return chain, reorgedChain

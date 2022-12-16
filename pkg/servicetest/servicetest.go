@@ -54,7 +54,7 @@ func InitTestComponents(
 	fakeRedis := datagateway.NewMock(conf.StartBlock, !firstRun)
 	return &TestComponents{
 		conf:           conf,
-		client:         reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel, nil),
+		client:         reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel),
 		serviceEngine:  serviceEngine,
 		dataGatewayGet: fakeRedis,
 		dataGatewaySet: fakeRedis,
