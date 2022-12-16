@@ -12,8 +12,9 @@ type block struct {
 	blockNumber uint64
 	hash        common.Hash
 	logs        []types.Log
-	reorgedHere bool
-	toBeForked  bool
+
+	reorgedHere bool // reorgedHere marks if this block is where an ReorgEvent begins
+	toBeForked  bool // toBeForked marks if this block will later be forked from the old chain according to ReorgEvent
 }
 
 // Implements superwatcher.EmitterBlockHeader

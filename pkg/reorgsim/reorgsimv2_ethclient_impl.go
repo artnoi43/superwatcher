@@ -2,15 +2,75 @@ package reorgsim
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
-func (r *ReorgSimV2) chooseBlock(number uint64) *block {
+func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
+	var currentReorgEvent int
+	for i, forked := range r.forked {
+		if !forked {
+			currentReorgEvent = i
+		}
+	}
 
-	return nil
+	b, found := r.chain[blockNumber]
+	if !found || b == nil {
+		return nil
+	}
+
+	logFunc := func(prefix string) {
+		r.debugger.Debug(
+			2,
+			fmt.Sprintf("%s chooseBlock", prefix),
+			zap.Int("currentReorgEvent", currentReorgEvent),
+			zap.Uint64("blockNumber", b.blockNumber),
+			zap.String("caller", caller),
+			zap.Bool("toBeForked", b.toBeForked),
+			zap.Int("seen", r.filterLogsCounter[b.blockNumber]),
+		)
+	}
+
+	logFunc("<")
+
+	if b.toBeForked {
+		var n int
+		switch caller {
+		case methodFilterLogs:
+			n = 1 // reorgSim.FilterLogs returns reorged blocks first
+			// case headerByNumber:
+			// 	n = 2
+		default:
+			panic("unexpected call to chooseBlock by \"" + caller + "\"")
+		}
+
+		if r.filterLogsCounter[blockNumber] >= n {
+			currentChain := r.reorgedChains[currentReorgEvent]
+			b, found = currentChain[blockNumber]
+			if !found {
+				return nil
+			}
+
+			r.debugger.Debug(
+				1, "REORGED!",
+				zap.Uint64("blockNumber", blockNumber),
+			)
+
+			r.chain = currentChain
+			r.forked[currentReorgEvent] = true
+		}
+	}
+
+	if caller == methodFilterLogs && b.toBeForked {
+		r.filterLogsCounter[blockNumber]++
+	}
+
+	logFunc(">")
+	return b
 }
 
 func (r *ReorgSimV2) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
@@ -28,11 +88,17 @@ func (r *ReorgSimV2) FilterLogs(ctx context.Context, query ethereum.FilterQuery)
 		to = from
 	}
 
+	var logs []types.Log
 	for number := from; number <= to; number++ {
+		b := r.chooseBlock(number, methodFilterLogs)
+		if b == nil || len(b.logs) == 0 {
+			continue
+		}
 
+		appendFilterLogs(&b.logs, &logs, query.Addresses, query.Topics)
 	}
 
-	return nil, nil
+	return logs, nil
 }
 
 func (r *ReorgSimV2) BlockNumber(ctx context.Context) (uint64, error) {

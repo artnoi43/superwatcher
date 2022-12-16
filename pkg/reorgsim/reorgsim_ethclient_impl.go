@@ -17,18 +17,18 @@ const (
 
 // chooseBlock returns a block at that |blockNumber| from
 // an appropriate chain. The "reorg" logic is defined here.
-func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller string) *block {
+func (r *ReorgSim) chooseBlock(blockNumber uint64, caller string) *block {
 	r.Lock()
 	defer r.Unlock()
 	// If we see a "toBeForked" block more than once,
 	// return the reorged block from reorged chain.
 
 	b, found := r.chain[blockNumber]
-	if !found {
+	if !found || b == nil {
 		return nil
 	}
 
-	log := func(prefix string) {
+	logFunc := func(prefix string) {
 		r.debugger.Debug(
 			2,
 			fmt.Sprintf("%s chooseBlock", prefix),
@@ -39,7 +39,7 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 		)
 	}
 
-	log("<")
+	logFunc("<")
 
 	// Use reorg block for this blockNumber
 	if b.toBeForked {
@@ -65,7 +65,10 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 			}
 
 			if !r.wasForked {
-				r.debugger.Debug(1, "!REORGED!", zap.Uint64("blockNumber", blockNumber))
+				r.debugger.Debug(
+					1, "!REORGED!",
+					zap.Uint64("blockNumber", blockNumber),
+				)
 
 				r.chain = r.reorgedChain
 				r.wasForked = true
@@ -73,11 +76,11 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 		}
 	}
 
-	if caller == methodFilterLogs && b.toBeForked {
+	if caller == methodFilterLogs {
 		r.filterLogsCounter[blockNumber]++
 	}
 
-	log(">")
+	logFunc(">")
 	return b
 }
 
@@ -101,10 +104,10 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 	}
 
 	var logs []types.Log
-	for blockNumber := from; blockNumber <= to; blockNumber++ {
+	for number := from; number <= to; number++ {
 		// Choose a block from an appropriate chain
-		b := r.chooseBlock(blockNumber, from, to, methodFilterLogs)
-		if b == nil || b.logs == nil {
+		b := r.chooseBlock(number, methodFilterLogs)
+		if b == nil || len(b.logs) == 0 {
 			continue
 		}
 

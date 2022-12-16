@@ -13,15 +13,15 @@ import (
 func TestFilterLogs(t *testing.T) {
 	param := ParamV1{
 		BaseParam: BaseParam{
-			StartBlock:    startBlock,
+			StartBlock:    defaultStartBlock,
 			BlockProgress: 20,
 		},
 		ReorgEvent: ReorgEvent{
-			ReorgedBlock: reorgedAt,
+			ReorgedBlock: defaultReorgedAt,
 			MovedLogs:    nil,
 		},
 	}
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 2)
 	ctx := context.Background()
 	logs, err := sim.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: big.NewInt(69),
@@ -42,7 +42,7 @@ func TestFilterLogs(t *testing.T) {
 		t.Errorf("FilterLogs returned error: %s", err.Error())
 	}
 	if len(logs) == 0 {
-		t.Fatalf("expecting >0 logs, got 0")
+		t.Fatalf("expecting > 0 logs, got 0 log")
 	}
 
 }
@@ -102,22 +102,22 @@ func TestFilterLogsReorg(t *testing.T) {
 }
 
 func TestExitBlock(t *testing.T) {
-	exitBlock := reorgedAt + 100
+	exitBlock := defaultReorgedAt + 100
 	t.Log("exit block", exitBlock)
 
 	param := ParamV1{
 		BaseParam: BaseParam{
-			StartBlock:    startBlock,
+			StartBlock:    defaultStartBlock,
 			BlockProgress: 5,
 			ExitBlock:     exitBlock,
 		},
 		ReorgEvent: ReorgEvent{
-			ReorgedBlock: reorgedAt,
+			ReorgedBlock: defaultReorgedAt,
 			MovedLogs:    nil,
 		},
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 1)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 1)
 
 	ctx := context.Background()
 	for {

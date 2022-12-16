@@ -37,6 +37,8 @@ func newReorgSimV2(
 	logLevel uint8,
 ) *ReorgSimV2 {
 	return &ReorgSimV2{
+		param:             param,
+		events:            reorgEvents,
 		chain:             chain,
 		reorgedChains:     reorgedChains,
 		filterLogsCounter: make(map[uint64]int),
@@ -52,7 +54,7 @@ func NewReorgSimV2(
 	logs map[uint64][]types.Log,
 	logLevel uint8,
 ) superwatcher.EthClient {
-	chain, _ := newBlockChain(logs, NoReorg)
+	chain, _ := newBlockChain(logs, events[0].ReorgedBlock)
 
 	var reorgedChains = make([]blockChain, len(events))
 	for i, event := range events {
@@ -61,4 +63,18 @@ func NewReorgSimV2(
 	}
 
 	return newReorgSimV2(param, events, chain, reorgedChains, logLevel)
+}
+
+func NewReorgSimV2FromLogsFiles(
+	param BaseParam,
+	events []ReorgEvent,
+	logsFiles []string,
+	logLevel uint8,
+) superwatcher.EthClient {
+	return NewReorgSimV2(
+		param,
+		events,
+		InitMappedLogsFromFiles(logsFiles...),
+		logLevel,
+	)
 }

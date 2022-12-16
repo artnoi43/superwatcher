@@ -77,7 +77,20 @@ func NewBlockChainWithMovedLogs(
 	chain, reorgedChain := newBlockChain(mappedLogs, reorgedAt)
 
 	if movedLogs != nil || len(movedLogs) != 0 {
-		reorgedChain.reorgMoveLogs(movedLogs)
+		moveToBlocks := reorgedChain.reorgMoveLogs(movedLogs)
+
+		// Ensure that all moveToBlocks exist in original chain
+		for _, moveToBlock := range moveToBlocks {
+			// If the old chain did not have moveToBlock, create one
+			if _, ok := chain[moveToBlock]; !ok {
+				chain[moveToBlock] = &block{
+					blockNumber: moveToBlock,
+					hash:        RandomHash(moveToBlock),
+					reorgedHere: moveToBlock == reorgedAt,
+					toBeForked:  true,
+				}
+			}
+		}
 	}
 
 	return chain, reorgedChain
@@ -86,7 +99,11 @@ func NewBlockChainWithMovedLogs(
 func (c blockChain) reorgMoveLogs(
 	// logsMoved maps old block to []moveLog
 	logsMoved map[uint64][]MoveLogs,
-) {
+) []uint64 {
+	// A slice of unique blockNumbers that logs will be moved to.
+	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain
+	var moveToBlocks []uint64
+
 	for blockNumber, moves := range logsMoved {
 		b, ok := c[blockNumber]
 		if !ok {
@@ -97,6 +114,10 @@ func (c blockChain) reorgMoveLogs(
 			targetBlock, ok := c[move.NewBlock]
 			if !ok {
 				panic("logsMoved to non-existent block")
+			}
+
+			if !gslutils.Contains(moveToBlocks, move.NewBlock) {
+				moveToBlocks = append(moveToBlocks, move.NewBlock)
 			}
 
 			// Save logsToMove before removing it from b
@@ -119,4 +140,6 @@ func (c blockChain) reorgMoveLogs(
 			targetBlock.logs = append(targetBlock.logs, logsToMove...)
 		}
 	}
+
+	return moveToBlocks
 }
