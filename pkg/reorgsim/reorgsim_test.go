@@ -11,20 +11,20 @@ import (
 )
 
 var (
-	startBlock  uint64 = 15900000
-	reorgedAt   uint64 = 15944444
-	defaultLogs        = []string{
+	defaultStartBlock uint64 = 15900000
+	defaultReorgedAt  uint64 = 15944444
+	defaultLogsFiles         = []string{
 		"./assets/logs_poolfactory.json",
 		"./assets/logs_lp.json",
 	}
 )
 
 func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
-	return NewBlockChain(reorgedAt, InitLogsFromFiles(defaultLogs...)...)
+	return NewBlockChain(reorgedAt, InitLogsFromFiles(defaultLogsFiles...)...)
 }
 
 func TestNewBlockChainNg(t *testing.T) {
-	oldChain, reorgedChain := initDefaultChains(reorgedAt)
+	oldChain, reorgedChain := initDefaultChains(defaultReorgedAt)
 	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
 		t.Fatal(err.Error())
 	}
@@ -32,7 +32,7 @@ func TestNewBlockChainNg(t *testing.T) {
 
 // Test if NewBlockChain works properly
 func TestNewBlockChain(t *testing.T) {
-	oldChain, reorgedChain := initDefaultChains(reorgedAt)
+	oldChain, reorgedChain := initDefaultChains(defaultReorgedAt)
 	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
 		t.Fatal(err.Error())
 	}
@@ -57,11 +57,11 @@ func testBlockChain(t *testing.T, oldChain, reorgedChain blockChain) error {
 			return fmt.Errorf("old and reorg block hashes match on block %d:%s", blockNumber, oldBlock.Hash().String())
 		}
 
-		if blockNumber < reorgedAt && reorgedBlock.toBeForked {
+		if blockNumber < defaultReorgedAt && reorgedBlock.toBeForked {
 			return fmt.Errorf("unreorged block %d from reorgedChain tagged with toBeForked", blockNumber)
 		}
 
-		if blockNumber > reorgedAt && !reorgedBlock.toBeForked {
+		if blockNumber > defaultReorgedAt && !reorgedBlock.toBeForked {
 			return fmt.Errorf("reorgedBlock %d not tagged with toBeForked", blockNumber)
 		}
 
@@ -94,7 +94,7 @@ func TestFoo(t *testing.T) {
 
 	param := ParamV1{
 		BaseParam: BaseParam{
-			StartBlock:    startBlock,
+			StartBlock:    defaultStartBlock,
 			BlockProgress: 3,
 			ExitBlock:     reorgedAt + 100,
 		},
@@ -103,7 +103,7 @@ func TestFoo(t *testing.T) {
 		},
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 3)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 3)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),
