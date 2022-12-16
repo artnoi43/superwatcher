@@ -48,8 +48,8 @@ func TestReorgMoveLogs(t *testing.T) {
 }
 
 func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
-	logs := InitMappedLogsFromFiles(conf.logsFiles)
-	_, reorgedChain := NewBlockChainV2(logs, conf.reorgedAt, conf.logsMoved)
+	logs := InitMappedLogsFromFiles(conf.logsFiles...)
+	_, reorgedChain := NewBlockChainWithMovedLogs(logs, conf.reorgedAt, conf.logsMoved)
 
 	movedLogs := make(map[common.Hash]bool)
 

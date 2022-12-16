@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/superwatcher"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 )
 
 func TestFakeRedis(t *testing.T) {

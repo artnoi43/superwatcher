@@ -20,19 +20,11 @@ var (
 )
 
 func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
-	mappedLogs := InitMappedLogsFromFiles(defaultLogs)
-
-	return NewBlockChain(mappedLogs, reorgedAt)
-}
-
-func initDefaultChainsNg(reorgedAt uint64) (blockChain, blockChain) {
-	logs := InitLogsFromFiles(defaultLogs...)
-
-	return NewBlockChainNg(logs, reorgedAt)
+	return NewBlockChain(reorgedAt, InitLogsFromFiles(defaultLogs...)...)
 }
 
 func TestNewBlockChainNg(t *testing.T) {
-	oldChain, reorgedChain := initDefaultChainsNg(reorgedAt)
+	oldChain, reorgedChain := initDefaultChains(reorgedAt)
 	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
 		t.Fatal(err.Error())
 	}
@@ -107,7 +99,7 @@ func TestFoo(t *testing.T) {
 		ExitBlock:     reorgedAt + 100,
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 3, nil)
+	sim := NewReorgSimFromLogsFiles(param, defaultLogs, 3)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),

@@ -200,10 +200,11 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 		BlockProgress: 20,
 		ReorgedBlock:  tc.ReorgedAt,
 		ExitBlock:     tc.ToBlock + 200,
+		MovedLogs:     tc.MovedLogs,
 		Debug:         true,
 	}
 
-	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2, tc.MovedLogs)
+	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2)
 
 	// Collect MovedLogs info
 	var movedFromBlocks []uint64

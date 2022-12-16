@@ -10,7 +10,7 @@ import (
 
 func TestReorg(t *testing.T) {
 	var blockNumber uint64 = 15944408
-	logs := InitMappedLogsFromFiles(defaultLogs)
+	logs := InitMappedLogsFromFiles(defaultLogs...)
 	blockLogs := logs[blockNumber]
 	oldLogsByTxHash := mapLogsToTxHash(blockLogs)
 	fmt.Println("oldLogs by TxHash")
@@ -38,8 +38,8 @@ func TestRemoveLogs(t *testing.T) {
 		common.HexToHash("0x620be69b041f986127322985854d3bc785abe1dc9f4df49173409f15b7515164"),
 	}
 
-	logs := InitMappedLogsFromFiles(defaultLogs)
-	chain, _ := NewBlockChain(logs, reorgedAt)
+	logs := InitMappedLogsFromFiles(defaultLogs...)
+	chain, _ := newBlockChain(logs, reorgedAt)
 
 	b := chain[blockNumber]
 
