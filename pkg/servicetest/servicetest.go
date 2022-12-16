@@ -42,13 +42,17 @@ func InitTestComponents(
 	firstRun bool, // If true, then the mock datagateway will return `ErrRecordNotFound` until `SetLastRecordedBlock`` is called
 ) (
 	*TestComponents,
-	reorgsim.Param, // For logging
+	reorgsim.ParamV1, // For logging
 ) {
-	param := reorgsim.Param{
-		StartBlock:    start,
-		BlockProgress: 5,
-		ReorgedBlock:  reorgAt,
-		ExitBlock:     exit,
+	param := reorgsim.ParamV1{
+		BaseParam: reorgsim.BaseParam{
+			StartBlock:    start,
+			BlockProgress: 5,
+			ExitBlock:     exit,
+		},
+		ReorgEvent: reorgsim.ReorgEvent{
+			ReorgedBlock: reorgAt,
+		},
 	}
 
 	fakeRedis := datagateway.NewMock(conf.StartBlock, !firstRun)

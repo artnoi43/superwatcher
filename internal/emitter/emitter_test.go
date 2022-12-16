@@ -195,13 +195,17 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 	fakeRedis := datagateway.NewMock(tc.FromBlock-1, true)
 
-	param := reorgsim.Param{
-		StartBlock:    tc.FromBlock,
-		BlockProgress: 20,
-		ReorgedBlock:  tc.ReorgedAt,
-		ExitBlock:     tc.ToBlock + 200,
-		MovedLogs:     tc.MovedLogs,
-		Debug:         true,
+	param := reorgsim.ParamV1{
+		BaseParam: reorgsim.BaseParam{
+			StartBlock:    tc.FromBlock,
+			BlockProgress: 20,
+			Debug:         true,
+			ExitBlock:     tc.ToBlock + 200,
+		},
+		ReorgEvent: reorgsim.ReorgEvent{
+			ReorgedBlock: tc.ReorgedAt,
+			MovedLogs:    tc.MovedLogs,
+		},
 	}
 
 	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2)

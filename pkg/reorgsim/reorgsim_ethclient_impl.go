@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -12,8 +11,8 @@ import (
 )
 
 const (
-	filterLogs     = "filterLogs"
-	headerByNumber = "headerByNumber"
+	methodFilterLogs     = "filterLogs"
+	methodHeaderByNumber = "headerByNumber"
 )
 
 // chooseBlock returns a block at that |blockNumber| from
@@ -51,7 +50,7 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 		// the reorged logs, and thus a different |n| value.
 		var n int
 		switch caller {
-		case filterLogs:
+		case methodFilterLogs:
 			n = 1 // reorgSim.FilterLogs returns reorged blocks first
 			// case headerByNumber:
 			// 	n = 2
@@ -74,7 +73,7 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 		}
 	}
 
-	if caller == filterLogs && b.toBeForked {
+	if caller == methodFilterLogs && b.toBeForked {
 		r.filterLogsCounter[blockNumber]++
 	}
 
@@ -83,6 +82,10 @@ func (r *ReorgSim) chooseBlock(blockNumber, fromBlock, toBlock uint64, caller st
 }
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+	// DO NOT LOCK! A mutex lock here will block call to ReorgSim.ChooseBlock
+	// r.RLock()
+	// defer r.RUnlock()
+
 	if query.FromBlock == nil {
 		return nil, errors.New("nil query.FromBlock")
 	}
@@ -100,31 +103,12 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 	var logs []types.Log
 	for blockNumber := from; blockNumber <= to; blockNumber++ {
 		// Choose a block from an appropriate chain
-		b := r.chooseBlock(blockNumber, from, to, filterLogs)
-		if b == nil {
+		b := r.chooseBlock(blockNumber, from, to, methodFilterLogs)
+		if b == nil || b.logs == nil {
 			continue
 		}
 
-		for _, log := range b.logs {
-			if query.Addresses == nil && query.Topics == nil {
-				logs = append(logs, log)
-				continue
-			}
-
-			if query.Addresses != nil {
-				if query.Topics != nil {
-					if gslutils.Contains(query.Topics[0], log.Topics[0]) {
-						logs = append(logs, log)
-						continue
-					}
-				}
-
-				if gslutils.Contains(query.Addresses, log.Address) {
-					logs = append(logs, log)
-					continue
-				}
-			}
-		}
+		appendFilterLogs(&b.logs, &logs, query.Addresses, query.Topics)
 	}
 
 	return logs, nil
@@ -134,21 +118,17 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	r.Lock()
 	defer r.Unlock()
 
-	if r.Param.BlockProgress == 0 {
-		panic("0 BlockProgress")
-	}
-
 	if r.currentBlock == 0 {
-		r.currentBlock = r.Param.StartBlock
+		r.currentBlock = r.ParamV1.StartBlock
 		return r.currentBlock, nil
 	}
 
 	currentBlock := r.currentBlock
-	if currentBlock >= r.Param.ExitBlock {
-		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.Param.ExitBlock)
+	if currentBlock >= r.ParamV1.ExitBlock {
+		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.ParamV1.ExitBlock)
 	}
 
-	r.currentBlock = currentBlock + r.Param.BlockProgress
+	r.currentBlock = currentBlock + r.ParamV1.BlockProgress
 	return currentBlock, nil
 }
 

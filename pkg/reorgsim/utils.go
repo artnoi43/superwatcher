@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -61,4 +62,28 @@ func readJsonLogs(filename string) []types.Log {
 	}
 
 	return logs
+}
+
+// appendFilterLogs appends logs from |src| to |dst| with |addresses| and |topics|.
+func appendFilterLogs(src, dst *[]types.Log, addresses []common.Address, topics [][]common.Hash) {
+	for _, log := range *src {
+		if addresses == nil && topics == nil {
+			*dst = append(*dst, log)
+			continue
+		}
+
+		if addresses != nil {
+			if topics != nil {
+				if gslutils.Contains(topics[0], log.Topics[0]) {
+					*dst = append(*dst, log)
+					continue
+				}
+			}
+
+			if gslutils.Contains(addresses, log.Address) {
+				*dst = append(*dst, log)
+				continue
+			}
+		}
+	}
 }
