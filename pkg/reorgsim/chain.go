@@ -62,22 +62,21 @@ type MoveLogs struct {
 // Calling NewBlockChainWithMovedLogs with nil |movedLogs| is the same as calling NewBlockChain
 func NewBlockChainWithMovedLogs(
 	mappedLogs map[uint64][]types.Log,
-	reorgedAt uint64,
-	movedLogs map[uint64][]MoveLogs,
+	event ReorgEvent,
 ) (
 	blockChain,
 	blockChain,
 ) {
-	for blockNumber := range movedLogs {
-		if blockNumber < reorgedAt {
-			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, reorgedAt))
+	for blockNumber := range event.MovedLogs {
+		if blockNumber < event.ReorgBlock {
+			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, event.ReorgBlock))
 		}
 	}
 
-	chain, reorgedChain := newBlockChain(mappedLogs, reorgedAt)
+	chain, reorgedChain := newBlockChain(mappedLogs, event.ReorgBlock)
 
-	if movedLogs != nil || len(movedLogs) != 0 {
-		moveToBlocks := reorgedChain.reorgMoveLogs(movedLogs)
+	if len(event.MovedLogs) != 0 {
+		moveToBlocks := reorgedChain.reorgMoveLogs(event.MovedLogs)
 
 		// Ensure that all moveToBlocks exist in original chain
 		for _, moveToBlock := range moveToBlocks {
@@ -86,7 +85,7 @@ func NewBlockChainWithMovedLogs(
 				chain[moveToBlock] = &block{
 					blockNumber: moveToBlock,
 					hash:        RandomHash(moveToBlock),
-					reorgedHere: moveToBlock == reorgedAt,
+					reorgedHere: moveToBlock == event.ReorgBlock,
 					toBeForked:  true,
 				}
 			}

@@ -88,8 +88,7 @@ func NewReorgSimFromLogsFiles(
 ) superwatcher.EthClient {
 	chain, reorgedChain := NewBlockChainWithMovedLogs(
 		InitMappedLogsFromFiles(logFiles...),
-		param.ReorgEvent.ReorgBlock,
-		param.ReorgEvent.MovedLogs,
+		param.ReorgEvent,
 	)
 
 	return NewReorgSim(param, chain, reorgedChain, logLevel)
