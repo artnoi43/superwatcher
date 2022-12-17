@@ -50,7 +50,7 @@ func TestFilterLogsV2(t *testing.T) {
 	}
 }
 
-func TestFilterLogsReorgV2TestFilterLogsReorgV2(t *testing.T) {
+func TestFilterLogsReorgV2(t *testing.T) {
 	reorgedAt := uint64(15944415)
 	logsPath := "../../internal/emitter/assets"
 	logsFiles := []string{

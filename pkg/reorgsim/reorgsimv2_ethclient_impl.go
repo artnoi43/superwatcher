@@ -49,6 +49,7 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 			panic("unexpected call to chooseBlock by \"" + caller + "\"")
 		}
 
+		// Only trigger new reorg if filterLogsCounter is >= n
 		if r.filterLogsCounter[blockNumber] >= n {
 			currentChain := r.reorgedChains[currentReorgEvent]
 			b, found = currentChain[blockNumber]
@@ -59,9 +60,9 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 			r.debugger.Debug(
 				1, "REORGED!",
 				zap.Uint64("blockNumber", blockNumber),
+				zap.Bools("forked", r.forked),
 			)
 
-			r.chain = currentChain
 			r.forked[currentReorgEvent] = true
 		}
 	}
