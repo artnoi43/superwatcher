@@ -20,7 +20,7 @@ var (
 )
 
 func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
-	return NewBlockChain(reorgedAt, InitLogsFromFiles(defaultLogsFiles...)...)
+	return NewBlockChainReorgV1(InitMappedLogsFromFiles(defaultLogsFiles...), reorgedAt)
 }
 
 func TestNewBlockChainNg(t *testing.T) {

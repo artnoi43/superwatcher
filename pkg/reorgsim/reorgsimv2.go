@@ -1,13 +1,17 @@
 package reorgsim
 
 import (
-	"fmt"
 	"sync"
+
+	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
-	"github.com/ethereum/go-ethereum/core/types"
 )
+
+var errInvalidReorgEvents = errors.New("invalid reorg events")
 
 // ReorgSimV2 can perform multiple on-the-fly chain reorganizations.
 type ReorgSimV2 struct {
@@ -32,64 +36,40 @@ type ReorgSimV2 struct {
 
 func newReorgSimV2(
 	param BaseParam,
-	reorgEvents []ReorgEvent,
+	events []ReorgEvent,
 	chain blockChain,
 	reorgedChains []blockChain,
 	logLevel uint8,
-) *ReorgSimV2 {
+) (
+	*ReorgSimV2,
+	error,
+) {
+	if err := validateReorgEvents(events); err != nil {
+		return nil, errors.Wrap(err, "invalid events")
+	}
+
 	return &ReorgSimV2{
 		param:             param,
-		events:            reorgEvents,
+		events:            events,
 		chain:             chain,
 		reorgedChains:     reorgedChains,
 		filterLogsCounter: make(map[uint64]int),
-		forked:            make([]bool, len(reorgEvents)),
+		forked:            make([]bool, len(events)),
 		debugger:          debugger.NewDebugger("ReorgSimV2", logLevel),
-	}
+	}, nil
 }
 
-// NewReorgSimV2 uses params to construct multiple reorged chains. It uses `params[0]`.StartBlock as ReorgSimV2.currentBlock
+// NewReorgSimV2 constructs blockChains using NewBlockChainV2 to call newReorgSimV2.
 func NewReorgSimV2(
 	param BaseParam,
 	events []ReorgEvent,
 	logs map[uint64][]types.Log,
 	logLevel uint8,
-) superwatcher.EthClient {
-	chain, _ := NewBlockChainWithMovedLogs(logs, events[0])
-
-	var reorgedChains = make([]blockChain, len(events))
-	for i, event := range events {
-		var prevChain blockChain
-		if i == 0 {
-			prevChain = chain
-		} else {
-			prevChain = reorgedChains[i-1]
-		}
-
-		forkedChain := copyBlockChain(prevChain)
-		prevChainFromBlocks := forkedChain.reorgMoveLogs(event.MovedLogs)
-
-		for _, prevFrom := range prevChainFromBlocks {
-			if _, ok := prevChain[prevFrom]; !ok {
-				panic(fmt.Sprintf("moved from non-existent block %d", prevFrom))
-			}
-
-			// Make sure the movedFrom block is not nil
-			if b, ok := forkedChain[prevFrom]; !ok || b == nil {
-				forkedChain[prevFrom] = &block{
-					blockNumber: prevFrom,
-					hash:        RandomHash(prevFrom),
-					reorgedHere: prevFrom == event.ReorgBlock,
-					toBeForked:  true,
-				}
-
-			}
-		}
-
-		// Make sure the block from which the logs moved
-		reorgedChains[i] = forkedChain
-	}
-
+) (
+	superwatcher.EthClient,
+	error,
+) {
+	chain, reorgedChains := NewBlockChainReorgV2(logs, events)
 	return newReorgSimV2(param, events, chain, reorgedChains, logLevel)
 }
 
@@ -98,7 +78,10 @@ func NewReorgSimV2FromLogsFiles(
 	events []ReorgEvent,
 	logsFiles []string,
 	logLevel uint8,
-) superwatcher.EthClient {
+) (
+	superwatcher.EthClient,
+	error,
+) {
 	return NewReorgSimV2(
 		param,
 		events,
@@ -117,4 +100,29 @@ func (r *ReorgSimV2) ReorgedChains() []blockChain {
 
 func (r *ReorgSimV2) ReorgedChain(i int) blockChain {
 	return r.reorgedChains[i]
+}
+
+// Subsequent ReorgEvent.ReorgBlock should be larger than the previous ones
+func validateReorgEvents(events []ReorgEvent) error {
+	reorgBlocks := gslutils.Map(events, func(event ReorgEvent) (uint64, bool) {
+		return event.ReorgBlock, true
+	})
+
+	for i, reorgBlock := range reorgBlocks {
+		var prevReorgBlock uint64
+		if i == 0 {
+			continue
+		} else {
+			prevReorgBlock = reorgBlocks[i-1]
+		}
+
+		if prevReorgBlock > reorgBlock {
+			return errors.Wrapf(
+				errInvalidReorgEvents, "event at index %d has smaller value than index %d (%d > %d)",
+				i, i-1, reorgBlock, prevReorgBlock,
+			)
+		}
+	}
+
+	return nil
 }

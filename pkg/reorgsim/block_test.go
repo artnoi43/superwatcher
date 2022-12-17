@@ -39,7 +39,7 @@ func TestRemoveLogs(t *testing.T) {
 	}
 
 	logs := InitMappedLogsFromFiles(defaultLogsFiles...)
-	chain, _ := newBlockChain(logs, reorgedAt)
+	chain, _ := NewBlockChainReorgV1(logs, reorgedAt)
 
 	b := chain[blockNumber]
 
