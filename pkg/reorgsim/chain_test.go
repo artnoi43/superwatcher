@@ -10,29 +10,30 @@ import (
 
 type moveConfig struct {
 	logsFiles []string
-	reorgedAt uint64
-	logsMoved map[uint64][]MoveLogs
+	event     ReorgEvent
 }
 
 func TestReorgMoveLogs(t *testing.T) {
 	tests := []moveConfig{
 		{
 			logsFiles: []string{"../../internal/emitter/assets/logs_lp_5.json"},
-			reorgedAt: 15966522,
-			logsMoved: map[uint64][]MoveLogs{
-				15966522: {
-					{
-						NewBlock: 15966527,
-						TxHashes: []common.Hash{
-							common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
+			event: ReorgEvent{
+				ReorgBlock: 15966522,
+				MovedLogs: map[uint64][]MoveLogs{
+					15966522: {
+						{
+							NewBlock: 15966527,
+							TxHashes: []common.Hash{
+								common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
+							},
 						},
 					},
-				},
-				15966525: {
-					{
-						NewBlock: 15966527,
-						TxHashes: []common.Hash{
-							common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
+					15966525: {
+						{
+							NewBlock: 15966527,
+							TxHashes: []common.Hash{
+								common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
+							},
 						},
 					},
 				},
@@ -49,11 +50,11 @@ func TestReorgMoveLogs(t *testing.T) {
 
 func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 	logs := InitMappedLogsFromFiles(conf.logsFiles...)
-	_, reorgedChain := NewBlockChainWithMovedLogs(logs, conf.reorgedAt, conf.logsMoved)
+	_, reorgedChain := NewBlockChainWithMovedLogs(logs, conf.event)
 
 	movedLogs := make(map[common.Hash]bool)
 
-	for moveFrom, moves := range conf.logsMoved {
+	for moveFrom, moves := range conf.event.MovedLogs {
 		for _, move := range moves {
 			moveFromBlock := reorgedChain[moveFrom]
 			for _, log := range moveFromBlock.logs {

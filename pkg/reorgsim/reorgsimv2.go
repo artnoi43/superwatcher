@@ -1,6 +1,7 @@
 package reorgsim
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/artnoi43/superwatcher"
@@ -54,12 +55,39 @@ func NewReorgSimV2(
 	logs map[uint64][]types.Log,
 	logLevel uint8,
 ) superwatcher.EthClient {
-	chain, _ := newBlockChain(logs, events[0].ReorgBlock)
+	chain, _ := NewBlockChainWithMovedLogs(logs, events[0])
 
 	var reorgedChains = make([]blockChain, len(events))
 	for i, event := range events {
-		_, reorgedChain := NewBlockChainWithMovedLogs(logs, event.ReorgBlock, event.MovedLogs)
-		reorgedChains[i] = reorgedChain
+		var prevChain blockChain
+		if i == 0 {
+			prevChain = chain
+		} else {
+			prevChain = reorgedChains[i-1]
+		}
+
+		forkedChain := copyBlockChain(prevChain)
+		prevChainFromBlocks := forkedChain.reorgMoveLogs(event.MovedLogs)
+
+		for _, prevFrom := range prevChainFromBlocks {
+			if _, ok := prevChain[prevFrom]; !ok {
+				panic(fmt.Sprintf("moved from non-existent block %d", prevFrom))
+			}
+
+			// Make sure the movedFrom block is not nil
+			if b, ok := forkedChain[prevFrom]; !ok || b == nil {
+				forkedChain[prevFrom] = &block{
+					blockNumber: prevFrom,
+					hash:        RandomHash(prevFrom),
+					reorgedHere: prevFrom == event.ReorgBlock,
+					toBeForked:  true,
+				}
+
+			}
+		}
+
+		// Make sure the block from which the logs moved
+		reorgedChains[i] = forkedChain
 	}
 
 	return newReorgSimV2(param, events, chain, reorgedChains, logLevel)
