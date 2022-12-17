@@ -15,13 +15,12 @@ type multiReorgConfig struct {
 	LogsFiles []string     `json:"logsFiles"`
 }
 
-func TestReorgSimV2(t *testing.T) {
-	defaultParam := BaseParam{
+var (
+	defaultReorgSimV2 = BaseParam{
 		BlockProgress: 20,
 		Debug:         true,
 	}
-
-	tests := []multiReorgConfig{
+	testsReorgSimV2 = []multiReorgConfig{
 		{
 			LogsFiles: []string{
 				"./assets/logs_lp.json",
@@ -30,8 +29,8 @@ func TestReorgSimV2(t *testing.T) {
 			Param: BaseParam{
 				StartBlock:    15944400,
 				ExitBlock:     15944500,
-				BlockProgress: defaultParam.BlockProgress,
-				Debug:         defaultParam.Debug,
+				BlockProgress: defaultReorgSimV2.BlockProgress,
+				Debug:         defaultReorgSimV2.Debug,
 			},
 			Events: []ReorgEvent{
 				{
@@ -63,8 +62,10 @@ func TestReorgSimV2(t *testing.T) {
 			},
 		},
 	}
+)
 
-	for _, test := range tests {
+func TestReorgSimV2(t *testing.T) {
+	for _, test := range testsReorgSimV2 {
 		err := testReorgSimV2MultiReorg(test)
 		if err != nil {
 			t.Error(err.Error())

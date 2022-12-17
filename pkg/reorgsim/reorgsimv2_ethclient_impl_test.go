@@ -50,28 +50,27 @@ func TestFilterLogsV2(t *testing.T) {
 	}
 }
 
+// Test if FilterLogs returns logs with correct hash (reorged hash).
+// No logs are moved in this test (yet).
 func TestFilterLogsReorgV2(t *testing.T) {
-	reorgedAt := uint64(15944415)
 	logsPath := "../../internal/emitter/assets"
 	logsFiles := []string{
 		logsPath + "/logs_lp.json",
 		logsPath + "/logs_poolfactory.json",
 	}
-
-	param := ParamV1{
-		BaseParam: BaseParam{
-			StartBlock:    reorgedAt,
-			BlockProgress: 20,
-		},
-		ReorgEvent: ReorgEvent{
-			ReorgBlock: reorgedAt,
-			MovedLogs:  nil,
-		},
+	param := BaseParam{
+		StartBlock:    15944410,
+		ExitBlock:     15944530,
+		BlockProgress: 20,
+	}
+	event := ReorgEvent{
+		ReorgBlock: 15944415,
+		MovedLogs:  nil,
 	}
 
 	sim, err := NewReorgSimV2FromLogsFiles(
-		param.BaseParam,
-		[]ReorgEvent{param.ReorgEvent},
+		param,
+		[]ReorgEvent{event},
 		logsFiles,
 		2,
 	)
@@ -81,35 +80,35 @@ func TestFilterLogsReorgV2(t *testing.T) {
 	}
 
 	rSim := sim.(*ReorgSimV2)
-	block := rSim.Chain()[reorgedAt]
-	rBlock := rSim.ReorgedChain(0)[reorgedAt]
-	if !rBlock.toBeForked {
-		t.Fatal("rBlock.toBeForked = false")
-	}
 
-	if block.Hash() == rBlock.Hash() {
-		t.Fatal("block and rBlock hashes match", "blockNumber", block.blockNumber, "hash", block.hash.String(), rBlock.hash.String())
-	}
-
-	filter := func() ([]types.Log, error) {
+	filter := func(base uint64) ([]types.Log, error) {
 		return rSim.FilterLogs(nil, ethereum.FilterQuery{
-			FromBlock: big.NewInt(int64(reorgedAt) - 2),
-			ToBlock:   big.NewInt(int64(reorgedAt) + 2),
+			FromBlock: big.NewInt(int64(base) - 2),
+			ToBlock:   big.NewInt(int64(base) + 2),
 		})
 	}
 
-	logs, _ := filter()
-	filter()
-	filter()
-	rLogs, _ := filter()
+	for number := param.StartBlock; number < param.ExitBlock; number++ {
+		logs, err := filter(number)
+		if err != nil {
+			t.Fatal("error from FilterLogs", err.Error())
+		}
+		rLogs, err := filter(number)
+		if err != nil {
+			t.Fatal("error from FilterLogs", err.Error())
+		}
 
-	for i, log := range logs {
-		t.Log("foo", log.BlockNumber)
-		if log.BlockNumber == reorgedAt {
-			rLog := rLogs[i]
+		for i, log := range logs {
+			if log.BlockNumber >= event.ReorgBlock {
+				rLog := rLogs[i]
 
-			if log.BlockHash == rLog.BlockHash {
-				t.Fatalf("log and rLog hashes match on %d-%d", log.BlockNumber, rLog.BlockNumber)
+				if log.BlockHash == rLog.BlockHash {
+					// If hashes are the same, but it's reorged hash, then it's ok
+					if log.BlockHash == PRandomHash(log.BlockNumber) {
+						continue
+					}
+					t.Fatalf("[number = %d] log and rLog hashes match on %d-%d", number, log.BlockNumber, rLog.BlockNumber)
+				}
 			}
 		}
 	}
