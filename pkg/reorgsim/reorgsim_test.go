@@ -99,7 +99,7 @@ func TestFoo(t *testing.T) {
 			ExitBlock:     reorgedAt + 100,
 		},
 		ReorgEvent: ReorgEvent{
-			ReorgedBlock: reorgedAt,
+			ReorgBlock: reorgedAt,
 		},
 	}
 

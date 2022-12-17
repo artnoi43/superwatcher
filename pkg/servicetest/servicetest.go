@@ -51,7 +51,7 @@ func InitTestComponents(
 			ExitBlock:     exit,
 		},
 		ReorgEvent: reorgsim.ReorgEvent{
-			ReorgedBlock: reorgAt,
+			ReorgBlock: reorgAt,
 		},
 	}
 
