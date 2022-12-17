@@ -35,7 +35,7 @@ func testMapLogsV1(tc *testConfig) error {
 		reorgEvent = &tc.Events[0]
 	}
 
-	oldChain, reorgedChain := reorgsim.NewBlockChainWithMovedLogs(logs, *reorgEvent)
+	oldChain, reorgedChain := reorgsim.NewBlockChainReorgMoveLogs(logs, *reorgEvent)
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
 	var concatLogs = make(map[uint64][]*types.Log)

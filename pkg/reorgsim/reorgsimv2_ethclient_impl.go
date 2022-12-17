@@ -15,6 +15,7 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 	for i, forked := range r.forked {
 		if !forked {
 			currentReorgEvent = i
+			break
 		}
 	}
 
