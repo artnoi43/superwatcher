@@ -16,17 +16,26 @@ func TestMapLogs(t *testing.T) {
 	for i, tc := range testCases {
 		b, _ := json.Marshal(tc)
 		t.Logf("testCase: %s", b)
-		err := testMapLogs(&tc)
+		err := testMapLogsV1(&tc)
 		if err != nil {
 			t.Fatalf("Case %d: %s", i, err.Error())
 		}
 	}
 }
 
-func testMapLogs(tc *testConfig) error {
+// testMapLogsV1 tests function mapLogs with ReorgSimV1 (1 reorg)
+func testMapLogsV1(tc *testConfig) error {
 	tracker := newTracker("testProcessReorg", 3)
 	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
-	oldChain, reorgedChain := reorgsim.NewBlockChainWithMovedLogs(logs, tc.ReorgedAt, tc.MovedLogs)
+
+	var reorgEvent *reorgsim.ReorgEvent
+	if len(tc.Events) == 0 {
+		reorgEvent = new(reorgsim.ReorgEvent)
+	} else {
+		reorgEvent = &tc.Events[0]
+	}
+
+	oldChain, reorgedChain := reorgsim.NewBlockChainWithMovedLogs(logs, reorgEvent.ReorgBlock, reorgEvent.MovedLogs)
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
 	var concatLogs = make(map[uint64][]*types.Log)
@@ -56,7 +65,7 @@ func testMapLogs(tc *testConfig) error {
 	// Collect movedFrom blockNumbers
 	var movedLogFromBlockNumbers []uint64
 	var movedLogToBlockNumbers []uint64
-	for blockNumber, moves := range tc.MovedLogs {
+	for blockNumber, moves := range tc.Events[0].MovedLogs {
 		movedLogFromBlockNumbers = append(movedLogFromBlockNumbers, blockNumber)
 		for _, move := range moves {
 			movedLogToBlockNumbers = append(movedLogToBlockNumbers, move.NewBlock)
@@ -80,21 +89,21 @@ func testMapLogs(tc *testConfig) error {
 		reorged := wasReorged[blockNumber]
 
 		// Any blocks after c.reorgedAt should be reorged.
-		if blockNumber >= tc.ReorgedAt {
+		if blockNumber >= reorgEvent.ReorgBlock {
 			if reorged {
 				continue
 			}
 
 			return fmt.Errorf(
 				"blockNumber %d is after reorg block at %d, but it was not tagged \"true\" in wasReorged: %v",
-				blockNumber, tc.ReorgedAt, wasReorged,
+				blockNumber, reorgEvent.ReorgBlock, wasReorged,
 			)
 		}
 
 		// And any block before c.reorgedAt should NOT be reorged.
 		if reorged {
 			return fmt.Errorf("blockNumber %d is before reorg block at %d, but it was not tagged \"false\" in wasReorged: %v",
-				blockNumber, tc.ReorgedAt, wasReorged,
+				blockNumber, reorgEvent.ReorgBlock, wasReorged,
 			)
 		}
 	}

@@ -17,8 +17,8 @@ func TestFilterLogs(t *testing.T) {
 			BlockProgress: 20,
 		},
 		ReorgEvent: ReorgEvent{
-			ReorgedBlock: defaultReorgedAt,
-			MovedLogs:    nil,
+			ReorgBlock: defaultReorgedAt,
+			MovedLogs:  nil,
 		},
 	}
 	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 2)
@@ -61,8 +61,8 @@ func TestFilterLogsReorg(t *testing.T) {
 			BlockProgress: 20,
 		},
 		ReorgEvent: ReorgEvent{
-			ReorgedBlock: reorgedAt,
-			MovedLogs:    nil,
+			ReorgBlock: reorgedAt,
+			MovedLogs:  nil,
 		},
 	}
 
@@ -112,8 +112,8 @@ func TestExitBlock(t *testing.T) {
 			ExitBlock:     exitBlock,
 		},
 		ReorgEvent: ReorgEvent{
-			ReorgedBlock: defaultReorgedAt,
-			MovedLogs:    nil,
+			ReorgBlock: defaultReorgedAt,
+			MovedLogs:  nil,
 		},
 	}
 

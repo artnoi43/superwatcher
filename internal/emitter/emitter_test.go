@@ -20,91 +20,126 @@ import (
 )
 
 type testConfig struct {
-	StartBlock uint64                         `json:"startBlock"`
-	ReorgedAt  uint64                         `json:"reorgedAt"`
-	FromBlock  uint64                         `json:"fromBlock"`
-	ToBlock    uint64                         `json:"toBlock"`
-	LogsFiles  []string                       `json:"logs"`
-	MovedLogs  map[uint64][]reorgsim.MoveLogs `json:"movedLogs"`
+	Param     reorgsim.BaseParam    `json:"baseParam"`
+	Events    []reorgsim.ReorgEvent `json:"reorgEvents"`
+	FromBlock uint64                `json:"fromBlock"`
+	ToBlock   uint64                `json:"toBlock"`
+	LogsFiles []string              `json:"logs"`
 }
 
 var testCases = []testConfig{
 	{
-		StartBlock: 15944390,
-		ReorgedAt:  15944411,
-		FromBlock:  15944400,
-		ToBlock:    15944500,
+		FromBlock: 15944400,
+		ToBlock:   15944500,
 		LogsFiles: []string{
 			"./assets/logs_poolfactory.json",
 			"./assets/logs_lp.json",
 		},
-		MovedLogs: nil,
+		Param: reorgsim.BaseParam{
+			StartBlock: 15944390,
+		},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15944411,
+				MovedLogs:  nil,
+			},
+		},
 	},
 	{
-		StartBlock: 15965710,
-		ReorgedAt:  15965730,
-		FromBlock:  15965717,
-		ToBlock:    15965748,
+		FromBlock: 15965717,
+		ToBlock:   15965748,
 		LogsFiles: []string{
 			"./assets/logs_lp_2_1.json",
 			"./assets/logs_lp_2_2.json",
 		},
-		MovedLogs: nil,
+		Param: reorgsim.BaseParam{
+			StartBlock: 15965710,
+		},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15965730,
+				MovedLogs:  nil,
+			},
+		},
 	},
 	{
-		StartBlock: 15965800,
-		ReorgedAt:  15965811,
-		FromBlock:  15965802,
-		ToBlock:    15965835,
+		FromBlock: 15965802,
+		ToBlock:   15965835,
 		LogsFiles: []string{
 			"./assets/logs_lp_3_1.json",
 			"./assets/logs_lp_3_2.json",
 		},
-		MovedLogs: nil,
+		Param: reorgsim.BaseParam{
+			StartBlock: 15965800,
+		},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15965811,
+				MovedLogs:  nil,
+			},
+		},
 	},
 	{
-		StartBlock: 15966455,
-		ReorgedAt:  15966475,
-		FromBlock:  15966460,
-		ToBlock:    15966479,
+		FromBlock: 15966460,
+		ToBlock:   15966479,
 		LogsFiles: []string{
 			"./assets/logs_lp_4.json",
 		},
-		MovedLogs: nil,
-	},
-	{
-		StartBlock: 15966490,
-		ReorgedAt:  15966536,
-		FromBlock:  15966500,
-		ToBlock:    15966536,
-		LogsFiles: []string{
-			"./assets/logs_lp_5.json",
+		Param: reorgsim.BaseParam{
+			StartBlock: 15966455,
 		},
-		MovedLogs: nil,
-	},
-	{
-		StartBlock: 15966490,
-		ReorgedAt:  15966512, // 0xf3a130
-		FromBlock:  15966500,
-		ToBlock:    15966536,
-		LogsFiles: []string{
-			"./assets/logs_lp_5.json",
-		},
-		// Move logs of 1 txHash to new block
-		MovedLogs: map[uint64][]reorgsim.MoveLogs{
-			15966522: { // 0xf3a13a
-				{
-					NewBlock: 15966527,
-					TxHashes: []common.Hash{
-						common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
-					},
-				},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15966475,
+				MovedLogs:  nil,
 			},
-			15966525: { // 0xf3a13d
-				{
-					NewBlock: 15966527, // 0xf3a13f
-					TxHashes: []common.Hash{
-						common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
+		},
+	},
+	{
+		FromBlock: 15966500,
+		ToBlock:   15966536,
+		LogsFiles: []string{
+			"./assets/logs_lp_5.json",
+		},
+		Param: reorgsim.BaseParam{
+			StartBlock: 15966490,
+		},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15966536,
+				MovedLogs:  nil,
+			},
+		},
+	},
+	{
+		FromBlock: 15966500,
+		ToBlock:   15966536,
+		LogsFiles: []string{
+			"./assets/logs_lp_5.json",
+		},
+		Param: reorgsim.BaseParam{
+			StartBlock: 15966490,
+		},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15966512, // 0xf3a130
+				// Move logs of 1 txHash to new block
+				MovedLogs: map[uint64][]reorgsim.MoveLogs{
+					15966522: { // 0xf3a13a
+						{
+							NewBlock: 15966527,
+							TxHashes: []common.Hash{
+								common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
+							},
+						},
+					},
+					15966525: { // 0xf3a13d
+						{
+							NewBlock: 15966527, // 0xf3a13f
+							TxHashes: []common.Hash{
+								common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
+							},
+						},
 					},
 				},
 			},
@@ -202,10 +237,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 			Debug:         true,
 			ExitBlock:     tc.ToBlock + 200,
 		},
-		ReorgEvent: reorgsim.ReorgEvent{
-			ReorgedBlock: tc.ReorgedAt,
-			MovedLogs:    tc.MovedLogs,
-		},
+		ReorgEvent: tc.Events[0],
 	}
 
 	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2)
@@ -214,7 +246,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	var movedFromBlocks []uint64
 	var movedToBlocks []uint64
 	var movedTxHashes []common.Hash
-	for movedFromBlock, moves := range tc.MovedLogs {
+	for movedFromBlock, moves := range tc.Events[0].MovedLogs {
 		movedFromBlocks = append(movedFromBlocks, movedFromBlock)
 		for _, move := range moves {
 			movedToBlocks = append(movedToBlocks, move.NewBlock)
