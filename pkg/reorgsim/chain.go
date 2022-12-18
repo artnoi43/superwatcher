@@ -34,6 +34,8 @@ func (c blockChain) reorg(reorgedBlock uint64) {
 // as blockChain.moveLogs only moves the logs and changing log.BlockHash and log.BlockNumber.
 // It also returns 2 slices of block numbers, 1st of which is a slice of blocks from which logs are moved,
 // the 2nd of which is a slice of blocks to which logs are moved.
+// NOTE: Do not use this function directly, since it only moves logs to new blocks and does not reorg blocks.
+// It is meant to be used inside NewBlockChainReorgMoveLogs, and NewBlockChainReorgV2
 func (c blockChain) moveLogs(
 	movedLogs map[uint64][]MoveLogs,
 ) (
@@ -41,14 +43,14 @@ func (c blockChain) moveLogs(
 	[]uint64, // Blocks to which logs art moved to
 ) {
 	// A slice of unique blockNumbers that logs will be moved to.
-	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain
+	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain.
 	var moveFromBlocks []uint64
 	var moveToBlocks []uint64
 
 	for moveFromBlock, moves := range movedLogs {
 		b, ok := c[moveFromBlock]
 		if !ok {
-			panic("logsMoved from non-existent block")
+			panic(fmt.Sprintf("logs moved from non-existent block %d", moveFromBlock))
 		}
 
 		moveFromBlocks = append(moveFromBlocks, moveFromBlock)
@@ -56,7 +58,7 @@ func (c blockChain) moveLogs(
 		for _, move := range moves {
 			targetBlock, ok := c[move.NewBlock]
 			if !ok {
-				panic(fmt.Sprintf("logsMoved to non-existent block %d", move.NewBlock))
+				panic(fmt.Sprintf("logs moved to non-existent block %d", move.NewBlock))
 			}
 
 			// Add unique moveToBlocks
@@ -72,7 +74,7 @@ func (c blockChain) moveLogs(
 				}
 			}
 
-			// Remove logs from the old block
+			// Remove logs from b
 			b.removeLogs(move.TxHashes)
 
 			// Change log.BlockHash to new BlockHash
@@ -160,7 +162,9 @@ func NewBlockChainReorgMoveLogs(
 
 		// Ensure that all moveToBlocks exist in original chain
 		for _, moveToBlock := range moveToBlocks {
-			// If the old chain did not have moveToBlock, create one
+			// If the old chain did not have moveToBlock, create one.
+			// This created block will need to have non-deterministic blockHash via RandomHash()
+			// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
 			if _, ok := chain[moveToBlock]; !ok {
 				chain[moveToBlock] = &block{
 					blockNumber: moveToBlock,
@@ -199,13 +203,15 @@ func NewBlockChainReorgV2(
 			prevChain = reorgedChains[i-1]
 		}
 
-		forkedChain := copyBlockChain(prevChain)
-
 		// Reorg and move logs
+		forkedChain := copyBlockChain(prevChain)
 		forkedChain.reorg(event.ReorgBlock)
 		moveFromBlocks, moveToBlocks := forkedChain.moveLogs(event.MovedLogs)
 
-		// Make sure the movedFrom block is not nil in forkedChain
+		// Ensure that all moveFromBlock exist in forkedChain.
+		// If the forkedChain did not have moveToBlock, create one.
+		// This created block will need to have non-deterministic blockHash via RandomHash()
+		// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
 		for _, prevFrom := range moveFromBlocks {
 			if _, ok := prevChain[prevFrom]; !ok {
 				panic(fmt.Sprintf("moved from non-existent block %d in the old chain", prevFrom))
@@ -214,13 +220,17 @@ func NewBlockChainReorgV2(
 			if b, ok := forkedChain[prevFrom]; !ok || b == nil {
 				forkedChain[prevFrom] = &block{
 					blockNumber: prevFrom,
-					hash:        RandomHash(prevFrom), // Uses non-deterministic hash
+					hash:        RandomHash(prevFrom),
 					reorgedHere: prevFrom == event.ReorgBlock,
 					toBeForked:  true,
 				}
 			}
 		}
 
+		// Ensure that all moveToBlocks exist in prevChain.
+		// If the old chain did not have moveToBlock, create one.
+		// This created block will need to have non-deterministic blockHash via RandomHash()
+		// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
 		for _, forkedTo := range moveToBlocks {
 			if _, ok := forkedChain[forkedTo]; !ok {
 				panic(fmt.Sprintf("moved to non-existent block %d in the new chain", forkedTo))
