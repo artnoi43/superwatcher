@@ -27,6 +27,24 @@ var (
 				"./assets/logs_poolfactory.json",
 			},
 			Param: BaseParam{
+				StartBlock:    15944410,
+				ExitBlock:     15944530,
+				BlockProgress: defaultReorgSimV2.BlockProgress,
+				Debug:         defaultReorgSimV2.Debug,
+			},
+			Events: []ReorgEvent{
+				{
+					ReorgBlock: 15944415,
+					MovedLogs:  nil,
+				},
+			},
+		},
+		{
+			LogsFiles: []string{
+				"./assets/logs_lp.json",
+				"./assets/logs_poolfactory.json",
+			},
+			Param: BaseParam{
 				StartBlock:    15944400,
 				ExitBlock:     15944500,
 				BlockProgress: defaultReorgSimV2.BlockProgress,
@@ -54,6 +72,46 @@ var (
 								NewBlock: 15944498,
 								TxHashes: []common.Hash{
 									common.HexToHash("0x620be69b041f986127322985854d3bc785abe1dc9f4df49173409f15b7515164"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			LogsFiles: []string{
+				"../../internal/emitter/assets/logs_lp_5.json",
+			},
+			Param: BaseParam{
+				StartBlock:    15966490,
+				ExitBlock:     15966540,
+				BlockProgress: defaultReorgSimV2.BlockProgress,
+				Debug:         defaultReorgSimV2.Debug,
+			},
+			Events: []ReorgEvent{
+				{
+					ReorgBlock: 15966522, // 0xf3a130
+					// Move logs of 1 txHash to new block
+					MovedLogs: map[uint64][]MoveLogs{
+						15966522: { // 0xf3a13a
+							{
+								NewBlock: 15966527,
+								TxHashes: []common.Hash{
+									common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
+								},
+							},
+						},
+					},
+				},
+				{
+					ReorgBlock: 15966525, // 0xf3a130
+					MovedLogs: map[uint64][]MoveLogs{ // 0xf3a13d
+						15966525: {
+							{
+								NewBlock: 15966536, // 0xf3a13f
+								TxHashes: []common.Hash{
+									common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
 								},
 							},
 						},

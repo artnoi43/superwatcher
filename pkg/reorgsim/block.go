@@ -1,6 +1,8 @@
 package reorgsim
 
 import (
+	"fmt"
+
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -52,15 +54,14 @@ func (b *block) reorg() *block {
 }
 
 func (b *block) removeLogs(txHashes []common.Hash) {
-	var resultLogs []types.Log
-	var c int
-
-	for _, log := range b.logs {
-		if !gslutils.Contains(txHashes, log.TxHash) {
-			resultLogs[c] = log
-			c++
-		}
+	if len(b.logs) == 0 {
+		panic(fmt.Sprintf("block %d has no logs", b.blockNumber))
 	}
 
-	b.logs = resultLogs
+	// Only keep log whose TxHash is not in |txHashes|.
+	remaining := gslutils.FilterSlice(b.logs, func(log types.Log) bool {
+		return !gslutils.Contains(txHashes, log.TxHash)
+	})
+
+	b.logs = remaining
 }

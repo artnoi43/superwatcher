@@ -56,7 +56,7 @@ func (c blockChain) moveLogs(
 		for _, move := range moves {
 			targetBlock, ok := c[move.NewBlock]
 			if !ok {
-				panic("logsMoved to non-existent block")
+				panic(fmt.Sprintf("logsMoved to non-existent block %d", move.NewBlock))
 			}
 
 			// Add unique moveToBlocks
