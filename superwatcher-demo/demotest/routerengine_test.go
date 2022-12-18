@@ -14,7 +14,7 @@ import (
 )
 
 func TestServiceEngineRouter(t *testing.T) {
-	logsPath := "../assets/servicetest"
+	logsPath := "../../test_logs/servicetest"
 	testCases := []servicetest.TestCase{
 		{
 			StartBlock: 16054000,

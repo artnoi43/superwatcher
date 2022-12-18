@@ -16,7 +16,7 @@ type moveConfig struct {
 func TestReorgMoveLogs(t *testing.T) {
 	tests := []moveConfig{
 		{
-			logsFiles: []string{"../../internal/emitter/assets/logs_lp_5.json"},
+			logsFiles: []string{logsPath + "/logs_lp_5.json"},
 			event: ReorgEvent{
 				ReorgBlock: 15966522,
 				MovedLogs: map[uint64][]MoveLogs{

@@ -23,8 +23,8 @@ var (
 	testsReorgSimV2 = []multiReorgConfig{
 		{
 			LogsFiles: []string{
-				"./assets/logs_lp.json",
-				"./assets/logs_poolfactory.json",
+				logsPath + "/logs_lp.json",
+				logsPath + "/logs_poolfactory.json",
 			},
 			Param: BaseParam{
 				StartBlock:    15944410,
@@ -41,8 +41,8 @@ var (
 		},
 		{
 			LogsFiles: []string{
-				"./assets/logs_lp.json",
-				"./assets/logs_poolfactory.json",
+				logsPath + "/logs_lp.json",
+				logsPath + "/logs_poolfactory.json",
 			},
 			Param: BaseParam{
 				StartBlock:    15944400,
@@ -81,7 +81,7 @@ var (
 		},
 		{
 			LogsFiles: []string{
-				"../../internal/emitter/assets/logs_lp_5.json",
+				logsPath + "/logs_lp_5.json",
 			},
 			Param: BaseParam{
 				StartBlock:    15966490,

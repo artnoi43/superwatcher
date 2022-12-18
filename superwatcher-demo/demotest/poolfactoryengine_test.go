@@ -13,7 +13,7 @@ import (
 )
 
 func TestServiceEnginePoolFactory(t *testing.T) {
-	logsPath := "../assets/poolfactory"
+	logsPath := "../../test_logs/poolfactory"
 	testCases := []servicetest.TestCase{
 		{
 			StartBlock: 16054000,

@@ -11,11 +11,12 @@ import (
 )
 
 var (
+	logsPath                 = "../../test_logs"
 	defaultStartBlock uint64 = 15900000
 	defaultReorgedAt  uint64 = 15944444
 	defaultLogsFiles         = []string{
-		"./assets/logs_poolfactory.json",
-		"./assets/logs_lp.json",
+		logsPath + "/logs_poolfactory.json",
+		logsPath + "/logs_lp.json",
 	}
 )
 

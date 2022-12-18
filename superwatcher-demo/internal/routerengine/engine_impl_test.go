@@ -20,17 +20,17 @@ import (
 )
 
 const (
-	assetsPath            = "../../assets"
-	assetsPathENS         = assetsPath + "/ens"
-	assetsPathPoolFactory = assetsPath + "/poolfactory"
+	logsPath            = "../../../test_logs/"
+	logsPathENS         = logsPath + "/ens"
+	logsPathPoolFactory = logsPath + "/poolfactory"
 )
 
 func TestHandleGoodLogs(t *testing.T) {
-	ensLogs, err := soyutils.ReadFileJSON[[]*types.Log](assetsPathENS + "/logs_multi_names.json")
+	ensLogs, err := soyutils.ReadFileJSON[[]*types.Log](logsPathENS + "/logs_multi_names.json")
 	if err != nil {
 		t.Skip("bad or missing ENS logs file:", err.Error())
 	}
-	poolFactoryLogs, err := soyutils.ReadFileJSON[[]*types.Log](assetsPathPoolFactory + "/log_poolcreated.json")
+	poolFactoryLogs, err := soyutils.ReadFileJSON[[]*types.Log](logsPathPoolFactory + "/log_poolcreated.json")
 	if err != nil {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
