@@ -55,10 +55,17 @@ func InitTestComponents(
 		},
 	}
 
+	sim := reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel)
+	// sim, err := reorgsim.NewReorgSimV2FromLogsFiles(param.BaseParam, []reorgsim.ReorgEvent{param.ReorgEvent}, logsFullPaths, conf.LogLevel)
+	// if err != nil {
+	// 	panic("failed to create ReorgSimV2")
+	// }
+
 	fakeRedis := datagateway.NewMock(conf.StartBlock, !firstRun)
+
 	return &TestComponents{
 		conf:           conf,
-		client:         reorgsim.NewReorgSimFromLogsFiles(param, logsFullPaths, conf.LogLevel),
+		client:         sim,
 		serviceEngine:  serviceEngine,
 		dataGatewayGet: fakeRedis,
 		dataGatewaySet: fakeRedis,

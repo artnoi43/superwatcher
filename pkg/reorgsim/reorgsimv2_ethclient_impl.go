@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -24,19 +25,21 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 		return nil
 	}
 
-	logFunc := func(prefix string) {
+	logFunc := func(prefix string, blockHash string) {
 		r.debugger.Debug(
 			2,
 			fmt.Sprintf("%s chooseBlock", prefix),
-			zap.Int("currentReorgEvent", currentReorgEvent),
 			zap.Uint64("blockNumber", b.blockNumber),
+			zap.String("blockHash", blockHash),
+			zap.Int("currentReorgEvent", currentReorgEvent),
+			zap.Bools("forked", r.forked),
 			zap.String("caller", caller),
 			zap.Bool("toBeForked", b.toBeForked),
 			zap.Int("seen", r.filterLogsCounter[b.blockNumber]),
 		)
 	}
 
-	logFunc("<")
+	logFunc("original chain", gslutils.StringerToLowerString(b.hash))
 
 	if b.toBeForked {
 		var n int
@@ -60,7 +63,6 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 			r.debugger.Debug(
 				1, "REORGED!",
 				zap.Uint64("blockNumber", blockNumber),
-				zap.Bools("forked", r.forked),
 			)
 
 			r.forked[currentReorgEvent] = true
@@ -71,7 +73,7 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 		r.filterLogsCounter[blockNumber]++
 	}
 
-	logFunc(">")
+	logFunc("current chain", gslutils.StringerToLowerString(b.hash))
 	return b
 }
 
