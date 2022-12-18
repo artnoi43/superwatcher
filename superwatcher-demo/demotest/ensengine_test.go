@@ -15,7 +15,7 @@ import (
 )
 
 func TestServiceEngineENS(t *testing.T) {
-	logsPath := "../assets/ens"
+	logsPath := "../../test_logs/ens"
 	testCases := []servicetest.TestCase{
 		{
 			StartBlock: 15984000,

@@ -49,7 +49,7 @@ func TestFilterLogs(t *testing.T) {
 
 func TestFilterLogsReorg(t *testing.T) {
 	reorgedAt := uint64(15944415)
-	logsPath := "../../internal/emitter/assets"
+	logsPath := "../../test_logs"
 	logsFiles := []string{
 		logsPath + "/logs_lp.json",
 		logsPath + "/logs_poolfactory.json",

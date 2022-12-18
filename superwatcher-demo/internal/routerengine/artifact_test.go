@@ -15,7 +15,7 @@ import (
 )
 
 func TestRouterArtifacts(t *testing.T) {
-	logsPath := "../../assets/servicetest/logs_servicetest_16054000_16054100.json"
+	logsPath := "../../../test_logs/servicetest/logs_servicetest_16054000_16054100.json"
 	logs := reorgsim.InitLogsFromFiles(logsPath)
 	logsCasted := gslutils.CollectPointers(logs)
 
