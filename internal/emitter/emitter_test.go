@@ -173,7 +173,7 @@ func TestEmitterAllCases(t *testing.T) {
 	for i := range testCases {
 		testName := fmt.Sprintf("Case:%d", i+1)
 		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplate(t, i+1, verbose)
+			emitterTestTemplateV1(t, i+1, verbose)
 		})
 	}
 }
@@ -201,7 +201,7 @@ func TestEmitterByCase(t *testing.T) {
 	if len(testCases)+1 > caseNumber {
 		testName := fmt.Sprintf("Case:%d", caseNumber)
 		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplate(t, caseNumber, verbose)
+			emitterTestTemplateV1(t, caseNumber, verbose)
 		})
 
 		return
@@ -210,11 +210,9 @@ func TestEmitterByCase(t *testing.T) {
 	t.Skipf("no such test case: %d", caseNumber)
 }
 
-// emitterTestTemplate is designed to test emitter's full `Loop` with reorgsim mocked chain.
-// The assumption test checks are only valid for logs filtered by reorgsim code,
-// i.e. this test is NOT a proper test for REAL ethclient,
-// as reorged logs may reappear on different block on a real chain.
-func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
+// emitterTestTemplateV1 is designed to test emitter's full `Loop` with ReorgSimV1 mocked chain.
+// This means that the test chain will only have 1 reorg event.
+func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	tc := testCases[caseNumber-1]
 	b, _ := json.Marshal(tc)
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
@@ -244,6 +242,10 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 	}
 
 	sim := reorgsim.NewReorgSimFromLogsFiles(param, tc.LogsFiles, 2)
+	// sim, err := reorgsim.NewReorgSimV2FromLogsFiles(param.BaseParam, []reorgsim.ReorgEvent{param.ReorgEvent}, tc.LogsFiles, 2)
+	// if err != nil {
+	// 	t.Fatal("error creating ReorgSimV2", err.Error())
+	// }
 
 	// Collect MovedLogs info
 	var movedFromBlocks []uint64
@@ -364,7 +366,7 @@ func emitterTestTemplate(t *testing.T, caseNumber int, verbose bool) {
 
 	for _, txHash := range movedTxHashes {
 		if !movedToCount[txHash] {
-			t.Errorf("txHash %s was not tagged true", txHash.String())
+			t.Errorf("movedToTxHash %s was not tagged true", txHash.String())
 		}
 
 		t.Log("movedLog", txHash.String())

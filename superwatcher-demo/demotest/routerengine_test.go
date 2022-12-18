@@ -80,14 +80,14 @@ func TestServiceEngineRouter(t *testing.T) {
 
 			if result.BlockNumber < testCase.ReorgBlock {
 				if result.BlockHash == expectedReorgedHash {
-					t.Errorf("good block resultENS has reorged blockHash: %s", expectedReorgedHash)
+					t.Errorf("good block %d resultENS has reorged blockHash: %s", result.BlockNumber, result.BlockHash)
 				}
 
 				continue
 			}
 
 			if result.BlockHash != expectedReorgedHash {
-				t.Errorf("reorged block resultENS has unexpected blockHash: %s", result.BlockHash)
+				t.Errorf("reorged block %d resultENS has unexpected blockHash: %s", result.BlockNumber, result.BlockHash)
 			}
 		}
 
@@ -97,14 +97,14 @@ func TestServiceEngineRouter(t *testing.T) {
 
 			if result.BlockCreated < testCase.ReorgBlock {
 				if resultBlockHash == expectedReorgedHash {
-					t.Errorf("good block resultPoolFactory has reorged blockHash: %s", resultBlockHash)
+					t.Errorf("resultPoolFactory from good block %d has reorged blockHash: %s", result.BlockCreated, resultBlockHash)
 				}
 
 				continue
 			}
 
 			if resultBlockHash != expectedReorgedHash {
-				t.Errorf("reorged block resultPoolFactory has unexpected blockHash: %s", resultBlockHash)
+				t.Errorf("resultPoolFactory from reorged block %d has unexpected blockHash: %s", result.BlockCreated, resultBlockHash)
 			}
 		}
 	}

@@ -58,9 +58,10 @@ func TestServiceEngineENS(t *testing.T) {
 				t.Log("checking block", result.BlockNumber)
 				// Since reorged block uses hash from deterministic PRandomHash,
 				// we can check for equality this way
-				expectedHash := reorgsim.PRandomHash(result.BlockNumber).String()
-				if result.BlockHash != gslutils.ToLower(expectedHash) {
-					t.Fatal("unexpected blockHash (ens)")
+				expectedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockNumber))
+
+				if result.BlockHash != expectedHash {
+					t.Fatalf("unexpected block %d hash (ens): expecting %s, got %s", result.BlockNumber, expectedHash, result.BlockHash)
 				}
 				if result.ID == "" {
 					t.Fatal("empty ENS ID -- should not happen")
