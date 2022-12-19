@@ -66,6 +66,7 @@ func (r *ReorgSimV2) chooseBlock(blockNumber uint64, caller string) *block {
 			)
 
 			r.forked[currentReorgEvent] = true
+			r.chain = currentChain
 		}
 	}
 
