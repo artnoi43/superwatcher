@@ -12,23 +12,30 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
 )
 
-func TestServiceEnginePoolFactory(t *testing.T) {
+func TestServiceEnginePoolFactoryV1(t *testing.T) {
 	logsPath := "../../test_logs/poolfactory"
 	testCases := []servicetest.TestCase{
 		{
-			StartBlock: 16054000,
-			ReorgBlock: 16054066,
-			ExitBlock:  16054200,
 			LogsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false,
+			Param: reorgsim.BaseParam{
+				StartBlock:    16054000,
+				ExitBlock:     16054200,
+				BlockProgress: 20,
+			},
+			Events: []reorgsim.ReorgEvent{
+				{
+					ReorgBlock: 16054066,
+				},
+			},
 		},
 	}
 
 	for _, testCase := range testCases {
 		serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
-		stateDataGateway, err := testServiceEnginePoolFactory(testCase, serviceDataGateway)
+		stateDataGateway, err := testServiceEnginePoolFactoryV1(testCase, serviceDataGateway)
 		if err != nil {
 			lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
 			t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
@@ -41,7 +48,7 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 
 		for _, result := range results {
 			expectedReorgedHash := reorgsim.PRandomHash(result.BlockCreated)
-			if result.BlockCreated >= testCase.ReorgBlock {
+			if result.BlockCreated >= testCase.Events[0].ReorgBlock {
 				if result.BlockHash != expectedReorgedHash {
 					t.Fatalf("blockHash not reorged")
 				}
@@ -56,7 +63,7 @@ func TestServiceEnginePoolFactory(t *testing.T) {
 	}
 }
 
-func testServiceEnginePoolFactory(
+func testServiceEnginePoolFactoryV1(
 	testCase servicetest.TestCase,
 	lpStore datagateway.RepositoryPoolFactory,
 ) (
@@ -65,20 +72,19 @@ func testServiceEnginePoolFactory(
 ) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:    testCase.StartBlock,
+		StartBlock:    testCase.Param.StartBlock,
 		FilterRange:   10,
 		GoBackRetries: 2,
 		LoopInterval:  0,
 	}
 
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
-	components, _ := servicetest.InitTestComponents(
+	components := servicetest.InitTestComponents(
 		conf,
 		poolFactoryEngine,
+		testCase.Param,
+		testCase.Events,
 		testCase.LogsFiles,
-		testCase.StartBlock,
-		testCase.ReorgBlock,
-		testCase.ExitBlock,
 		testCase.DataGatewayFirstRun,
 	)
 

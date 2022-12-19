@@ -14,26 +14,41 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
 )
 
-func TestServiceEngineENS(t *testing.T) {
+// TestServiceEngineENSV1 is full tests for SubEngineENS with only 1 reorg event.
+func TestServiceEngineENSV1(t *testing.T) {
 	logsPath := "../../test_logs/ens"
 	testCases := []servicetest.TestCase{
 		{
-			StartBlock: 15984000,
-			ReorgBlock: 15984033,
-			ExitBlock:  15984100,
 			LogsFiles: []string{
 				logsPath + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false, // Normal run
+			Param: reorgsim.BaseParam{
+				StartBlock:    15984000,
+				BlockProgress: 20,
+				ExitBlock:     15984200,
+			},
+			Events: []reorgsim.ReorgEvent{
+				{
+					ReorgBlock: 15984033,
+				},
+			},
 		},
 		{
-			StartBlock: 16054000,
-			ReorgBlock: 16054078,
-			ExitBlock:  16054100,
 			LogsFiles: []string{
 				logsPath + "/logs_servicetest_16054000_16054100.json",
 			},
 			DataGatewayFirstRun: false,
+			Param: reorgsim.BaseParam{
+				StartBlock:    16054000,
+				BlockProgress: 20,
+				ExitBlock:     16054200,
+			},
+			Events: []reorgsim.ReorgEvent{
+				{
+					ReorgBlock: 16054078,
+				},
+			},
 		},
 	}
 
@@ -42,7 +57,7 @@ func TestServiceEngineENS(t *testing.T) {
 		// We'll later use |ensStore| to check for saved results
 		ensStore := datagateway.NewMockDataGatewayENS()
 
-		fakeRedis, err := testServiceEngineENS(testCase, ensStore)
+		fakeRedis, err := testServiceEngineENSV1(testCase, ensStore)
 		if err != nil {
 			lastRecordedBlock, _ := fakeRedis.GetLastRecordedBlock(nil)
 			t.Errorf("lastRecordedBlock %d - error in full servicetest (ens): %s", lastRecordedBlock, err.Error())
@@ -54,7 +69,7 @@ func TestServiceEngineENS(t *testing.T) {
 		}
 
 		for _, result := range results {
-			if result.BlockNumber >= testCase.ReorgBlock {
+			if result.BlockNumber >= testCase.Events[0].ReorgBlock {
 				t.Log("checking block", result.BlockNumber)
 				// Since reorged block uses hash from deterministic PRandomHash,
 				// we can check for equality this way
@@ -74,7 +89,7 @@ func TestServiceEngineENS(t *testing.T) {
 	}
 }
 
-func testServiceEngineENS(
+func testServiceEngineENSV1(
 	testCase servicetest.TestCase,
 	ensStore datagateway.RepositoryENS,
 ) (
@@ -83,7 +98,7 @@ func testServiceEngineENS(
 ) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:    testCase.StartBlock,
+		StartBlock:    testCase.Param.StartBlock,
 		FilterRange:   10,
 		GoBackRetries: 2,
 		LoopInterval:  0,
@@ -92,13 +107,12 @@ func testServiceEngineENS(
 
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine
 
-	components, _ := servicetest.InitTestComponents(
+	components := servicetest.InitTestComponents(
 		conf,
 		ensEngine,
+		testCase.Param,
+		testCase.Events,
 		testCase.LogsFiles,
-		testCase.StartBlock,
-		testCase.ReorgBlock,
-		testCase.ReorgBlock+conf.FilterRange*conf.GoBackRetries,
 		testCase.DataGatewayFirstRun,
 	)
 
