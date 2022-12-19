@@ -15,11 +15,10 @@ import (
 // TestCase will be converted into config.EmitterConfig and reorgsim.Param
 // to cerate TestComponents
 type TestCase struct {
-	StartBlock          uint64   `json:"startBlock"`          // Maps to EmitterConfig.StartBlock and is also used to init mock superwatcher.StateDataGateway
-	ReorgBlock          uint64   `json:"reorgBlock"`          // Block that reorgSim will use as the reorging point
-	ExitBlock           uint64   `json:"exitBlock"`           // Block for reorgSim to exit cleanly (in servicetest only)
-	LogsFiles           []string `json:"logFiles"`            // JSON logs files for initializing reorgSim
-	DataGatewayFirstRun bool     `json:"dataGatewayFirstRun"` // If set to true, the emitter will go back due to datagateway.ErrRecordNotFound
+	Param               reorgsim.BaseParam    `json:"baseParam"`
+	Events              []reorgsim.ReorgEvent `json:"reorgEvents"`
+	LogsFiles           []string              `json:"logFiles"`            // JSON logs files for initializing reorgSim
+	DataGatewayFirstRun bool                  `json:"dataGatewayFirstRun"` // If set to true, the emitter will go back due to datagateway.ErrRecordNotFound
 }
 
 // TestComponents is used by RunServiceTestComponents to instantiate
@@ -35,27 +34,12 @@ type TestComponents struct {
 func InitTestComponents(
 	conf *config.EmitterConfig,
 	serviceEngine superwatcher.ServiceEngine,
+	param reorgsim.BaseParam,
+	events []reorgsim.ReorgEvent,
 	logsFullPaths []string,
-	start uint64,
-	reorgAt uint64,
-	exit uint64,
 	firstRun bool, // If true, then the mock datagateway will return `ErrRecordNotFound` until `SetLastRecordedBlock`` is called
-) (
-	*TestComponents,
-	reorgsim.ParamV1, // For logging
-) {
-	param := reorgsim.ParamV1{
-		BaseParam: reorgsim.BaseParam{
-			StartBlock:    start,
-			BlockProgress: 5,
-			ExitBlock:     exit,
-		},
-		ReorgEvent: reorgsim.ReorgEvent{
-			ReorgBlock: reorgAt,
-		},
-	}
-
-	sim, err := reorgsim.NewReorgSimV2FromLogsFiles(param.BaseParam, []reorgsim.ReorgEvent{param.ReorgEvent}, logsFullPaths, conf.LogLevel)
+) *TestComponents {
+	sim, err := reorgsim.NewReorgSimV2FromLogsFiles(param, events, logsFullPaths, conf.LogLevel)
 	if err != nil {
 		panic("failed to create ReorgSimV2")
 	}
@@ -68,7 +52,7 @@ func InitTestComponents(
 		serviceEngine:  serviceEngine,
 		dataGatewayGet: fakeRedis,
 		dataGatewaySet: fakeRedis,
-	}, param
+	}
 }
 
 // RunServiceTestComponents runs the entire service using |components| and |param|.

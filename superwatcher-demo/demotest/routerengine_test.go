@@ -13,15 +13,22 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/routerengine"
 )
 
-func TestServiceEngineRouter(t *testing.T) {
+func TestServiceEngineRouterV1(t *testing.T) {
 	logsPath := "../../test_logs/servicetest"
 	testCases := []servicetest.TestCase{
 		{
-			StartBlock: 16054000,
-			ReorgBlock: 16054078,
-			ExitBlock:  16054100,
 			LogsFiles: []string{
 				logsPath + "/logs_servicetest_16054000_16054100.json",
+			},
+			Param: reorgsim.BaseParam{
+				StartBlock:    16054000,
+				BlockProgress: 20,
+				ExitBlock:     16054100,
+			},
+			Events: []reorgsim.ReorgEvent{
+				{
+					ReorgBlock: 16054078,
+				},
 			},
 		},
 	}
@@ -34,20 +41,19 @@ func TestServiceEngineRouter(t *testing.T) {
 
 		conf := &config.EmitterConfig{
 			// We use fakeRedis and fakeEthClient, so no need for token strings.
-			StartBlock:    testCase.StartBlock,
+			StartBlock:    testCase.Param.StartBlock,
 			FilterRange:   10,
 			GoBackRetries: 2,
 			LoopInterval:  0,
 			LogLevel:      logLevel,
 		}
 
-		components, _ := servicetest.InitTestComponents(
+		components := servicetest.InitTestComponents(
 			conf,
 			router,
+			testCase.Param,
+			testCase.Events,
 			testCase.LogsFiles,
-			testCase.StartBlock,
-			testCase.ReorgBlock,
-			testCase.ExitBlock,
 			testCase.DataGatewayFirstRun,
 		)
 
@@ -78,7 +84,7 @@ func TestServiceEngineRouter(t *testing.T) {
 
 			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockNumber))
 
-			if result.BlockNumber < testCase.ReorgBlock {
+			if result.BlockNumber < testCase.Events[0].ReorgBlock {
 				if result.BlockHash == expectedReorgedHash {
 					t.Errorf("good block %d resultENS has reorged blockHash: %s", result.BlockNumber, result.BlockHash)
 				}
@@ -95,7 +101,7 @@ func TestServiceEngineRouter(t *testing.T) {
 			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
 			resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
 
-			if result.BlockCreated < testCase.ReorgBlock {
+			if result.BlockCreated < testCase.Events[0].ReorgBlock {
 				if resultBlockHash == expectedReorgedHash {
 					t.Errorf("resultPoolFactory from good block %d has reorged blockHash: %s", result.BlockCreated, resultBlockHash)
 				}
