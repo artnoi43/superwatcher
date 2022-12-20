@@ -16,10 +16,6 @@ type multiReorgConfig struct {
 }
 
 var (
-	defaultReorgSimV2 = BaseParam{
-		BlockProgress: 20,
-		Debug:         true,
-	}
 	testsReorgSimV2 = []multiReorgConfig{
 		{
 			LogsFiles: []string{
@@ -29,8 +25,8 @@ var (
 			Param: BaseParam{
 				StartBlock:    15944410,
 				ExitBlock:     15944530,
-				BlockProgress: defaultReorgSimV2.BlockProgress,
-				Debug:         defaultReorgSimV2.Debug,
+				BlockProgress: DefaultParam.BlockProgress,
+				Debug:         DefaultParam.Debug,
 			},
 			Events: []ReorgEvent{
 				{
@@ -47,8 +43,8 @@ var (
 			Param: BaseParam{
 				StartBlock:    15944400,
 				ExitBlock:     15944500,
-				BlockProgress: defaultReorgSimV2.BlockProgress,
-				Debug:         defaultReorgSimV2.Debug,
+				BlockProgress: DefaultParam.BlockProgress,
+				Debug:         DefaultParam.Debug,
 			},
 			Events: []ReorgEvent{
 				{
@@ -86,8 +82,8 @@ var (
 			Param: BaseParam{
 				StartBlock:    15966490,
 				ExitBlock:     15966540,
-				BlockProgress: defaultReorgSimV2.BlockProgress,
-				Debug:         defaultReorgSimV2.Debug,
+				BlockProgress: DefaultParam.BlockProgress,
+				Debug:         DefaultParam.Debug,
 			},
 			Events: []ReorgEvent{
 				{

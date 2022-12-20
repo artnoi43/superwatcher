@@ -11,17 +11,16 @@ import (
 )
 
 func TestFilterLogs(t *testing.T) {
-	param := ParamV1{
-		BaseParam: BaseParam{
-			StartBlock:    defaultStartBlock,
-			BlockProgress: 20,
-		},
-		ReorgEvent: ReorgEvent{
-			ReorgBlock: defaultReorgedAt,
-			MovedLogs:  nil,
-		},
+	param := BaseParam{
+		StartBlock:    defaultStartBlock,
+		BlockProgress: DefaultParam.BlockProgress,
 	}
-	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 2)
+	event := ReorgEvent{
+		ReorgBlock: defaultReorgedAt,
+		MovedLogs:  nil,
+	}
+
+	sim := NewReorgSimFromLogsFiles(param, event, defaultLogsFiles, 2)
 	ctx := context.Background()
 	logs, err := sim.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: big.NewInt(69),
@@ -55,18 +54,16 @@ func TestFilterLogsReorg(t *testing.T) {
 		logsPath + "/logs_poolfactory.json",
 	}
 
-	param := ParamV1{
-		BaseParam: BaseParam{
-			StartBlock:    reorgedAt,
-			BlockProgress: 20,
-		},
-		ReorgEvent: ReorgEvent{
-			ReorgBlock: reorgedAt,
-			MovedLogs:  nil,
-		},
+	param := BaseParam{
+		StartBlock:    reorgedAt,
+		BlockProgress: 20,
+	}
+	event := ReorgEvent{
+		ReorgBlock: reorgedAt,
+		MovedLogs:  nil,
 	}
 
-	rSim := NewReorgSimFromLogsFiles(param, logsFiles, 1).(*ReorgSim)
+	rSim := NewReorgSimFromLogsFiles(param, event, logsFiles, 1).(*ReorgSim)
 
 	block := rSim.Chain()[reorgedAt]
 	rBlock := rSim.ReorgedChain()[reorgedAt]
@@ -105,19 +102,17 @@ func TestExitBlock(t *testing.T) {
 	exitBlock := defaultReorgedAt + 100
 	t.Log("exit block", exitBlock)
 
-	param := ParamV1{
-		BaseParam: BaseParam{
-			StartBlock:    defaultStartBlock,
-			BlockProgress: 5,
-			ExitBlock:     exitBlock,
-		},
-		ReorgEvent: ReorgEvent{
-			ReorgBlock: defaultReorgedAt,
-			MovedLogs:  nil,
-		},
+	param := BaseParam{
+		StartBlock:    defaultStartBlock,
+		BlockProgress: 5,
+		ExitBlock:     exitBlock,
+	}
+	event := ReorgEvent{
+		ReorgBlock: defaultReorgedAt,
+		MovedLogs:  nil,
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 1)
+	sim := NewReorgSimFromLogsFiles(param, event, defaultLogsFiles, 1)
 
 	ctx := context.Background()
 	for {

@@ -122,16 +122,16 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	defer r.Unlock()
 
 	if r.currentBlock == 0 {
-		r.currentBlock = r.ParamV1.StartBlock
+		r.currentBlock = r.Param.StartBlock
 		return r.currentBlock, nil
 	}
 
 	currentBlock := r.currentBlock
-	if currentBlock >= r.ParamV1.ExitBlock {
-		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.ParamV1.ExitBlock)
+	if currentBlock >= r.Param.ExitBlock {
+		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.Param.ExitBlock)
 	}
 
-	r.currentBlock = currentBlock + r.ParamV1.BlockProgress
+	r.currentBlock = currentBlock + r.Param.BlockProgress
 	return currentBlock, nil
 }
 

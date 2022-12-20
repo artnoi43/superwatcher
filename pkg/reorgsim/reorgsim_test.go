@@ -93,18 +93,16 @@ func TestFoo(t *testing.T) {
 	fmt.Println("reorged chain")
 	prontBlockChain(reorgedChain)
 
-	param := ParamV1{
-		BaseParam: BaseParam{
-			StartBlock:    defaultStartBlock,
-			BlockProgress: 3,
-			ExitBlock:     reorgedAt + 100,
-		},
-		ReorgEvent: ReorgEvent{
-			ReorgBlock: reorgedAt,
-		},
+	param := BaseParam{
+		StartBlock:    defaultStartBlock,
+		BlockProgress: 3,
+		ExitBlock:     reorgedAt + 100,
+	}
+	event := ReorgEvent{
+		ReorgBlock: reorgedAt,
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, defaultLogsFiles, 3)
+	sim := NewReorgSimFromLogsFiles(param, event, defaultLogsFiles, 3)
 	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
 		FromBlock: big.NewInt(15944401),
 		ToBlock:   big.NewInt(15944500),

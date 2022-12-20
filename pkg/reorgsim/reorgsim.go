@@ -30,11 +30,12 @@ type BaseParam struct {
 	Debug bool `json:"-"`
 }
 
-// ParamV1 is embedded into ReorgSim (V1), and represents the fake blockchain client parameters
-type ParamV1 struct {
-	BaseParam
-	ReorgEvent ReorgEvent // V1 can only perform 1 reorg event
+var DefaultParam = BaseParam{
+	BlockProgress: 20,
+	Debug:         true,
 }
+
+// ParamV1 is embedded into ReorgSim (V1), and represents the fake blockchain client parameters
 
 // ReorgSim implements superwatcher.EthClient[block], and will be used in place of the normal Ethereum client
 // to test the default emitter implementation.
@@ -44,7 +45,8 @@ type ParamV1 struct {
 // before calling NewReorgSimFromLogsFiles.
 type ReorgSim struct {
 	sync.RWMutex
-	ParamV1
+	Param BaseParam
+	Event ReorgEvent
 
 	// chain is source for all blocks before Param.ReorgedBlock
 	chain blockChain
@@ -63,16 +65,19 @@ type ReorgSim struct {
 // NewReorgSim returns the mocked client.EthClient. After the internal state ReorgSim.currentBlock exceeds |reorgedAt|,
 // ReorgSim methods returns data from |reorgedChain|.
 func NewReorgSim(
-	param ParamV1,
+	param BaseParam,
+	event ReorgEvent,
 	chain blockChain,
 	reorgedChain blockChain,
 	logLevel uint8,
 ) superwatcher.EthClient {
 	if param.BlockProgress == 0 {
-		panic("0 param.BlockProgress")
+		panic("0 BaseParam.BlockProgress")
 	}
+
 	return &ReorgSim{
-		ParamV1:           param,
+		Param:             param,
+		Event:             event,
 		chain:             chain,
 		reorgedChain:      reorgedChain,
 		filterLogsCounter: make(map[uint64]int),
@@ -82,16 +87,17 @@ func NewReorgSim(
 
 // NewReorgSimFromLogsFiles returns a new ReorgSim with good and reorged chains mocked using the files.
 func NewReorgSimFromLogsFiles(
-	param ParamV1,
+	param BaseParam,
+	event ReorgEvent,
 	logFiles []string,
 	logLevel uint8,
 ) superwatcher.EthClient {
 	chain, reorgedChain := NewBlockChainReorgMoveLogs(
 		InitMappedLogsFromFiles(logFiles...),
-		param.ReorgEvent,
+		event,
 	)
 
-	return NewReorgSim(param, chain, reorgedChain, logLevel)
+	return NewReorgSim(param, event, chain, reorgedChain, logLevel)
 }
 
 func (s *ReorgSim) Chain() blockChain {

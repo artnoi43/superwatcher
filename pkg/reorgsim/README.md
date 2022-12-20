@@ -17,6 +17,12 @@ This means that there must be a mechanism for `ReorgSim` to determine which chai
 
 ## Using `reorgsim`
 
+> superwatcher is currently in a transition to using `ReorgSimV2` and testing components with multiple `ReorgEvent`s.
+
+There are 2 versions of the `superwatcher.EthClient` simulation - `ReorgSim` (V1) and `ReorgSimV2`. V1 is a simpler design,
+and can only simulate a single `ReorgEvent`. V2 can handle multiple `ReorgEvent`s, and is the default simulation used
+by other packages, even though the test cases still have 1 `ReorgEvent`.
+
 To use code in `reorgsim`, users will need to prepare logs `[]types.Log` and parameters `Param`. The logs are used to
 construct a mocked blockchains, with `Param` being used to construct the _reorged chain_, in `NewBlockChain`.
 These blockchains and the parameters will then later be used to call `NewReorgSim`.
