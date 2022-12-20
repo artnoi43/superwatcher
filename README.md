@@ -7,31 +7,33 @@ The code in this project is organized into the following packages:
 
 1. Top-level package `"github.com/artnoi43/superwatcher"` (public)
 
-   This package exposes core interfaces to the superwatcher.
+   This package exposes core interfaces to the superwatcher that the application code must implement.
+   To use superwatcher, call functions in [`pkg`](./pkg/) sub-packages.
 
-2. `pkg` (public)
+2. [`pkg`](./pkg/) (public)
 
    This package defines extra (non-core) interfaces and some implementations that would help
    superwatcher user during their development. Most code there provides wrapper for `internal`,
    or offers other convenient functions and examples.
 
-   Some development facility code like a full integrated test building block package
-   [`servicetest`](./pkg/servicetest/), or the chain reorg simulation package [`reorgsim`](./pkg/reorgsim/),
-   or the mocked [`StateDataGateway`](./pkg/datagateway/) types, are provided in `pkg`.
+   Some development facility code like a fullly integrated test suite for application code
+   [`servicetest`](./pkg/servicetest/), or the chain reorg simulation code [`reorgsim`](./pkg/reorgsim/),
+   or the mocked [`StateDataGateway`](./pkg/datagateway/) types, are provided here.
 
 3. [`config`](./config/) (public)
 
-   This package defines basic superwatcher configuration.
+   This package defines basic superwatcher configuration that affects the pace and range of emitter,
+   as well as the maximum temporary storage size for the in-memory metadata trackers.
 
-4. `internal` (private)
+4. [`internal`](./internal/) (private)
 
    This _private_ package defines the actual implementations of interfaces defined in
    the top-level package. User are _not_ expected to directly interact with the code here.
 
-5. `superwatcher-demo` (public)
+5. [`superwatcher-demo`](./superwatcher-demo/) (public)
 
    This package provides some context and examples of how to use superwatcher to build services. You can try
-   running the service with a `main.go` in `superwatcher-demo/cmd/main.go`.
+   running the service with its `main` at `superwatcher-demo/cmd/main.go`.
 
 ## superwatcher components
 
@@ -44,7 +46,7 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
                                 │  blockHashes []common.Hash
                                 │
                                 ▼
-                          watcherEmitter
+                          WatcherEmitter
                                 │
                                 │  FilterResult {
                                 │     GoodBlocks
@@ -54,7 +56,7 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
                                 │  error
                                 ▼
     ┌─────────────────────────────────────────────────────────────┐
-    │                      emitterClient                          │
+    │                      EmitterClient                          │
     │                           │                                 │
     │                           ▼                                 │
     │                      WatcherEngine                          │
@@ -79,7 +81,7 @@ If no signal is received, the emitter blocks forever (for now).
 
    The emitter client is embedded into `WatcherEngine`. The emitter client linearly receives `FilterResult`
    from emitter, and then returning it to `WatcherEngine`. It also syncs with the emittter. If it fails to sync,
-   the emitter will not proceed to the next `emitter.filterLogs` loop
+   the emitter will not proceed to the next [`emitter.filterLogs`](./internal/emitter/filterlogs.go) loop.
 
 3. [`WatcherEngine`](./internal/engine/)
    The engine receives `FilterResult` from the emitter client, and passes the result to appropriate methods of `ServiceEngine`.

@@ -1,6 +1,6 @@
 # Components
 
-> Note: we also provide [`initsuperwatcher`](../initsuperwatcher/) so that
+> Note: We also provide [`initsuperwatcher`](../initsuperwatcher/) so that
 > users can initialize all components in one function call - eliminating
 > possible confusion caused by the instability of the internals.
 

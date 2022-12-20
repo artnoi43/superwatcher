@@ -19,8 +19,8 @@ type MoveLogs struct {
 	TxHashes []common.Hash // txHashes of logs to be moved to newBlock
 }
 
-// reorg calls `*block.reorg` on every block whose blockNumber is greater than |reorgedAt|.
-// Unlike `*block.reorg`, which returns a `*block`, c.reorg(reorgedAt) modifies c in-place.
+// reorg calls `*block.reorg` on every block whose blockNumber is greater than |reorgedBlock|.
+// Unlike `*block.reorg`, which returns a `*block`, c.reorg(reorgedBlock) modifies c in-place.
 func (c blockChain) reorg(reorgedBlock uint64) {
 	for number, block := range c {
 		if number >= reorgedBlock {
@@ -41,7 +41,7 @@ func (c blockChain) moveLogs(
 	movedLogs map[uint64][]MoveLogs,
 ) (
 	[]uint64, // Blocks from which logs are moved from
-	[]uint64, // Blocks to which logs art moved to
+	[]uint64, // Blocks to which logs are moved to
 ) {
 	// A slice of unique blockNumbers that logs will be moved to.
 	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain.
@@ -91,8 +91,8 @@ func (c blockChain) moveLogs(
 	return moveFromBlocks, moveToBlocks
 }
 
-// newBlockChain returns a new blockChain from |mappedLogs|. The parameter |reorgedAt|
-// is used to determine block.reorgedHere and block.toBeForked
+// newBlockChain returns a new blockChain from |mappedLogs|.
+// The parameter |reorgedBlock| // is used to determine block.reorgedHere and block.toBeForked.
 func newBlockChain(
 	mappedLogs map[uint64][]types.Log,
 	reorgedBlock uint64,
@@ -218,7 +218,7 @@ func newBlockChainReorgSimple(
 		return chain, chain
 	}
 
-	// |reorgedChain| will differ from |oldChain| after |reorgedAt|
+	// |reorgedChain| will differ from |oldChain| after |reorgedBlock|
 	reorgedChain := copyBlockChain(chain)
 	reorgedChain.reorg(reorgedBlock)
 
@@ -237,7 +237,7 @@ func NewBlockChainReorgMoveLogs(
 ) {
 	for blockNumber := range event.MovedLogs {
 		if blockNumber < event.ReorgBlock {
-			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, event.ReorgBlock))
+			panic(fmt.Sprintf("blockNumber %d < reorgedBlock %d", blockNumber, event.ReorgBlock))
 		}
 	}
 

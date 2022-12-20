@@ -3,6 +3,23 @@
 Package `reorgsim` provides a very basic mocked [`superwatcher.EthClient`](../../ethclient.go),
 implemented by struct [`ReorgSim`](./reorgsim.go).
 
+## Types
+
+- [`ReorgSim`](./reorgsim.go) - mocks `superwatcher.Client`
+
+- [`block`](./block.go) - mocks Ethereum block with main focus on event logs and nothing else
+
+- [`chain`](./chain.go) - represents Ethereum blockchain by mapping a `block` to a block number
+
+- [`BaseParam`](./reorgsim.go) - parameters for `ReorgSim`
+
+- [`ReorgEvent`](./reorgsim.go) - parameters for constructing reorged `chain`s
+
+## Variables
+
+- [`ErrExitBlockReached`](./errors.go) - a sentinel error for cleanly exiting `ReorgSim`.
+  It should be checked for in tests, to break out of the tests once this error is thrown.
+
 ## Using `reorgsim`
 
 Struct `ReorgSim` can handle multiple `ReorgEvent`s, and is the default simulation used
@@ -21,29 +38,33 @@ See code in tests to get a clearer picture of how this works.
 
 ## Mocked blockchains in `reorgsim`
 
-The package defines blockchains (type `blockChain`) as a hash map of uint64 and a reference to custom type `block`.
+The package defines blockchains (type [`blockChain`](./chain.go)) as a hash map of uint64 to
+a reference to custom type [`block`](./block.go).
 
-`reorgsim.block` is a new data structure containing only the bare minimum block info
+`block` is a small struct containing only the bare minimum Ethereum block information
 needed by the [emitter](../../emitter.go), so it only needs to have Ethereum logs and the block hashes.
 
-Ethereum transactions and TX hashes are not implemented, as it is not currently used by the emitter.
+Ethereum transactions and transaction hashes are not considered in `reorgsim` code,
+as it is not currently used by the emitter.
 
-To simulate a reorged (forked) blockchain, `ReorgSim` internally stores multiple `blockChain`s.
+To simulate a reorged (forked) blockchain, `ReorgSim` internally stores multiple `blockChain`s in `reorgSim.reorgedChains`.
 This means that there must be a mechanism for `ReorgSim` to determine which chain to use for a particular function call.
 
 ## Deep dive
 
 ### `ReorgEvent`
 
-To get reorged chains, pass `[]ReorgEvent` to `NewBlockChain` or `NewReorgSim`. Each event will map
-directly to a reorged chain.
+Pass `[]ReorgEvent` to `NewBlockChain` or `NewReorgSim` to enable chain reorg simulation.
+Each event will map directly to a reorged chain.
 
-Each event must have a non-zero field `ReorgEvent.ReorgBlock`, which is a pivot point after which
-block hashes changes.
+Each event must have a non-zero uint64 field `ReorgEvent.ReorgBlock`, which is a pivot point after which
+block hashes changes (i.e. reorged/forked).
 
-Each event may also optionally have `ReorgEvent.MovedLogs`, which is a hash map of block number to `[]MoveLogs`.
-The key of `ReorgEvent.MovedLogs` is the block number from which the logs are moved. We specify which logs
-are moved with a slice of desired logs' TX hashes.
+Each event may also optionally have `ReorgEvent.MovedLogs`, which is a map of a block number to `[]MoveLogs`.
+The key of map `ReorgEvent.MovedLogs` is the block number from which the logs are moved.
+
+We specify which logs are moved to which block with `[]MoveLogs`. For each `MoveLogs`, `MoveLogs.TxHashes`
+represent the transaction hashes of the logs we want to move to `MoveLogs.NewBlock`.
 
 ### Constructing `blockChain` and chain reorg mechanisms
 
