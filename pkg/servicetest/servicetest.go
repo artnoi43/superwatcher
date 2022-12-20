@@ -12,8 +12,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-// TestCase will be converted into config.EmitterConfig and reorgsim.Param
-// to cerate TestComponents
+// TestCase will be converted into config.EmitterConfig and reorgsim.BaseParam to create TestComponents
 type TestCase struct {
 	Param               reorgsim.BaseParam    `json:"baseParam"`
 	Events              []reorgsim.ReorgEvent `json:"reorgEvents"`

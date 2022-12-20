@@ -7,15 +7,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// ReorgEvent is parameters for chain reorg events.
-type ReorgEvent struct {
-	// ReorgBlock is the pivot block after which ReorgSim should use ReorgSim.reorgedChain.
-	ReorgBlock uint64 `json:"reorgBlock"`
-	// MovedLogs represents all of the moved logs after a chain reorg event. The map key is the source blockNumber.
-	MovedLogs map[uint64][]MoveLogs `json:"movedLogs"`
-}
-
-// BaseParam is the basic parameter for the mock client. Chain reorg parameters are NOT included here, but in ChainParam.
+// BaseParam is the basic parameters for the mock client. Chain reorg parameters are NOT included here, but in ChainParam.
 // It will be embedded in either ParamV1 or ParamV2, for ReorgSimV1 and ReorgSimV2 respectively.
 type BaseParam struct {
 	// StartBlock will be used as initial ReorgSim.currentBlock. ReorgSim.currentBlock increases by `BlockProgess`
@@ -35,35 +27,42 @@ var DefaultParam = BaseParam{
 	Debug:         true,
 }
 
-// ParamV1 is embedded into ReorgSim (V1), and represents the fake blockchain client parameters
+// ReorgEvent is parameters for chain reorg events.
+type ReorgEvent struct {
+	// ReorgBlock is the pivot block after which ReorgSim should use ReorgSim.reorgedChain.
+	ReorgBlock uint64 `json:"reorgBlock"`
+	// MovedLogs represents all of the moved logs after a chain reorg event. The map key is the source blockNumber.
+	MovedLogs map[uint64][]MoveLogs `json:"movedLogs"`
+}
 
-// ReorgSim implements superwatcher.EthClient[block], and will be used in place of the normal Ethereum client
+// ReorgSim implements superwatcher.EthClient, and will be used in place of the normal Ethereum client
 // to test the default emitter implementation.
-// ReorgSim stores old chain and reorged chain, and it will not change the chain internal data. This means that
-// it can support `MoveLogs`, even though the reorgedChain has to be reorged before being sent to NewReorgSim.
-// To create a new ReorgSim with MoveLogs functionality, populate `Param.MovedLogs` with the desired values
-// before calling NewReorgSimFromLogsFiles.
+// ReorgSim does not modify any chain data, it only *chooses* a chain at a certain block number,
+// This means that both ReorgSim.chain and ReorgSim.reorgedChain are populated and constructed before hand,
+// before being embedded into ReorgSim.
 type ReorgSim struct {
 	sync.RWMutex
-	Param BaseParam
-	Event ReorgEvent
 
-	// chain is source for all blocks before Param.ReorgedBlock
+	// Param controls basic ReorgSim behaviors.
+	Param BaseParam `json:"baseParam"`
+	// Event represents a single ReorgEvent.
+	Event ReorgEvent `json:"reorgEvent"`
+	// chain is source for all blocks before Param.ReorgedBlock.
 	chain blockChain
-	// reorgedChain is source for logs after Param.ReorgedBlock. The logic for doing this is in method ReorgSim.chooseBlock
+	// reorgedChain is source for logs after Param.ReorgedBlock. The logic for doing this is in method ReorgSim.chooseBlock.
 	reorgedChain blockChain
-	// currentBlock tracks the current block for the fake blockChain and is hidden from outside for using exclusively in BlockByNumber
+	// currentBlock tracks the current block for the fake blockChain and is accessed via ReorgSim.BlockNumber().
 	currentBlock uint64
-	// filterLogsCounter is used to switch chain for a blockNumber, after certain number of calls to FilterLogs
+	// filterLogsCounter is used to switch chain for a blockNumber, after certain number of calls to FilterLogs.
 	filterLogsCounter map[uint64]int
-	// wasForked tracks if the fake chain was forked (i.e. if ReorgChain has returned any logs from a reorgedChain)
+	// wasForked tracks if the fake chain was forked (i.e. if ReorgChain has returned any logs from a reorgedChain).
 	wasForked bool
 
 	debugger *debugger.Debugger
 }
 
-// NewReorgSim returns the mocked client.EthClient. After the internal state ReorgSim.currentBlock exceeds |reorgedAt|,
-// ReorgSim methods returns data from |reorgedChain|.
+// NewReorgSim is a simple factory function for ReorgSim. Blockchains must be populated beforehand,
+// and |param.BlockProgress| must be > 0.
 func NewReorgSim(
 	param BaseParam,
 	event ReorgEvent,

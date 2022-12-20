@@ -20,16 +20,19 @@ type ReorgSimV2 struct {
 	param BaseParam
 	// events represents the multiple events
 	events []ReorgEvent
+	// currentReorgEvent is used to index events and reorgedChains
+	currentReorgEvent int
 	// chain is the original blockChain
 	chain blockChain
 	// reorgedChains is the multiple reorged blockchains construct from `ReorgSimV2.chain` and `ReorgSimV2.param`
 	reorgedChains []blockChain
+	// forked tracks whether reorgChains[i] was forked (used)
+	forked []bool
 	// currentBlock tracks the current block for the fake blockChain and is used for exclusively in BlockByNumber
 	currentBlock uint64
 	// filterLogsCounter is used to switch chain for a blockNumber, after certain number of calls to FilterLogs
 	filterLogsCounter map[uint64]int
 	// forked (forked[i]) tracks if the param[i] was forked (i.e. if ReorgChain has returned any logs from the reorgedEvents[i])
-	forked []bool
 
 	debugger *debugger.Debugger
 }
@@ -53,8 +56,9 @@ func newReorgSimV2(
 		events:            events,
 		chain:             chain,
 		reorgedChains:     reorgedChains,
-		filterLogsCounter: make(map[uint64]int),
+		currentReorgEvent: 0,
 		forked:            make([]bool, len(events)),
+		filterLogsCounter: make(map[uint64]int),
 		debugger:          debugger.NewDebugger("ReorgSimV2", logLevel),
 	}, nil
 }
