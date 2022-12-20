@@ -144,6 +144,7 @@ func (e *emitter) filterLogs(
 	return nil
 }
 
+// lastGoodBlock computes `superwatcher.FilterResult.lastGoodBlock` based on |result|.
 // TODO: Finalize or just remove FilterResult.LastGoodBlock altogether.
 func lastGoodBlock(
 	result *superwatcher.FilterResult,

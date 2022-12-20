@@ -44,7 +44,7 @@ type emitter struct {
 	debugger *debugger.Debugger
 }
 
-// NewEmitter initializes contract info from config
+// New returns a new `superwatcher.WatcherEmitter`
 func New(
 	conf *config.EmitterConfig,
 	client superwatcher.EthClient,
@@ -94,11 +94,13 @@ func (e *emitter) Loop(ctx context.Context) error {
 	}
 }
 
+// Shutdowns closes `e.filterResultChan` and `e.errChan`.
 func (e *emitter) Shutdown() {
 	close(e.filterResultChan)
 	close(e.errChan)
 }
 
+// SyncsWithEngine blocks until a signal is sent to `e.syncChan`.
 func (e *emitter) SyncsWithEngine() {
 	e.debugger.Debug(1, "waiting for engine sync")
 	<-e.syncChan

@@ -13,11 +13,11 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// TODO: blockInfoTracker name needs revision!
-// TODO: Remove caller and logging
 // blockInfoTracker stores the `superwatcher.BlockInfo` with blockNumber as key.
 // It is used by emitter to store `BlockInfo` from the last run of `emitter.filterLogs`
 // to see if a block's hash has changed.
+// TODO: blockInfoTracker name needs revision!
+// TODO: Remove caller and logging
 type blockInfoTracker struct {
 	sortedSet *sortedset.SortedSet
 	user      string
