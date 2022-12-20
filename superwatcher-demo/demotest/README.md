@@ -1,8 +1,5 @@
 # Package `demotest`
 
-> V1 tests mean that there's a single `reorgsim.ReorgEvent` in each test case,
-> while V2 tests will have more than one `reorgsim.ReorgEvent` in each test case.
-
 demotest is a test package using [`servicetest`](../../pkg/servicetest/) for superwatcher-demo.
 
 It is used to test superwatcher-demo services functionality, and also to test superwatcher

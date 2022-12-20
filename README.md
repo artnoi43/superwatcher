@@ -15,10 +15,11 @@ The code in this project is organized into the following packages:
    superwatcher user during their development. Most code there provides wrapper for `internal`,
    or offers other convenient functions and examples.
 
-   Some development facility code like a full integrated test building block package `servicetest`,
-   or the chain reorg simulation package `reorgsim`, or the mocked `StateDataGateway` types, are provided in `pkg`.
+   Some development facility code like a full integrated test building block package
+   [`servicetest`](./pkg/servicetest/), or the chain reorg simulation package [`reorgsim`](./pkg/reorgsim/),
+   or the mocked [`StateDataGateway`](./pkg/datagateway/) types, are provided in `pkg`.
 
-3. `config` (public)
+3. [`config`](./config/) (public)
 
    This package defines basic superwatcher configuration.
 

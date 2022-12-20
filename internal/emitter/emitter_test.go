@@ -239,9 +239,9 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	}
 	events := []reorgsim.ReorgEvent{tc.Events[0]}
 
-	sim, err := reorgsim.NewReorgSimV2FromLogsFiles(param, events, tc.LogsFiles, 2)
+	sim, err := reorgsim.NewReorgSimFromLogsFiles(param, events, tc.LogsFiles, "EmitterTestV1", 2)
 	if err != nil {
-		t.Fatal("error creating ReorgSimV2", err.Error())
+		t.Fatal("error creating ReorgSim", err.Error())
 	}
 
 	// Collect MovedLogs info

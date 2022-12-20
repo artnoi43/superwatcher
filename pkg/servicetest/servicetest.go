@@ -38,9 +38,9 @@ func InitTestComponents(
 	logsFullPaths []string,
 	firstRun bool, // If true, then the mock datagateway will return `ErrRecordNotFound` until `SetLastRecordedBlock`` is called
 ) *TestComponents {
-	sim, err := reorgsim.NewReorgSimV2FromLogsFiles(param, events, logsFullPaths, conf.LogLevel)
+	sim, err := reorgsim.NewReorgSimFromLogsFiles(param, events, logsFullPaths, "ServiceTest", conf.LogLevel)
 	if err != nil {
-		panic("failed to create ReorgSimV2")
+		panic("failed to create ReorgSim")
 	}
 
 	fakeRedis := datagateway.NewMock(conf.StartBlock, !firstRun)

@@ -1,9 +1,12 @@
 package reorgsim
 
+// See README.md for code documentation
+
 import (
 	"context"
 	"fmt"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -15,39 +18,30 @@ const (
 	methodHeaderByNumber = "headerByNumber"
 )
 
-// chooseBlock returns a block at that |blockNumber| from
-// an appropriate chain. The "reorg" logic is defined here.
-func (r *ReorgSim) chooseBlock(blockNumber uint64, caller string) *block {
+func (r *ReorgSim) chooseBlock(blockNumber uint64, caller string) (*block, int) {
 	r.Lock()
 	defer r.Unlock()
-	// If we see a "toBeForked" block more than once,
-	// return the reorged block from reorged chain.
 
 	b, found := r.chain[blockNumber]
 	if !found || b == nil {
-		return nil
+		return nil, r.currentReorgEvent
 	}
 
-	logFunc := func(prefix string) {
+	logFunc := func(prefix string, blockHash string) {
 		r.debugger.Debug(
 			2,
 			fmt.Sprintf("%s chooseBlock", prefix),
 			zap.Uint64("blockNumber", b.blockNumber),
+			zap.String("blockHash", blockHash),
+			zap.Int("currentReorgEvent", r.currentReorgEvent),
+			zap.Bools("forked", r.forked),
 			zap.String("caller", caller),
 			zap.Bool("toBeForked", b.toBeForked),
 			zap.Int("seen", r.filterLogsCounter[b.blockNumber]),
 		)
 	}
 
-	logFunc("<")
-
-	// Use reorg block for this blockNumber
 	if b.toBeForked {
-		// In emitter.FilterLogs, client.FilterLogs is called before client.HeaderByNumber,
-		// so here we use call from FilterLogs to trigger a reorg by incrementing the filterLogsCounter
-		// and using reorged block if the counter is > 1.
-		// This is why reorgSim.HeaderByNumber should only use reorgedChain if FilterLogs already returned
-		// the reorged logs, and thus a different |n| value.
 		var n int
 		switch caller {
 		case methodFilterLogs:
@@ -58,37 +52,47 @@ func (r *ReorgSim) chooseBlock(blockNumber uint64, caller string) *block {
 			panic("unexpected call to chooseBlock by \"" + caller + "\"")
 		}
 
+		// Only trigger new reorg if filterLogsCounter is >= n
 		if r.filterLogsCounter[blockNumber] >= n {
-			b, found = r.reorgedChain[blockNumber]
-			if !found {
-				return nil
+			var currentChain blockChain
+			var lastReorg bool
+			if r.currentReorgEvent < len(r.events) {
+				currentChain = r.reorgedChains[r.currentReorgEvent]
+			} else {
+				currentChain = r.reorgedChains[len(r.reorgedChains)-1]
+				lastReorg = true
 			}
 
-			if !r.wasForked {
-				r.debugger.Debug(
-					1, "!REORGED!",
-					zap.Uint64("blockNumber", blockNumber),
-				)
+			b, found = currentChain[blockNumber]
+			if !found {
+				return nil, r.currentReorgEvent
+			}
 
-				r.chain = r.reorgedChain
-				r.wasForked = true
+			if !lastReorg {
+				if !r.forked[r.currentReorgEvent] {
+					r.debugger.Debug(
+						1, "REORGED!",
+						zap.Uint64("blockNumber", blockNumber),
+					)
+
+					r.chain = currentChain
+					r.currentBlock = blockNumber
+					r.forked[r.currentReorgEvent] = true
+					r.currentReorgEvent++
+				}
 			}
 		}
 	}
 
-	if caller == methodFilterLogs {
+	if caller == methodFilterLogs && b.toBeForked {
 		r.filterLogsCounter[blockNumber]++
 	}
 
-	logFunc(">")
-	return b
+	logFunc("current chain", gslutils.StringerToLowerString(b.hash))
+	return b, r.currentReorgEvent
 }
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
-	// DO NOT LOCK! A mutex lock here will block call to ReorgSim.ChooseBlock
-	// r.RLock()
-	// defer r.RUnlock()
-
 	if query.FromBlock == nil {
 		return nil, errors.New("nil query.FromBlock")
 	}
@@ -105,8 +109,7 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 
 	var logs []types.Log
 	for number := from; number <= to; number++ {
-		// Choose a block from an appropriate chain
-		b := r.chooseBlock(number, methodFilterLogs)
+		b, _ := r.chooseBlock(number, methodFilterLogs)
 		if b == nil || len(b.logs) == 0 {
 			continue
 		}
@@ -122,28 +125,15 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	defer r.Unlock()
 
 	if r.currentBlock == 0 {
-		r.currentBlock = r.Param.StartBlock
+		r.currentBlock = r.param.StartBlock
 		return r.currentBlock, nil
 	}
 
 	currentBlock := r.currentBlock
-	if currentBlock >= r.Param.ExitBlock {
-		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.Param.ExitBlock)
+	if currentBlock >= r.param.ExitBlock {
+		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.param.ExitBlock)
 	}
 
-	r.currentBlock = currentBlock + r.Param.BlockProgress
+	r.currentBlock = currentBlock + r.param.BlockProgress
 	return currentBlock, nil
 }
-
-// func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
-// 	blockNumber := number.Uint64()
-//
-// 	b := r.chooseBlock(blockNumber, blockNumber, blockNumber, headerByNumber)
-// 	if b != nil {
-// 		return *b, nil
-// 	}
-//
-// 	return &block{
-// 		hash: PRandomHash(number.Uint64()),
-// 	}, nil
-// }

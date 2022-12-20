@@ -2,25 +2,32 @@ package reorgsim
 
 import (
 	"context"
-	"errors"
 	"math/big"
 	"testing"
+	"time"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 )
 
 func TestFilterLogs(t *testing.T) {
 	param := BaseParam{
 		StartBlock:    defaultStartBlock,
-		BlockProgress: DefaultParam.BlockProgress,
+		BlockProgress: 20,
 	}
 	event := ReorgEvent{
 		ReorgBlock: defaultReorgedAt,
 		MovedLogs:  nil,
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, event, defaultLogsFiles, 2)
+	sim, err := NewReorgSimFromLogsFiles(param, []ReorgEvent{event}, defaultLogsFiles, "TestFilterLogs", 4)
+	if err != nil {
+		t.Fatal("error creating ReorgSim", err.Error())
+	}
+
 	ctx := context.Background()
 	logs, err := sim.FilterLogs(ctx, ethereum.FilterQuery{
 		FromBlock: big.NewInt(69),
@@ -43,95 +50,99 @@ func TestFilterLogs(t *testing.T) {
 	if len(logs) == 0 {
 		t.Fatalf("expecting > 0 logs, got 0 log")
 	}
-
 }
 
 func TestFilterLogsReorg(t *testing.T) {
-	reorgedAt := uint64(15944415)
-	logsPath := "../../test_logs"
-	logsFiles := []string{
-		logsPath + "/logs_lp.json",
-		logsPath + "/logs_poolfactory.json",
-	}
-
-	param := BaseParam{
-		StartBlock:    reorgedAt,
-		BlockProgress: 20,
-	}
-	event := ReorgEvent{
-		ReorgBlock: reorgedAt,
-		MovedLogs:  nil,
-	}
-
-	rSim := NewReorgSimFromLogsFiles(param, event, logsFiles, 1).(*ReorgSim)
-
-	block := rSim.Chain()[reorgedAt]
-	rBlock := rSim.ReorgedChain()[reorgedAt]
-	if !rBlock.toBeForked {
-		t.Fatal("rBlock.toBeForked = false")
-	}
-
-	if block.Hash() == rBlock.Hash() {
-		t.Fatal("block and rBlock hashes match")
-	}
-
-	filter := func() ([]types.Log, error) {
-		return rSim.FilterLogs(nil, ethereum.FilterQuery{
-			FromBlock: big.NewInt(int64(reorgedAt) - 2),
-			ToBlock:   big.NewInt(int64(reorgedAt) + 2),
-		})
-	}
-
-	logs, _ := filter()
-	filter()
-	filter()
-	rLogs, _ := filter()
-
-	for i, log := range logs {
-		if log.BlockNumber == reorgedAt {
-			rLog := rLogs[i]
-
-			if log.BlockHash == rLog.BlockHash {
-				t.Fatalf("log and rLog hashes match on %d-%d", log.BlockNumber, rLog.BlockNumber)
-			}
-		}
+	for i, test := range testsReorgSim {
+		testFilterLogsReorg(t, i+1, test)
 	}
 }
 
-func TestExitBlock(t *testing.T) {
-	exitBlock := defaultReorgedAt + 100
-	t.Log("exit block", exitBlock)
-
-	param := BaseParam{
-		StartBlock:    defaultStartBlock,
-		BlockProgress: 5,
-		ExitBlock:     exitBlock,
-	}
-	event := ReorgEvent{
-		ReorgBlock: defaultReorgedAt,
-		MovedLogs:  nil,
+func testFilterLogsReorg(t *testing.T, caseNumber int, testConf multiReorgConfig) error {
+	if len(testConf.Events) == 0 {
+		return errors.New("got 0 ReorgEvent")
 	}
 
-	sim := NewReorgSimFromLogsFiles(param, event, defaultLogsFiles, 1)
+	sim, err := NewReorgSimFromLogsFiles(testConf.Param, testConf.Events, testConf.LogsFiles, testConf.Name, 2)
+	if err != nil {
+		t.Fatalf("[%d] failed to create new ReorgSim: %s", caseNumber, err.Error())
+	}
 
-	ctx := context.Background()
-	for {
-		blockNumber, err := sim.BlockNumber(ctx)
+	movedTo := make(map[uint64][]common.Hash)
+	forked := make([]bool, len(testConf.Events))
+	for _, event := range testConf.Events {
+		for _, moves := range event.MovedLogs {
+			for _, move := range moves {
+				for _, moveHash := range move.TxHashes {
+					if gslutils.Contains(movedTo[move.NewBlock], moveHash) {
+						continue
+					}
+
+					movedTo[move.NewBlock] = append(movedTo[move.NewBlock], moveHash)
+				}
+			}
+		}
+	}
+
+	rSim := sim.(*ReorgSim)
+
+	callReorgSim := func(baseNumber uint64) (uint64, []types.Log, error) {
+		blockNumber, err := rSim.BlockNumber(nil) // Trigger forward block progression
 		if err != nil {
-			t.Log("err", err.Error())
-			if blockNumber < exitBlock {
-				t.Fatalf("blockNumber < exit: %d < %d", blockNumber, exitBlock)
-			}
-
 			if !errors.Is(err, ErrExitBlockReached) {
-				t.Fatalf("invalid error returned by reorgsim.BlockNumber: %s", err.Error())
+				t.Fatal("unexpected error from ReorgSim.BlockNumber", err.Error())
 			}
-
-			break
 		}
 
-		if blockNumber > exitBlock {
-			t.Fatalf("blockNumber < exit: %d < %d", blockNumber, exitBlock)
+		logs, err := rSim.FilterLogs(nil, ethereum.FilterQuery{
+			FromBlock: big.NewInt(int64(baseNumber) - 2),
+			ToBlock:   big.NewInt(int64(baseNumber) + 2),
+		})
+
+		return blockNumber, logs, err
+	}
+
+	var reorgCount int
+	for number := testConf.Param.StartBlock; number < testConf.Param.ExitBlock; number++ {
+		simBlockNumber, logs, err := callReorgSim(number)
+		if err != nil {
+			t.Fatal("ReorgSim.FilterLogs returned non-nil error", err.Error())
+		}
+
+		event := testConf.Events[reorgCount]
+		if simBlockNumber > event.ReorgBlock {
+			forked[reorgCount] = true
+
+			if gslutils.Contains(forked, false) {
+				reorgCount++
+			}
+		}
+
+		mappedLogs := mapLogsToNumber(logs)
+
+		for blockNumber, blockLogs := range mappedLogs {
+			for _, moves := range event.MovedLogs {
+				for _, move := range moves {
+					if move.NewBlock != blockNumber {
+						continue
+					}
+
+					blockTxHashes := gslutils.Map(blockLogs, func(l types.Log) (common.Hash, bool) {
+						return l.TxHash, true
+					})
+
+					for _, moveTxHash := range move.TxHashes {
+						if gslutils.Contains(blockTxHashes, moveTxHash) {
+							continue
+						}
+
+						t.Log("blockTxHashes", blockTxHashes)
+						t.Errorf("moveTxHash (%d) %s missing %s from blockTxHashes", blockNumber, moveTxHash.String(), time.Now().String())
+					}
+				}
+			}
 		}
 	}
+
+	return nil
 }

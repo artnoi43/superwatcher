@@ -3,12 +3,15 @@ package reorgsim
 import (
 	"sync"
 
+	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
+
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// BaseParam is the basic parameters for the mock client. Chain reorg parameters are NOT included here, but in ChainParam.
-// It will be embedded in either ParamV1 or ParamV2, for ReorgSimV1 and ReorgSimV2 respectively.
+// BaseParam is the basic parameters for the mock client. Chain reorg parameters are NOT included here.
 type BaseParam struct {
 	// StartBlock will be used as initial ReorgSim.currentBlock. ReorgSim.currentBlock increases by `BlockProgess`
 	// after each call to ReorgSim.BlockNumber.
@@ -35,74 +38,131 @@ type ReorgEvent struct {
 	MovedLogs map[uint64][]MoveLogs `json:"movedLogs"`
 }
 
-// ReorgSim implements superwatcher.EthClient, and will be used in place of the normal Ethereum client
-// to test the default emitter implementation.
-// ReorgSim does not modify any chain data, it only *chooses* a chain at a certain block number,
-// This means that both ReorgSim.chain and ReorgSim.reorgedChain are populated and constructed before hand,
-// before being embedded into ReorgSim.
+var errInvalidReorgEvents = errors.New("invalid reorg events")
+
+// ReorgSim is a mock superwatcher.EthClient can simulate multiple on-the-fly chain reorganizations.
 type ReorgSim struct {
 	sync.RWMutex
-
-	// Param controls basic ReorgSim behaviors.
-	Param BaseParam `json:"baseParam"`
-	// Event represents a single ReorgEvent.
-	Event ReorgEvent `json:"reorgEvent"`
-	// chain is source for all blocks before Param.ReorgedBlock.
+	// param is only BaseParam, which specifies how ReorgSim should behave
+	param BaseParam
+	// events represents the multiple events
+	events []ReorgEvent
+	// currentReorgEvent is used to index events and reorgedChains
+	currentReorgEvent int
+	// chain is the original blockChain
 	chain blockChain
-	// reorgedChain is source for logs after Param.ReorgedBlock. The logic for doing this is in method ReorgSim.chooseBlock.
-	reorgedChain blockChain
-	// currentBlock tracks the current block for the fake blockChain and is accessed via ReorgSim.BlockNumber().
+	// reorgedChains is the multiple reorged blockchains construct from `ReorgSim.chain` and `ReorgSim.param`
+	reorgedChains []blockChain
+	// forked tracks whether reorgChains[i] was forked (used)
+	forked []bool
+	// currentBlock tracks the current block for the fake blockChain and is used for exclusively in BlockByNumber
 	currentBlock uint64
-	// filterLogsCounter is used to switch chain for a blockNumber, after certain number of calls to FilterLogs.
+	// filterLogsCounter is used to switch chain for a blockNumber, after certain number of calls to FilterLogs
 	filterLogsCounter map[uint64]int
-	// wasForked tracks if the fake chain was forked (i.e. if ReorgChain has returned any logs from a reorgedChain).
-	wasForked bool
 
 	debugger *debugger.Debugger
 }
 
-// NewReorgSim is a simple factory function for ReorgSim. Blockchains must be populated beforehand,
-// and |param.BlockProgress| must be > 0.
-func NewReorgSim(
+func newReorgSim(
 	param BaseParam,
-	event ReorgEvent,
+	events []ReorgEvent,
 	chain blockChain,
-	reorgedChain blockChain,
+	reorgedChains []blockChain,
+	debugName string,
 	logLevel uint8,
-) superwatcher.EthClient {
-	if param.BlockProgress == 0 {
-		panic("0 BaseParam.BlockProgress")
+) (
+	*ReorgSim,
+	error,
+) {
+	if err := validateReorgEvents(events); err != nil {
+		return nil, errors.Wrap(err, "invalid events")
+	}
+
+	var name string
+	if debugName == "" {
+		name = "ReorgSim"
+	} else {
+		name = "ReorgSim " + debugName
 	}
 
 	return &ReorgSim{
-		Param:             param,
-		Event:             event,
+		param:             param,
+		events:            events,
 		chain:             chain,
-		reorgedChain:      reorgedChain,
+		reorgedChains:     reorgedChains,
+		currentReorgEvent: 0,
+		forked:            make([]bool, len(events)),
 		filterLogsCounter: make(map[uint64]int),
-		debugger:          debugger.NewDebugger("ReorgSim", logLevel),
-	}
+		debugger:          debugger.NewDebugger(name, logLevel),
+	}, nil
 }
 
-// NewReorgSimFromLogsFiles returns a new ReorgSim with good and reorged chains mocked using the files.
+func NewReorgSim(
+	param BaseParam,
+	events []ReorgEvent,
+	logs map[uint64][]types.Log,
+	debugName string,
+	logLevel uint8,
+) (
+	superwatcher.EthClient,
+	error,
+) {
+	chain, reorgedChains := NewBlockChain(logs, events)
+	return newReorgSim(param, events, chain, reorgedChains, debugName, logLevel)
+}
+
 func NewReorgSimFromLogsFiles(
 	param BaseParam,
-	event ReorgEvent,
-	logFiles []string,
+	events []ReorgEvent,
+	logsFiles []string,
+	debugName string,
 	logLevel uint8,
-) superwatcher.EthClient {
-	chain, reorgedChain := NewBlockChainReorgMoveLogs(
-		InitMappedLogsFromFiles(logFiles...),
-		event,
+) (
+	superwatcher.EthClient,
+	error,
+) {
+	return NewReorgSim(
+		param,
+		events,
+		InitMappedLogsFromFiles(logsFiles...),
+		debugName,
+		logLevel,
 	)
-
-	return NewReorgSim(param, event, chain, reorgedChain, logLevel)
 }
 
-func (s *ReorgSim) Chain() blockChain {
-	return s.chain
+func (r *ReorgSim) Chain() blockChain {
+	return r.chain
 }
 
-func (s *ReorgSim) ReorgedChain() blockChain {
-	return s.reorgedChain
+func (r *ReorgSim) ReorgedChains() []blockChain {
+	return r.reorgedChains
+}
+
+func (r *ReorgSim) ReorgedChain(i int) blockChain {
+	return r.reorgedChains[i]
+}
+
+// Subsequent ReorgEvent.ReorgBlock should be larger than the previous ones
+func validateReorgEvents(events []ReorgEvent) error {
+	reorgBlocks := gslutils.Map(events, func(event ReorgEvent) (uint64, bool) {
+		return event.ReorgBlock, true
+	})
+
+	for i, reorgBlock := range reorgBlocks {
+		var prevReorgBlock uint64
+		if i == 0 {
+			continue
+		} else {
+			prevReorgBlock = reorgBlocks[i-1]
+		}
+
+		if prevReorgBlock > reorgBlock {
+			return errors.Wrapf(
+				errInvalidReorgEvents, "event at index %d has smaller value than index %d (%d > %d)",
+				i, i-1, reorgBlock, prevReorgBlock,
+			)
+		}
+	}
+
+	return nil
 }

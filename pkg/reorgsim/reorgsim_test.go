@@ -1,141 +1,215 @@
 package reorgsim
 
 import (
-	"context"
 	"fmt"
-	"math/big"
 	"testing"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 )
+
+type multiReorgConfig struct {
+	Name      string       `json:"name"`
+	Param     BaseParam    `json:"baseParam"`
+	Events    []ReorgEvent `json:"events"`
+	LogsFiles []string     `json:"logsFiles"`
+}
 
 var (
-	logsPath                 = "../../test_logs"
-	defaultStartBlock uint64 = 15900000
-	defaultReorgedAt  uint64 = 15944444
-	defaultLogsFiles         = []string{
-		logsPath + "/logs_poolfactory.json",
-		logsPath + "/logs_lp.json",
+	testsReorgSim = []multiReorgConfig{
+		{
+			LogsFiles: []string{
+				logsPath + "/logs_lp.json",
+				logsPath + "/logs_poolfactory.json",
+			},
+			Param: BaseParam{
+				StartBlock:    15944410,
+				ExitBlock:     15944530,
+				BlockProgress: DefaultParam.BlockProgress,
+				Debug:         DefaultParam.Debug,
+			},
+			Events: []ReorgEvent{
+				{
+					ReorgBlock: 15944415,
+					MovedLogs:  nil,
+				},
+			},
+		},
+		{
+			LogsFiles: []string{
+				logsPath + "/logs_lp.json",
+				logsPath + "/logs_poolfactory.json",
+			},
+			Param: BaseParam{
+				StartBlock:    15944400,
+				ExitBlock:     15944500,
+				BlockProgress: DefaultParam.BlockProgress,
+				Debug:         DefaultParam.Debug,
+			},
+			Events: []ReorgEvent{
+				{
+					ReorgBlock: 15944411,
+					MovedLogs: map[uint64][]MoveLogs{
+						15944411: {
+							{
+								NewBlock: 15944498,
+								TxHashes: []common.Hash{
+									common.HexToHash("0x1db603684cd6c04eec3166f216ebfb86c79bf63de6d0a9b2de535c38217d673d"),
+								},
+							},
+						},
+					},
+				},
+				{
+					ReorgBlock: 15944455,
+					MovedLogs: map[uint64][]MoveLogs{
+						15944455: {
+							{
+								NewBlock: 15944498,
+								TxHashes: []common.Hash{
+									common.HexToHash("0x620be69b041f986127322985854d3bc785abe1dc9f4df49173409f15b7515164"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			LogsFiles: []string{
+				logsPath + "/logs_lp_5.json",
+			},
+			Param: BaseParam{
+				StartBlock:    15966490,
+				ExitBlock:     15966540,
+				BlockProgress: DefaultParam.BlockProgress,
+				Debug:         DefaultParam.Debug,
+			},
+			Events: []ReorgEvent{
+				{
+					ReorgBlock: 15966522, // 0xf3a130
+					// Move logs of 1 txHash to new block
+					MovedLogs: map[uint64][]MoveLogs{
+						15966522: { // 0xf3a13a
+							{
+								NewBlock: 15966527,
+								TxHashes: []common.Hash{
+									common.HexToHash("0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"),
+								},
+							},
+						},
+					},
+				},
+				{
+					ReorgBlock: 15966525, // 0xf3a130
+					MovedLogs: map[uint64][]MoveLogs{ // 0xf3a13d
+						15966525: {
+							{
+								NewBlock: 15966536, // 0xf3a13f
+								TxHashes: []common.Hash{
+									common.HexToHash("0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 )
 
-func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
-	return NewBlockChainReorgV1(InitMappedLogsFromFiles(defaultLogsFiles...), reorgedAt)
-}
-
-func TestNewBlockChainNg(t *testing.T) {
-	oldChain, reorgedChain := initDefaultChains(defaultReorgedAt)
-	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
-		t.Fatal(err.Error())
+func TestReorgSim(t *testing.T) {
+	for _, test := range testsReorgSim {
+		err := testReorgSimMultiReorg(test)
+		if err != nil {
+			t.Error(err.Error())
+		}
 	}
 }
 
-// Test if NewBlockChain works properly
-func TestNewBlockChain(t *testing.T) {
-	oldChain, reorgedChain := initDefaultChains(defaultReorgedAt)
-	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
-		t.Fatal(err.Error())
+func testReorgSimMultiReorg(testConf multiReorgConfig) error {
+	sim, err := NewReorgSimFromLogsFiles(testConf.Param, testConf.Events, testConf.LogsFiles, testConf.Name, 3)
+	if err != nil {
+		return errors.Wrap(err, "failed to create ReorgSim from config")
 	}
-}
 
-func testBlockChain(t *testing.T, oldChain, reorgedChain blockChain) error {
-	for blockNumber, reorgedBlock := range reorgedChain {
-		oldBlock := oldChain[blockNumber]
+	rSim := sim.(*ReorgSim)
+	if len(rSim.reorgedChains) != len(testConf.Events) {
+		return errors.New("len reorgedChain doesn't match len ReorgEvents")
+	}
 
-		oldLogs := oldBlock.Logs()
-		reorgedLogs := reorgedBlock.Logs()
+	for i, event := range testConf.Events {
+		var prevChain blockChain
 
-		if lo, lr := len(oldLogs), len(reorgedLogs); lo != lr {
-			return fmt.Errorf("len(logs) not match on block %d", blockNumber)
+		if i == 0 {
+			prevChain = rSim.chain
+		} else {
+			prevChain = rSim.reorgedChains[i-1]
 		}
 
-		if !reorgedBlock.toBeForked {
-			continue
+		reorgedChain := rSim.reorgedChains[i]
+		for blockNumber, b := range rSim.chain {
+			reorgedBlock, ok := reorgedChain[blockNumber]
+			if !ok {
+				return fmt.Errorf("original block %d not found in reorgedChain[%d]", blockNumber, i)
+			}
+
+			if blockNumber >= event.ReorgBlock {
+				if b.hash == reorgedBlock.hash {
+					return fmt.Errorf("reorgedBlock %d has original hash %s", blockNumber, reorgedBlock.hash.String())
+				}
+			}
 		}
 
-		if oldBlock.Hash() == reorgedBlock.Hash() {
-			return fmt.Errorf("old and reorg block hashes match on block %d:%s", blockNumber, oldBlock.Hash().String())
-		}
+		for blockMovedFrom, moves := range event.MovedLogs {
+			for _, move := range moves {
+				_, ok := prevChain[blockMovedFrom]
+				if !ok {
+					return fmt.Errorf("moveFromBlock %d not found in prevChain", blockMovedFrom)
+				}
 
-		if blockNumber < defaultReorgedAt && reorgedBlock.toBeForked {
-			return fmt.Errorf("unreorged block %d from reorgedChain tagged with toBeForked", blockNumber)
-		}
+				movedFromBlock, ok := reorgedChain[blockMovedFrom]
+				if !ok {
+					return fmt.Errorf("moveFromBlock %d not found in reorgedChain[%d]", blockMovedFrom, i)
+				}
 
-		if blockNumber > defaultReorgedAt && !reorgedBlock.toBeForked {
-			return fmt.Errorf("reorgedBlock %d not tagged with toBeForked", blockNumber)
-		}
+				moveToBlock, ok := reorgedChain[move.NewBlock]
+				if !ok {
+					return fmt.Errorf("moveToBlock %d not found in reorgedChain[%d]", move.NewBlock, i)
+				}
 
-		for i, reorgedLog := range reorgedLogs {
-			oldLog := oldLogs[i]
+				// movedFromBlock should not have any logs with TxHash in move.TxHashes
+				for _, log := range movedFromBlock.logs {
+					if gslutils.Contains(move.TxHashes, log.TxHash) {
+						return fmt.Errorf("moveFromBlock still has log %s", log.TxHash.String())
+					}
+				}
 
-			// Uncomment to change txHash when reorg too
-			// if reorgedLog.TxHash == oldLog.TxHash {
-			// 	t.Fatal("old and reorg log txHash match")
-			// }
+				// Check if all move.TxHashes has actually been moved to move.NewBlock
+				var count int
+				var seen = make(map[common.Hash]bool)
+				for _, log := range moveToBlock.logs {
+					if seen[log.TxHash] {
+						continue
+					}
 
-			if reorgedLog.BlockHash == oldLog.BlockHash {
-				return fmt.Errorf("old and reorg log blockHash match %d:%s", blockNumber, reorgedLog.BlockHash.String())
+					seen[log.TxHash] = true
+
+					if gslutils.Contains(move.TxHashes, log.TxHash) {
+						count++
+					}
+				}
+
+				if l := len(move.TxHashes); l != count {
+					return fmt.Errorf(
+						"expecting %d logs to move from %d to %d, only got %d",
+						l, blockMovedFrom, move.NewBlock, count,
+					)
+				}
 			}
 		}
 	}
 
 	return nil
-}
-
-func TestFoo(t *testing.T) {
-	reorgedAt := uint64(15944408)
-	chain, reorgedChain := initDefaultChains(reorgedAt)
-
-	fmt.Println("old chain")
-	prontBlockChain(chain)
-
-	fmt.Println("reorged chain")
-	prontBlockChain(reorgedChain)
-
-	param := BaseParam{
-		StartBlock:    defaultStartBlock,
-		BlockProgress: 3,
-		ExitBlock:     reorgedAt + 100,
-	}
-	event := ReorgEvent{
-		ReorgBlock: reorgedAt,
-	}
-
-	sim := NewReorgSimFromLogsFiles(param, event, defaultLogsFiles, 3)
-	filterLogs, err := sim.FilterLogs(context.Background(), ethereum.FilterQuery{
-		FromBlock: big.NewInt(15944401),
-		ToBlock:   big.NewInt(15944500),
-	})
-
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-	filterLogsMapped := mapLogsToNumber(filterLogs)
-	fmt.Println("filterLogs")
-	prontMapLen(filterLogsMapped, "blockNumber", "len(logs)")
-}
-
-func prontMapLen[T comparable, U any](m map[T][]U, keyString, lenString string) {
-	for k, arr := range m {
-		fmt.Println(keyString, k, lenString, len(arr))
-	}
-}
-
-func prontLogs(logs []types.Log) {
-	for _, log := range logs {
-		fmt.Println("blockNumber", log.BlockNumber, "blockHash", log.BlockHash.String(), "txHash", log.TxHash.String())
-	}
-}
-
-func prontBlockChain(chain blockChain) {
-	for _, b := range chain {
-		fmt.Println(
-			"blockNumber", b.blockNumber,
-			"blockhash", b.Hash().String(),
-			"len(logs)", len(b.logs),
-			"forked", b.toBeForked,
-		)
-		prontLogs(b.logs)
-	}
 }

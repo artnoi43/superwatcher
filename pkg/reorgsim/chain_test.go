@@ -6,6 +6,17 @@ import (
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+)
+
+var (
+	logsPath                 = "../../test_logs"
+	defaultStartBlock uint64 = 15900000
+	defaultReorgedAt  uint64 = 15944444
+	defaultLogsFiles         = []string{
+		logsPath + "/logs_poolfactory.json",
+		logsPath + "/logs_lp.json",
+	}
 )
 
 type moveConfig struct {
@@ -85,4 +96,90 @@ func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 	}
 
 	return nil
+}
+
+func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
+	return newBlockChainReorgSimple(InitMappedLogsFromFiles(defaultLogsFiles...), reorgedAt)
+}
+
+func TestNewBlockChainNg(t *testing.T) {
+	oldChain, reorgedChain := initDefaultChains(defaultReorgedAt)
+	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+// Test if NewBlockChain works properly
+func TestNewBlockChain(t *testing.T) {
+	oldChain, reorgedChain := initDefaultChains(defaultReorgedAt)
+	if err := testBlockChain(t, oldChain, reorgedChain); err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func testBlockChain(t *testing.T, oldChain, reorgedChain blockChain) error {
+	for blockNumber, reorgedBlock := range reorgedChain {
+		oldBlock := oldChain[blockNumber]
+
+		oldLogs := oldBlock.Logs()
+		reorgedLogs := reorgedBlock.Logs()
+
+		if lo, lr := len(oldLogs), len(reorgedLogs); lo != lr {
+			return fmt.Errorf("len(logs) not match on block %d", blockNumber)
+		}
+
+		if !reorgedBlock.toBeForked {
+			continue
+		}
+
+		if oldBlock.Hash() == reorgedBlock.Hash() {
+			return fmt.Errorf("old and reorg block hashes match on block %d:%s", blockNumber, oldBlock.Hash().String())
+		}
+
+		if blockNumber < defaultReorgedAt && reorgedBlock.toBeForked {
+			return fmt.Errorf("unreorged block %d from reorgedChain tagged with toBeForked", blockNumber)
+		}
+
+		if blockNumber > defaultReorgedAt && !reorgedBlock.toBeForked {
+			return fmt.Errorf("reorgedBlock %d not tagged with toBeForked", blockNumber)
+		}
+
+		for i, reorgedLog := range reorgedLogs {
+			oldLog := oldLogs[i]
+
+			// Uncomment to change txHash when reorg too
+			// if reorgedLog.TxHash == oldLog.TxHash {
+			// 	t.Fatal("old and reorg log txHash match")
+			// }
+
+			if reorgedLog.BlockHash == oldLog.BlockHash {
+				return fmt.Errorf("old and reorg log blockHash match %d:%s", blockNumber, reorgedLog.BlockHash.String())
+			}
+		}
+	}
+
+	return nil
+}
+func prontMapLen[T comparable, U any](m map[T][]U, keyString, lenString string) {
+	for k, arr := range m {
+		fmt.Println(keyString, k, lenString, len(arr))
+	}
+}
+
+func prontLogs(logs []types.Log) {
+	for _, log := range logs {
+		fmt.Println("blockNumber", log.BlockNumber, "blockHash", log.BlockHash.String(), "txHash", log.TxHash.String())
+	}
+}
+
+func prontBlockChain(chain blockChain) {
+	for _, b := range chain {
+		fmt.Println(
+			"blockNumber", b.blockNumber,
+			"blockhash", b.Hash().String(),
+			"len(logs)", len(b.logs),
+			"forked", b.toBeForked,
+		)
+		prontLogs(b.logs)
+	}
 }

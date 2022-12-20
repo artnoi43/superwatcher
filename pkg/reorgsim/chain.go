@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// Use this as ReorgEvent.ReorgBlock to disable chain reorg.
 const NoReorg uint64 = 0
 
 type blockChain map[uint64]*block
@@ -35,7 +36,7 @@ func (c blockChain) reorg(reorgedBlock uint64) {
 // It also returns 2 slices of block numbers, 1st of which is a slice of blocks from which logs are moved,
 // the 2nd of which is a slice of blocks to which logs are moved.
 // NOTE: Do not use this function directly, since it only moves logs to new blocks and does not reorg blocks.
-// It is meant to be used inside NewBlockChainReorgMoveLogs, and NewBlockChainReorgV2
+// It is meant to be used inside NewBlockChainReorgMoveLogs, and NewBlockChain
 func (c blockChain) moveLogs(
 	movedLogs map[uint64][]MoveLogs,
 ) (
@@ -90,98 +91,43 @@ func (c blockChain) moveLogs(
 	return moveFromBlocks, moveToBlocks
 }
 
-// NewBlockChain returns a new blockChain from |mappedLogs|. The parameter |reorgedAt|
-// is used to deterine block.reorgedHere and block.toBeForked
-func NewBlockChain(
+// newBlockChain returns a new blockChain from |mappedLogs|. The parameter |reorgedAt|
+// is used to determine block.reorgedHere and block.toBeForked
+func newBlockChain(
 	mappedLogs map[uint64][]types.Log,
 	reorgedBlock uint64,
 ) blockChain {
 	chain := make(blockChain)
 
+	var noReorg bool
+	if reorgedBlock == NoReorg {
+		noReorg = true
+	}
+
 	for blockNumber, logs := range mappedLogs {
+		var toBeForked bool
+		if noReorg {
+			toBeForked = false
+		} else {
+			toBeForked = blockNumber >= reorgedBlock
+		}
+
 		chain[blockNumber] = &block{
 			blockNumber: blockNumber,
 			hash:        logs[0].BlockHash,
 			logs:        logs,
 			reorgedHere: blockNumber == reorgedBlock,
-			toBeForked:  blockNumber >= reorgedBlock,
+			toBeForked:  toBeForked,
 		}
 	}
 
 	return chain
 }
 
-// NewBlockChainReorgV1 returns a tuple of blockChain(s) for reorgSim. It takes in |reorgedAt|,
-// and construct the chains based on that number.
-func NewBlockChainReorgV1(
-	mappedLogs map[uint64][]types.Log,
-	reorgedBlock uint64,
-) (
-	blockChain,
-	blockChain,
-) {
-	// The "good old chain"
-	chain := NewBlockChain(mappedLogs, reorgedBlock)
-
-	// No reorg - use the same chain
-	if reorgedBlock == NoReorg {
-		return chain, chain
-	}
-
-	// |reorgedChain| will differ from |oldChain| after |reorgedAt|
-	reorgedChain := copyBlockChain(chain)
-	reorgedChain.reorg(reorgedBlock)
-
-	return chain, reorgedChain
-}
-
-// NewBlockChainReorgMoveLogs is similar to NewBlockChain, but the reorgedChain (the 2nd returned variable)
-// will call blockChain.reorgMoveLogs with |movedLogs|. NewBlockChainReorgMoveLogs will also add moveToBlock
-// in the old original chain to ensure that ReorgSim does not skip the block.
-// Calling NewBlockChainReorgMoveLogs with nil |movedLogs| is the same as calling NewBlockChain.
-func NewBlockChainReorgMoveLogs(
-	mappedLogs map[uint64][]types.Log,
-	event ReorgEvent,
-) (
-	blockChain,
-	blockChain,
-) {
-	for blockNumber := range event.MovedLogs {
-		if blockNumber < event.ReorgBlock {
-			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, event.ReorgBlock))
-		}
-	}
-
-	chain := NewBlockChain(mappedLogs, event.ReorgBlock)
-
-	reorgedChain := copyBlockChain(chain)
-	reorgedChain.reorg(event.ReorgBlock)
-
-	if len(event.MovedLogs) != 0 {
-		_, moveToBlocks := reorgedChain.moveLogs(event.MovedLogs)
-
-		// Ensure that all moveToBlocks exist in original chain
-		for _, moveToBlock := range moveToBlocks {
-			// If the old chain did not have moveToBlock, create one.
-			// This created block will need to have non-deterministic blockHash via RandomHash()
-			// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
-			if _, ok := chain[moveToBlock]; !ok {
-				chain[moveToBlock] = &block{
-					blockNumber: moveToBlock,
-					hash:        RandomHash(moveToBlock),
-					reorgedHere: moveToBlock == event.ReorgBlock,
-					toBeForked:  true,
-				}
-			}
-		}
-	}
-
-	return chain, reorgedChain
-}
-
-// NewBlockChainReorgV2 can simulate multiple chain reorgs with moved logs.
-// Each ReorgEvent will result in its own blockChain, with the same index.
-func NewBlockChainReorgV2(
+// NewBlockChain is the preferred way to init reorgsim `blockChain`s. It accept a slice of `ReorgEvent` and
+// uses each event to construct a reorged chain, which will be appended to the second return variable.
+// Each ReorgEvent will result in its own blockChain, with the identical index.
+func NewBlockChain(
 	logs map[uint64][]types.Log,
 	events []ReorgEvent,
 ) (
@@ -189,12 +135,12 @@ func NewBlockChainReorgV2(
 	[]blockChain, // Reorged chains
 ) {
 	if len(events) == 0 {
-		return NewBlockChain(logs, NoReorg), nil
+		return newBlockChain(logs, NoReorg), nil
 	}
 
-	chain := NewBlockChain(logs, events[0].ReorgBlock)
-
+	chain := newBlockChain(logs, events[0].ReorgBlock)
 	var reorgedChains = make([]blockChain, len(events))
+
 	for i, event := range events {
 		var prevChain blockChain
 		if i == 0 {
@@ -251,4 +197,70 @@ func NewBlockChainReorgV2(
 	}
 
 	return chain, reorgedChains
+}
+
+// newBlockChainReorgSimple returns a tuple of 2 blockChain, the first being the original chain,
+// and the second being the reorged chain based solely on 1 |reorgedBlock| (no logs will be moved to new blocks).
+// It is unexported and is only here as a convenient function wrapped by others, and for reorg logic tests.
+// NOTE: maybe deprecated in favor of NewBlockChain
+func newBlockChainReorgSimple(
+	mappedLogs map[uint64][]types.Log,
+	reorgedBlock uint64,
+) (
+	blockChain,
+	blockChain,
+) {
+	// The "good old chain"
+	chain := newBlockChain(mappedLogs, reorgedBlock)
+
+	// No reorg - use the same chain
+	if reorgedBlock == NoReorg {
+		return chain, chain
+	}
+
+	// |reorgedChain| will differ from |oldChain| after |reorgedAt|
+	reorgedChain := copyBlockChain(chain)
+	reorgedChain.reorg(reorgedBlock)
+
+	return chain, reorgedChain
+}
+
+// NewBlockChainReorgMoveLogs calls newBlockChainReorgSimple, and uses |event.MovedLogs| to move logs.
+// If |event.MovedLogs| is nil, the result chains are identical to those of newBlockChainReorgSimple.
+// NOTE: maybe deprecated in favor of NewBlockChain
+func NewBlockChainReorgMoveLogs(
+	mappedLogs map[uint64][]types.Log,
+	event ReorgEvent,
+) (
+	blockChain,
+	blockChain,
+) {
+	for blockNumber := range event.MovedLogs {
+		if blockNumber < event.ReorgBlock {
+			panic(fmt.Sprintf("blockNumber %d < reorgedAt %d", blockNumber, event.ReorgBlock))
+		}
+	}
+
+	chain, reorgedChain := newBlockChainReorgSimple(mappedLogs, event.ReorgBlock)
+
+	if len(event.MovedLogs) != 0 {
+		_, moveToBlocks := reorgedChain.moveLogs(event.MovedLogs)
+
+		// Ensure that all moveToBlocks exist in original chain
+		for _, moveToBlock := range moveToBlocks {
+			// If the old chain did not have moveToBlock, create one.
+			// This created block will need to have non-deterministic blockHash via RandomHash()
+			// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
+			if _, ok := chain[moveToBlock]; !ok {
+				chain[moveToBlock] = &block{
+					blockNumber: moveToBlock,
+					hash:        RandomHash(moveToBlock),
+					reorgedHere: moveToBlock == event.ReorgBlock,
+					toBeForked:  true,
+				}
+			}
+		}
+	}
+
+	return chain, reorgedChain
 }
