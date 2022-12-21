@@ -37,14 +37,21 @@ type stateEvent = struct {
 	event blockEvent
 }
 
+// TODO: Update this table should we implement new feature "soft-errors".
+// The soft errors features would allow ServiceEngine to inject "soft errors",
+// which would NOT cause the engine to exit on seeing these soft errors.
+// To implement this feature, we must allow certain states to be handled again,
+// since some blocks with state stateSeen might fail and never progressed to stateHandled.
+// i.e. as in stateSeen + eventSeeBlock = stateSeen, to allow the engine to re-handle the blocks.
+// The transitions that need to be updated are tagged with TODO comments.
 var watcherEngineStateMachine = map[stateEvent]blockState{
 	{state: stateNull, event: eventSeeBlock}:    stateSeen,
 	{state: stateNull, event: eventSeeReorg}:    stateInvalid,
 	{state: stateNull, event: eventHandle}:      stateInvalid,
 	{state: stateNull, event: eventHandleReorg}: stateInvalid,
 
-	{state: stateSeen, event: eventSeeBlock}:    stateSeen,    // Maybe stateInvalid is better?
-	{state: stateSeen, event: eventSeeReorg}:    stateReorged, // Maybe stateInvalid is better?
+	{state: stateSeen, event: eventSeeBlock}:    stateInvalid, // TODO: Change to stateSeen if implementing soft-errors
+	{state: stateSeen, event: eventSeeReorg}:    stateInvalid, // TODO: Change to stateReorged if implementing soft-errors
 	{state: stateSeen, event: eventHandle}:      stateHandled,
 	{state: stateSeen, event: eventHandleReorg}: stateInvalid,
 
@@ -54,19 +61,14 @@ var watcherEngineStateMachine = map[stateEvent]blockState{
 	{state: stateHandled, event: eventHandleReorg}: stateInvalid,
 
 	{state: stateReorged, event: eventSeeBlock}:    stateInvalid,
-	{state: stateReorged, event: eventSeeReorg}:    stateInvalid,
+	{state: stateReorged, event: eventSeeReorg}:    stateInvalid, // TODO: Change to stateReorged if implementing soft-errors
 	{state: stateReorged, event: eventHandle}:      stateInvalid,
 	{state: stateReorged, event: eventHandleReorg}: stateHandledReorg,
 
 	{state: stateHandledReorg, event: eventSeeBlock}:    stateInvalid,
-	{state: stateHandledReorg, event: eventSeeReorg}:    stateHandledReorg,
+	{state: stateHandledReorg, event: eventSeeReorg}:    stateInvalid,
 	{state: stateHandledReorg, event: eventHandle}:      stateInvalid,
 	{state: stateHandledReorg, event: eventHandleReorg}: stateInvalid,
-
-	{state: stateInvalid, event: eventSeeBlock}:    stateInvalid,
-	{state: stateInvalid, event: eventSeeReorg}:    stateInvalid,
-	{state: stateInvalid, event: eventHandle}:      stateInvalid,
-	{state: stateInvalid, event: eventHandleReorg}: stateInvalid,
 }
 
 func (state *blockState) Fire(event blockEvent) {
@@ -74,8 +76,14 @@ func (state *blockState) Fire(event blockEvent) {
 		panic(fmt.Sprintf("invalid WatcherEngine event: %d", event))
 	}
 
-	self := stateEvent{state: *state, event: event}
-	newState := watcherEngineStateMachine[self]
+	this := stateEvent{state: *state, event: event}
+
+	newState, ok := watcherEngineStateMachine[this]
+	if !ok {
+		*state = stateInvalid
+		return
+	}
+
 	*state = newState
 }
 
@@ -86,13 +94,13 @@ func (state blockState) String() string {
 	case stateSeen:
 		return "SEEN"
 	case stateHandled:
-		return "PROCESSED"
+		return "HANDLED"
 	case stateReorged:
 		return "REORGED"
 	case stateHandledReorg:
-		return "REORG_HANDLED"
+		return "HANDLED_REORG"
 	case stateInvalid:
-		return "INVALID_ENGINE_STATE"
+		return "INVALID_BLOCK_STATE"
 	}
 
 	panic(fmt.Sprintf("invalid WatcherEngine state: %d", state))
@@ -117,11 +125,11 @@ func (state blockState) IsValid() bool {
 func (event blockEvent) String() string {
 	switch event {
 	case eventSeeBlock:
-		return "Got Log"
+		return "See Block"
 	case eventHandle:
-		return "Process"
+		return "Handle Block"
 	case eventSeeReorg:
-		return "Got Reorg"
+		return "See Reorg"
 	case eventHandleReorg:
 		return "Handle Reorg"
 	}

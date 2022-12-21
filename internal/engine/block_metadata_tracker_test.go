@@ -17,60 +17,67 @@ func newBlockInfo(number uint64) *superwatcher.BlockInfo {
 	}
 }
 
+func assertState(t *testing.T, expected, actual blockState) {
+	if expected != actual {
+		t.Fatalf("expecting %s state, got %s", expected.String(), actual.String())
+	}
+}
+
+// TODO: Rewrite
 func TestMetadataTracker(t *testing.T) {
 	tracker := NewTracker(3)
+	trackerKey := callerMethod("testTracker")
+
 	// GetBlockMetadata should not return nil even if it's empty
 	block69 := newBlockInfo(69)
-	if met := tracker.GetBlockMetadata("test", block69.Number, block69.String()); met == nil {
+	if met := tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String()); met == nil {
 		t.Fatal("GetBlockMetadata returns nil")
 	} else {
-		if met.state != stateNull {
-			t.Fatalf("expecting Null state, got %s", met.state.String())
-		}
+		assertState(t, stateNull, met.state)
 	}
 
-	met69 := tracker.GetBlockMetadata("test", block69.Number, block69.String())
+	met69 := tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String())
+
 	met69.state.Fire(eventSeeBlock)
-	if met69.state != stateSeen {
-		t.Fatalf("expecting Seen state, got %s", met69.state.String())
-	}
+	assertState(t, stateSeen, met69.state)
+
+	met69.state.Fire(eventHandle)
+	assertState(t, stateHandled, met69.state)
+
+	met69.state.Fire(eventSeeBlock)
+	assertState(t, stateHandled, met69.state)
 
 	// Overwrite met69 with blank metadata from GetBlockMetadata
-	met69 = tracker.GetBlockMetadata("test", block69.Number, block69.String())
-	if met69.state != stateNull {
-		t.Fatalf("expecting Null state (did not save back yet), got %s", met69.state.String())
-	}
+	met69 = tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String())
+	assertState(t, stateNull, met69.state)
 
 	// Copy state reference out and fire on it - and `metadata.state` should change too
-	state := met69.state
+	state := &met69.state
 	state.Fire(eventSeeBlock)
-
-	if met69.state != stateNull {
-		t.Fatalf("expecing met69.state to remain Null, got %s", met69.state.String())
-	}
+	assertState(t, stateSeen, met69.state)
+	state.Fire(eventHandle)
+	assertState(t, stateHandled, met69.state)
 
 	// Overwrite met69 with blank metadata from GetBlockMetadata
-	met69 = tracker.GetBlockMetadata("test", block69.Number, block69.String())
+	met69 = tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String())
 	met69.state.Fire(eventSeeBlock)
-	if met69.state != stateSeen {
-		t.Fatalf("expecing met69.state to change to Seen, got %s", met69.state.String())
-	}
+	met69.state.Fire(eventHandle)
+	assertState(t, stateHandled, met69.state)
 
-	// Save back
-	tracker.SetBlockMetadata("test", met69)
-	// And get it out again - the state should remain Seen
-	met69 = tracker.GetBlockMetadata("test", block69.Number, block69.String())
-	if met69.state != stateSeen {
-		t.Fatalf("expecing met69.state to change to Seen, got %s", met69.state.String())
-	}
+	met69.state.Fire(eventSeeReorg)
+	assertState(t, stateReorged, met69.state)
 
-	// State should remain Seen
-	met69.state.Fire(eventSeeBlock)
-	met69.state.Fire(eventSeeBlock)
-	met69.state.Fire(eventSeeBlock)
-	if met69.state != stateSeen {
-		t.Fatalf("expecing met69.state to remain Seen, got %s", met69.state.String())
-	}
+	tracker.SetBlockMetadata(trackerKey, met69)
+	met69 = tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String())
+	assertState(t, stateReorged, met69.state)
+
+	// Save metadata with artifacts back to tracker
+	tracker.SetBlockMetadata(trackerKey, met69)
+	// Delete met69 data
+	met69 = nil
+	// Re-get the saved metadata, and it should remain stateReorged
+	met69 = tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String())
+	assertState(t, stateReorged, met69.state)
 
 	type foo struct {
 		a int
@@ -88,15 +95,6 @@ func TestMetadataTracker(t *testing.T) {
 		&bar{
 			x: 69, y: "bar69",
 		},
-	}
-
-	// Save metadata with artifacts back to tracker
-	tracker.SetBlockMetadata("test", met69)
-	met69 = nil
-
-	met69 = tracker.GetBlockMetadata("test", block69.Number, block69.String())
-	if met69.state != stateSeen {
-		t.Fatalf("expecting met69.state to remain Seen, got %s", met69.state.String())
 	}
 	for i, art := range met69.artifacts {
 		switch i {
