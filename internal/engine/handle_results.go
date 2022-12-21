@@ -45,9 +45,9 @@ func (e *engine) handleResults(ctx context.Context) error {
 				zap.Any("metadata artifacts", metadata.artifacts),
 			)
 
-			metadata.state.Fire(EventReorg)
+			metadata.state.Fire(eventSeeReorg)
 			// Only process block with Reorged state
-			if metadata.state != StateReorged {
+			if metadata.state != stateReorged {
 				e.debugger.Debug(
 					1, "skip bad reorged block logs",
 					zap.String("state", metadata.state.String()),
@@ -86,7 +86,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		// Update metadata for reorged blocks
 		for _, metadata := range reorgedBlocks.metadata {
-			metadata.state.Fire(EventHandleReorg)
+			metadata.state.Fire(eventHandleReorg)
 			metadata.artifacts = reorgedArtifacts[common.HexToHash(metadata.blockHash)]
 
 			e.debugger.Debug(
@@ -101,13 +101,13 @@ func (e *engine) handleResults(ctx context.Context) error {
 		var goodBlocks engineBlocks
 		for _, block := range result.GoodBlocks {
 			metadata := e.metadataTracker.GetBlockMetadata(callerGoodLogs, block.Number, block.String())
-			metadata.state.Fire(EventGotLog)
+			metadata.state.Fire(eventSeeBlock)
 
 			// Update state to tracker
 			e.metadataTracker.SetBlockMetadata(callerGoodLogs, metadata)
 
 			// Only process block with Seen state
-			if metadata.state != StateSeen {
+			if metadata.state != stateSeen {
 				e.debugger.Debug(
 					1, "skip goodBlock",
 					zap.String("state", metadata.state.String()),
@@ -135,7 +135,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 		}
 
 		for _, metadata := range goodBlocks.metadata {
-			metadata.state.Fire(EventProcess)
+			metadata.state.Fire(eventHandle)
 			metadata.artifacts = artifacts[common.HexToHash(metadata.blockHash)]
 
 			e.debugger.Debug(

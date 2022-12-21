@@ -1,9 +1,12 @@
 # Package `engine`
 
 This package defines the superwatcher engine (core engine), a component implementing `superwatcher.WatcherEngine`
-that processes logs filtered by the emitter.
+that processes logs filtered by the emitter. It is designed to help service code interface with the emitter
+in a managed fashion.
 
 The engine wraps [`superwatcher.ServiceEngine`](../../service_engine.go) and passes the logs to service code.
+
+> The other, dumber and faster `WatcherEngine` implementation is the [`thinEngine`](../thinengine/)
 
 ## Interactions with `superwatcher.ServiceEngine`
 
@@ -12,26 +15,32 @@ The engine wraps [`superwatcher.ServiceEngine`](../../service_engine.go) and pas
 Service code expects that every data passed to it is a new, current, non-duplicate data, which is why the engine
 keeps track of the state for each block, only passing relavant logs (i.e. with current state) to the service code.
 
+See [`STATES.md`](./STATES.md) for how this works. If you don't want the engine to manage these states for you,
+use [`thinEngine`](../thinengine/) instead.
+
 ### Artifacts
 
-> The artifacts can be anything, and the service code and omit it altogether by returning nil artifacts.
+> **Service code can omit this feature altogether by returning `nil` artifacts**.
 
 In addition to keeping processing states, the engine also stores the so-called artifacts for the service.
-The artifacts are mapped to a block's hash, and maybe particularly useful if the service code needs to process a
-transaction with multiple logs from multiple contracts.
+
+The artifacts returned by the `ServiceEngine` is in the form of `map[common.Hash][]superwatcher.Artifact`,
+with the block hash as map key.
+
+** Inside the engine `metadataTracker`, artifacts storage keys are formatted strings of `"$number:$hash"`**,
+and maybe particularly useful if the service code needs to process a transaction with multiple logs
+from multiple contracts.
 
 The example of multi-contracts service is [ENS engine](../../superwatcher-demo/internal/subengines/ensengine/)
--- to process a new ENS entry, the service needs logs from _ENS Registrar_ and _ENS Controller_ contracts.
+-- to process a new ENS entry, the service needs logs from `ENS Registrar` and `ENS Controller` contracts.
 
 The logs from the Registrar contract contains basic information like ENS ID, expiration, but not the domain name.
 To actually get a domain name value, the service needs to get another log from the Controller contract.
 
-This means that the Controller contract handler would need access to the previous artifact from processing Registrar contract,
-in order to fill the fields of an ENS entry.
+This means that the `ENS Controller` contract handler would need access to the previous artifact
+from `ENS Registrar` handler, in order to fill the fields of an ENS entry.
 
-### Writing `superwatcher.ServiceEngine` middleware (i.e. the router style)
-
-You can, ofc, implement your own way for having different code for different contracts, and that is fine.
+### Guide: Writing `superwatcher.ServiceEngine` middleware (i.e. the router style)
 
 We could write a `ServiceEngine` that processes all logs from all interesting contracts `A`, `B`, and `C`
 with only one `ServiceEngine`, and all the logs routing is done inside of the service, without superwatcher context.

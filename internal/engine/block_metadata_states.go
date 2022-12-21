@@ -2,140 +2,142 @@ package engine
 
 import (
 	"fmt"
-
-	"go.uber.org/zap"
-
-	"github.com/artnoi43/superwatcher/pkg/logger"
 )
+
+// Package `engine` uses a simple state machine to track each block's state.
+// See STATES.md for explanation of the design decision.
+
+// A block's initial (default) state `blockState` is always `stateNull`,
+// and we can mutate the block's state by firing blockEvent event on the state.
+// Note that each blockState corresponds the a block's hash (`see metadataTracker`).
 
 type (
-	BlockState uint8
-	BlockEvent uint8
+	blockState uint8 // blockState is used by WatcherEngine to determine if it should pass a block's logs to ServiceEngine.
+	blockEvent uint8 // blockEvent is used by WatcherEngine to mutate blockState according to the state machine.
 )
 
+// All states and events are defined in the same const block to avoid collision.
 const (
-	StateNull BlockState = iota
-	StateSeen
-	StateProcessed
-	StateReorged
-	StateReorgHandled
-	StateInvalid
+	stateNull         blockState = iota // Block was never seen before by WatcherEngine (default blockState)
+	stateSeen                           // Block was seen by WatcherEngine
+	stateHandled                        // Block was processed by ServiceEngine
+	stateReorged                        // Block was present in a FilterResult.ReorgedBlocks
+	stateHandledReorg                   // Block's reorg was handled by ServiceEngine
+	stateInvalid                        // Invalid blockState - program will panic
 
-	EventInvalid BlockEvent = iota
-	EventGotLog
-	EventProcess
-	EventReorg
-	EventHandleReorg
+	eventInvalid     blockEvent = iota // Invalid blockEvent - program will panic (default blockEvent)
+	eventSeeBlock                      // When WatcherEngine sees a block
+	eventHandle                        // When ServiceEngine has processed the block's logs
+	eventSeeReorg                      // When WatcherEngine sees the block in FilterResult.ReorgedBlocks
+	eventHandleReorg                   // When ServiceEngine has handled the reorg event
 )
 
 type stateEvent = struct {
-	state BlockState
-	event BlockEvent
+	state blockState
+	event blockEvent
 }
 
-var engineStateTransitionTable = map[stateEvent]BlockState{
-	{state: StateNull, event: EventGotLog}:      StateSeen,
-	{state: StateNull, event: EventProcess}:     StateInvalid,
-	{state: StateNull, event: EventReorg}:       StateReorged,
-	{state: StateNull, event: EventHandleReorg}: StateInvalid,
+var watcherEngineStateMachine = map[stateEvent]blockState{
+	{state: stateNull, event: eventSeeBlock}:    stateSeen,
+	{state: stateNull, event: eventSeeReorg}:    stateInvalid,
+	{state: stateNull, event: eventHandle}:      stateInvalid,
+	{state: stateNull, event: eventHandleReorg}: stateInvalid,
 
-	{state: StateSeen, event: EventGotLog}:      StateSeen,
-	{state: StateSeen, event: EventProcess}:     StateProcessed,
-	{state: StateSeen, event: EventReorg}:       StateReorged,
-	{state: StateSeen, event: EventHandleReorg}: StateReorgHandled,
+	{state: stateSeen, event: eventSeeBlock}:    stateSeen,    // Maybe stateInvalid is better?
+	{state: stateSeen, event: eventSeeReorg}:    stateReorged, // Maybe stateInvalid is better?
+	{state: stateSeen, event: eventHandle}:      stateHandled,
+	{state: stateSeen, event: eventHandleReorg}: stateInvalid,
 
-	{state: StateProcessed, event: EventGotLog}:      StateProcessed,
-	{state: StateProcessed, event: EventProcess}:     StateProcessed,
-	{state: StateProcessed, event: EventReorg}:       StateReorged,
-	{state: StateProcessed, event: EventHandleReorg}: StateReorgHandled,
+	{state: stateHandled, event: eventSeeBlock}:    stateHandled,
+	{state: stateHandled, event: eventSeeReorg}:    stateReorged,
+	{state: stateHandled, event: eventHandle}:      stateInvalid,
+	{state: stateHandled, event: eventHandleReorg}: stateInvalid,
 
-	{state: StateReorged, event: EventGotLog}:      StateReorged,
-	{state: StateReorged, event: EventProcess}:     StateInvalid,
-	{state: StateReorged, event: EventReorg}:       StateReorged,
-	{state: StateReorged, event: EventHandleReorg}: StateReorgHandled,
+	{state: stateReorged, event: eventSeeBlock}:    stateInvalid,
+	{state: stateReorged, event: eventSeeReorg}:    stateInvalid,
+	{state: stateReorged, event: eventHandle}:      stateInvalid,
+	{state: stateReorged, event: eventHandleReorg}: stateHandledReorg,
 
-	{state: StateReorgHandled, event: EventGotLog}:      StateInvalid,
-	{state: StateReorgHandled, event: EventProcess}:     StateInvalid,
-	{state: StateReorgHandled, event: EventReorg}:       StateReorged,
-	{state: StateReorgHandled, event: EventHandleReorg}: StateInvalid,
+	{state: stateHandledReorg, event: eventSeeBlock}:    stateInvalid,
+	{state: stateHandledReorg, event: eventSeeReorg}:    stateHandledReorg,
+	{state: stateHandledReorg, event: eventHandle}:      stateInvalid,
+	{state: stateHandledReorg, event: eventHandleReorg}: stateInvalid,
 
-	{state: StateInvalid, event: EventGotLog}:      StateInvalid,
-	{state: StateInvalid, event: EventProcess}:     StateInvalid,
-	{state: StateInvalid, event: EventReorg}:       StateInvalid,
-	{state: StateInvalid, event: EventHandleReorg}: StateInvalid,
+	{state: stateInvalid, event: eventSeeBlock}:    stateInvalid,
+	{state: stateInvalid, event: eventSeeReorg}:    stateInvalid,
+	{state: stateInvalid, event: eventHandle}:      stateInvalid,
+	{state: stateInvalid, event: eventHandleReorg}: stateInvalid,
 }
 
-func (state *BlockState) Fire(event BlockEvent) {
+func (state *blockState) Fire(event blockEvent) {
 	if !event.IsValid() {
-		logger.Panic("invalid event", zap.String("event", event.String()))
+		panic(fmt.Sprintf("invalid WatcherEngine event: %d", event))
 	}
 
 	self := stateEvent{state: *state, event: event}
-	newState := engineStateTransitionTable[self]
+	newState := watcherEngineStateMachine[self]
 	*state = newState
 }
 
-func (state BlockState) String() string {
+func (state blockState) String() string {
 	switch state {
-	case StateNull:
+	case stateNull:
 		return "NULL"
-	case StateSeen:
+	case stateSeen:
 		return "SEEN"
-	case StateProcessed:
+	case stateHandled:
 		return "PROCESSED"
-	case StateReorged:
+	case stateReorged:
 		return "REORGED"
-	case StateReorgHandled:
+	case stateHandledReorg:
 		return "REORG_HANDLED"
-	case StateInvalid:
+	case stateInvalid:
 		return "INVALID_ENGINE_STATE"
 	}
 
-	panic(fmt.Sprintf("unexpected invalid state: %d", state))
+	panic(fmt.Sprintf("invalid WatcherEngine state: %d", state))
 }
 
-func (state BlockState) IsValid() bool {
+func (state blockState) IsValid() bool {
 	switch state {
-	case StateInvalid:
+	case stateInvalid:
 		return false
 	case
-		StateNull,
-		StateSeen,
-		StateProcessed,
-		StateReorged,
-		StateReorgHandled:
+		stateNull,
+		stateSeen,
+		stateHandled,
+		stateReorged,
+		stateHandledReorg:
 		return true
 	}
 
-	panic(fmt.Sprintf("unexpected invalid state: %d", state))
+	panic(fmt.Sprintf("invalid WatcherEngine state: %d", state))
 }
 
-func (event BlockEvent) String() string {
+func (event blockEvent) String() string {
 	switch event {
-	case EventGotLog:
+	case eventSeeBlock:
 		return "Got Log"
-	case EventProcess:
+	case eventHandle:
 		return "Process"
-	case EventReorg:
+	case eventSeeReorg:
 		return "Got Reorg"
-	case EventHandleReorg:
+	case eventHandleReorg:
 		return "Handle Reorg"
 	}
 
-	panic(fmt.Sprintf("unexpected invalid event: %d", event))
+	panic(fmt.Sprintf("invalid WatcherEngine event: %d", event))
 }
 
-func (event BlockEvent) IsValid() bool {
+func (event blockEvent) IsValid() bool {
 	switch event {
-	case EventInvalid:
-		return false
 	case
-		EventGotLog,
-		EventProcess,
-		EventReorg,
-		EventHandleReorg:
+		eventSeeBlock,
+		eventHandle,
+		eventSeeReorg,
+		eventHandleReorg:
 		return true
 	}
 
-	panic(fmt.Sprintf("unexpected invalid event: %d", event))
+	return false
 }
