@@ -84,6 +84,7 @@ func (e *emitter) loopFilterLogs(
 
 			// updateStatus is called after e.filterLogs returned. It updates status to newStatus,
 			// and also increments the counter for tracking retries during reorg.
+			// If |isReorging| is true, then the emitter *goes back* until the chain stops reorging.
 			updateStatus := func(isReorging bool) {
 				status = newStatus
 				status.IsReorging = isReorging
@@ -113,6 +114,14 @@ func (e *emitter) loopFilterLogs(
 					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", newStatus))
 					continue
 				}
+
+				if errors.Is(err, errProcessReorg) {
+					e.debugger.Debug(
+						1, "got errProcessReorg - contact prem@cleverse.com for reporting this bug",
+						zap.Error(err),
+					)
+				}
+
 				return errors.Wrap(err, "unexpected filterLogs error")
 			}
 

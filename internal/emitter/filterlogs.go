@@ -16,7 +16,7 @@ import (
 )
 
 // filterLogs filters Ethereum event logs from fromBlock to toBlock,
-// and sends *types.Log and *lib.BlockInfo through w.logChan and w.reorgChan respectively.
+// and sends *types.Log and *superwatcher.BlockInfo through w.logChan and w.reorgChan respectively.
 // If an error is encountered, filterLogs returns with error.
 // filterLogs should not be the one sending the error through w.errChan.
 func (e *emitter) filterLogs(
@@ -69,11 +69,13 @@ func (e *emitter) filterLogs(
 		if removedBlocks[blockNumber] {
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
-				logger.Panic(
+				logger.Warn(
 					"blockInfo marked as reorged but was not found in tracker",
 					zap.Uint64("blockNumber", blockNumber),
 					zap.String("freshHash", reorgedBlock.String()),
 				)
+
+				return errors.Wrapf(errProcessReorg, "reorgedBlock %d not found in tracker", blockNumber)
 			}
 
 			logger.Info(
@@ -92,7 +94,7 @@ func (e *emitter) filterLogs(
 
 		// New blocks will use fresh information. This includes new block after a reorg.
 		logs, ok := mapFreshLogs[blockNumber]
-		if !ok {
+		if !ok || len(logs) == 0 {
 			continue
 		}
 		hash, ok := mapFreshHashes[blockNumber]
@@ -106,7 +108,6 @@ func (e *emitter) filterLogs(
 			Hash:   hash,
 			Logs:   logs,
 		}
-		b.Logs = mapFreshLogs[blockNumber]
 		e.tracker.addTrackerBlockInfo(b)
 
 		// Publish only block with logs
