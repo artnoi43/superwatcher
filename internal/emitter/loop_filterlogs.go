@@ -1,10 +1,11 @@
 package emitter
 
+// TODO: Refactor. Too complex.
+
 import (
 	"context"
 	"time"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-type filterLogStatus struct {
+type emitterStatus struct {
 	FromBlock         uint64 `json:"fromBlock"`
 	ToBlock           uint64 `json:"toBlock"`
 	CurrentBlock      uint64 `json:"currentBlock"`
@@ -32,7 +33,7 @@ func (e *emitter) sleep() {
 // and will only returns if (some) errors happened.
 func (e *emitter) loopFilterLogs(
 	ctx context.Context,
-	status *filterLogStatus,
+	status *emitterStatus,
 ) error {
 	// Assume that this is a normal first start (watcher restarted).
 	status.GoBackFirstStart = true
@@ -135,15 +136,15 @@ func (e *emitter) loopFilterLogs(
 	}
 }
 
-// computeFromBlockToBlock gets relevant block numbers using emitter's resources
-// such as |e.client| and |e.stateDataGateway| before calling the other (non-method) `computeFromBlockToBlock`,
-// which does not use emitter's resources.
-// It returns old status with updated values if there was an error, or new status if successful.
+// computeFromBlockToBlock gets relevant block numbers using emitter's resources such as |e.client|,
+// or |e.stateDataGateway|, before calling the other (non-method) `computeFromBlockToBlock`,
+// which does not use emitter's resources. It returns old status with updated values if there was an error,
+// or a pointer to a new `emitterStatus` if successful.
 func (e *emitter) computeFromBlockToBlock(
 	ctx context.Context,
-	prevStatus *filterLogStatus,
+	prevStatus *emitterStatus,
 ) (
-	*filterLogStatus,
+	*emitterStatus,
 	error,
 ) {
 	// Get chain's tallest block number and compare it with lastRecordedBlock
@@ -162,7 +163,8 @@ func (e *emitter) computeFromBlockToBlock(
 			return prevStatus, errors.Wrap(err, "failed to get last recorded block from Redis")
 		}
 
-		// If no lastRecordedBlock, then it means the emitter has never been run on the host: there's no need to look back.
+		// If code reaches this line, then lastRecordedBlock was not found in the database.
+		// This means the emitter has never been run on the host and **there's no need to look back**.
 		prevStatus.GoBackFirstStart = false
 		// If no lastRecordedBlock, use startBlock (contract genesis block)
 		lastRecordedBlock = e.conf.StartBlock
@@ -192,7 +194,7 @@ func (e *emitter) computeFromBlockToBlock(
 		currentBlock,
 		lastRecordedBlock,
 		e.conf.FilterRange,
-		e.conf.GoBackRetries,
+		e.conf.MaxGoBackRetries,
 		e.conf.StartBlock,
 		e.debugger,
 	)
@@ -201,11 +203,13 @@ func (e *emitter) computeFromBlockToBlock(
 	}
 
 	// If fromBlock was too far back, i.e. fromBlock = 0
-	if fromBlock < e.conf.StartBlock && toBlock >= e.conf.StartBlock {
+	// This if check can now be safely removed, as the same checks are done in fromBlockToBlockNormal,
+	// fromBlockToBlockGoBackFirstRun, and fromBlockToBlockIsReorging.
+	if fromBlock < e.conf.StartBlock {
 		fromBlock = e.conf.StartBlock
 	}
 
-	return &filterLogStatus{
+	return &emitterStatus{
 		FromBlock:         fromBlock,
 		ToBlock:           toBlock,
 		CurrentBlock:      currentBlock,
@@ -225,7 +229,7 @@ func (e *emitter) computeFromBlockToBlock(
 // (3) Normal cases - this should be the base case for computing fromBlock and toBlock.
 // The emitter will use `fromBlockToBlockNormal` function to compute the values.
 func computeFromBlockToBlock(
-	prevStatus *filterLogStatus,
+	prevStatus *emitterStatus,
 	currentBlock uint64,
 	lastRecordedBlock uint64,
 	filterRange uint64,
@@ -237,35 +241,27 @@ func computeFromBlockToBlock(
 	uint64,
 	error,
 ) {
-	var fromBlock, toBlock uint64
+	var err error
+	var fromBlock, toBlock, goBack uint64
 
-	// Special case
 	if prevStatus.GoBackFirstStart {
+
 		// Start with going back for filterRange * goBackRetries blocks if watcher was restarted
 		// lastRecordedBlock = 80, filterRange = 10, maxRetries = 5
-		// 1st run: from(31), to(40)   [goBackFirstStart] -> lastRecordedBlock = 40 (goBack: range = 5)
-		// 2nd run: from(31), to(50)   [normalCase]       -> lastRecordedBlock = 50 (range = 10)
-		// 3rd run: from(41), to(60)   [normalCase]       -> lastRecordedBlock = 60 (range = 10)
+		// 31 - 40  [goBackFirstStart] -> lastRecordedBlock = 40 lookBack = 50, fwdRange = 0
+		// 31 - 50  [normalCase]       -> lastRecordedBlock = 50 lookBack = 10, fwdRange = 50 - 40   = 10
+		// 41 - 60  [normalCase]       -> lastRecordedBlock = 60 lookBack = 10, fwdRange = 60 - 50   = 10
 
 		prevStatus.GoBackFirstStart = false
-		goBack := filterRange * prevStatus.RetriesCount
 
-		firstNewBlock := lastRecordedBlock + 1
-		// Prevent overflow
-		if goBack > firstNewBlock {
-			debugger.Debug(
-				1, "goBack > firstNewBlock",
-				zap.Uint64("goBack", goBack),
-				zap.Uint64("firstNewBlock", firstNewBlock),
-			)
-
-			fromBlock = startBlock
-		} else {
-			fromBlock = firstNewBlock - goBack
-		}
-
-		// The range is the same in firstStart
-		toBlock = fromBlock + filterRange - 1
+		fromBlock, toBlock, goBack = fromBlockToBlockGoBackFirstRun(
+			startBlock,
+			currentBlock,
+			lastRecordedBlock,
+			filterRange,
+			maxRetries,
+			prevStatus,
+		)
 
 		debugger.Debug(
 			1,
@@ -274,56 +270,55 @@ func computeFromBlockToBlock(
 			zap.Uint64("goBack", goBack),
 			zap.Uint64("fromBlock", fromBlock),
 		)
+
 	} else if prevStatus.IsReorging {
+
 		// The lookBack range will grow after each retries, but not the forward range
 		// lastRecordedBlock = 80, filterRange = 10
-		// 71 - 90   # none reorged in this loop       lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80   = 10
-		// 81 - 100  # none reoged in this loop        lastRecordedBlock = 100, lookBack = 10  fwdRange = 100 - 90  = 10
-		// 91 - 110  # 91 reorged in this loop         lastRecordedBlock = 110, lookBack = 10  fwdRange = 110 - 100 = 10
-		// 81 - 110  # 81 reorged in this loop         lastRecordedBlock = 110, lookBack = 15  fwdRange = 110 - 110 = 0
-		// 71 - 110  # 71 reorged in this loop         lastRecordedBlock = 110, lookBack = 20  fwdRange = 110 - 110 = 0
-		// 61 - 110  # none reorged in this loop       lastRecordedBlock = 110, lookBack = 25, fwdRange = 110 - 110 = 0
-		// 101 - 120 # normal case continues           lastRecordedBlock = 120, lookBack = 10, fwdRange = 120 - 110 = 10
+		// 71  - 90   [normalCase]                -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80   = 10
+		// 81  - 100  [normalCase]                -> lastRecordedBlock = 100, lookBack = 10, fwdRange = 100 - 90  = 10
+		// 91  - 110  # 91 reorged in this loop   -> lastRecordedBlock = 110, lookBack = 10, fwdRange = 110 - 100 = 10
+		// 81  - 110  # 81 reorged in this loop   -> lastRecordedBlock = 110, lookBack = 15, fwdRange = 110 - 110 = 0
+		// 71  - 110  # 71 reorged in this loop   -> lastRecordedBlock = 110, lookBack = 20, fwdRange = 110 - 110 = 0
+		// 61  - 110  # none reorged in this loop -> lastRecordedBlock = 110, lookBack = 25, fwdRange = 110 - 110 = 0
+		// 101 - 120  [normalCase]                -> lastRecordedBlock = 120, lookBack = 10, fwdRange = 120 - 110 = 10
 
-		if prevStatus.RetriesCount > maxRetries {
-			return prevStatus.FromBlock, prevStatus.ToBlock, errors.Wrapf(ErrMaxRetriesReached, "%d goBackRetries", prevStatus.RetriesCount)
-		}
+		fromBlock, toBlock, err = fromBlockToBlockIsReorging(
+			startBlock,
+			currentBlock,
+			lastRecordedBlock,
+			filterRange,
+			maxRetries,
+			prevStatus,
+		)
 
-		// goBack in this case (reorging) is fixed
-		goBack := filterRange
-
-		// goBack is 1500, but (prev) fromBlock is 1050
-		if goBack > prevStatus.FromBlock {
+		if err != nil {
 			debugger.Debug(
-				1, "goBack > fromBlock",
-				zap.Uint64("goBack", goBack),
-				zap.Uint64("fromBlock", fromBlock),
-				zap.Uint64("currentRetries", prevStatus.RetriesCount),
+				1, "goBack maxRetries reached",
+				zap.Uint64("retries counts", prevStatus.RetriesCount),
 			)
-
-			fromBlock = startBlock
-		} else {
-			// goBack from the last fromBlock
-			fromBlock = prevStatus.FromBlock - goBack
 		}
 
-		// toBlock does not go back, so we don't update it,
-		// unless currentBlock was shrunk during reorg too.
-		toBlock = gslutils.Min(prevStatus.ToBlock, currentBlock)
 	} else {
+
 		// Call fromBlockToBlock in normal cases
 		// lastRecordedBlock = 80, filterRange = 10
-		// 71 - 90   # none reorged in this loop       lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10
-		// 81 - 100  # none reoged in this loop        lastRecordedBlock = 100, lookBack = 10  fwdRange = 100 - 90   = 10
-		// 91 - 110  # none reoged in this loop        lastRecordedBlock = 110, lookBack = 10  fwdRange = 110 - 100  = 10
-		// 101 - 120 # none reoged in this loop        lastRecordedBlock = 120, lookBack = 10  fwdRange = 120 - 110  = 10
+		// 71  - 90   [normalCase] -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10
+		// 81  - 100  [normalCase] -> lastRecordedBlock = 100, lookBack = 10, fwdRange = 100 - 90   = 10
+		// 91  - 110  [normalCase] -> lastRecordedBlock = 110, lookBack = 10, fwdRange = 110 - 100  = 10
+		// 101 - 120  [normalCase] -> lastRecordedBlock = 120, lookBack = 10, fwdRange = 120 - 110  = 10
 
-		fromBlock, toBlock = fromBlockToBlockNormal(startBlock, currentBlock, lastRecordedBlock, filterRange)
+		fromBlock, toBlock = fromBlockToBlockNormal(
+			startBlock,
+			currentBlock,
+			lastRecordedBlock,
+			filterRange,
+		)
 	}
 
 	// Update status here too
 	prevStatus.FromBlock = fromBlock
 	prevStatus.ToBlock = toBlock
 
-	return fromBlock, toBlock, nil
+	return fromBlock, toBlock, err
 }

@@ -43,7 +43,7 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			// We use fakeRedis and fakeEthClient, so no need for token strings.
 			StartBlock:    testCase.Param.StartBlock,
 			FilterRange:   10,
-			GoBackRetries: 2,
+			MaxGoBackRetries: 2,
 			LoopInterval:  0,
 			LogLevel:      logLevel,
 		}

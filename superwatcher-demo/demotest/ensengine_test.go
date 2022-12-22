@@ -98,11 +98,11 @@ func testServiceEngineENSV1(
 ) {
 	conf := &config.EmitterConfig{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:    testCase.Param.StartBlock,
-		FilterRange:   10,
-		GoBackRetries: 2,
-		LoopInterval:  0,
-		LogLevel:      4,
+		StartBlock:       testCase.Param.StartBlock,
+		FilterRange:      10,
+		MaxGoBackRetries: 2,
+		LoopInterval:     0,
+		LogLevel:         4,
 	}
 
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine

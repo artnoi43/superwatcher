@@ -23,7 +23,7 @@ Configuration field `FilterRange` determines how many _new blocks_ the emitter w
 > The logic behind this is not yet stable
 
 The main loop for the emitter is [`loopFilterLogs`](./loop_filterlogs.go),
-which determines the `fromBlock` and `toBlock` for `filterLogs(fromBlock, toBlock)`.
+which [determines `fromBlock` and `toBlock`](./FILTERING.md) for `filterLogs(fromBlock, toBlock)`.
 
 The emitter decides which block to start from based on `lastRecordedBlock`,
 which is persistently saved on Redis.

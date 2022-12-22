@@ -76,7 +76,7 @@ func New(
 // Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.
 // When |ctx| is canceled elsewhere, Loop calls *emitter.shutdown and returns value of ctx.Err()
 func (e *emitter) Loop(ctx context.Context) error {
-	status := new(filterLogStatus)
+	status := new(emitterStatus)
 
 	for {
 		select {

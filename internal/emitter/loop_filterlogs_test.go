@@ -6,6 +6,19 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
+func newStatus(
+	goBackFirstStart, isReorging bool,
+	fromBlock, toBlock, maxRetries uint64,
+) *emitterStatus {
+	return &emitterStatus{
+		GoBackFirstStart: goBackFirstStart,
+		IsReorging:       isReorging,
+		FromBlock:        fromBlock,
+		ToBlock:          toBlock,
+		RetriesCount:     maxRetries,
+	}
+}
+
 func TestComputeFromBlockToBlock(t *testing.T) {
 	type testCase struct {
 		Name               string `json:"Name"`
@@ -17,19 +30,6 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 		MaxRetries         uint64 `json:"retriesCount"`
 		GoBackFirstStart   bool   `json:"goBackFirstStart"`
 		Reorging           bool   `json:"reorging"`
-	}
-
-	newStatus := func(
-		goBackFirstStart, isReorging bool,
-		fromBlock, toBlock, maxRetries uint64,
-	) *filterLogStatus {
-		return &filterLogStatus{
-			GoBackFirstStart: goBackFirstStart,
-			IsReorging:       isReorging,
-			FromBlock:        fromBlock,
-			ToBlock:          toBlock,
-			RetriesCount:     maxRetries,
-		}
 	}
 
 	reorging := true

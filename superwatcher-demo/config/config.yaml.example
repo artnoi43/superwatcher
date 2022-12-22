@@ -3,7 +3,7 @@ superwatcher_config:
   node_url: "https://mybestnode.net/0xdeadbeef"
   redis_conn_str: "localhost:6379"
   loop_interval: 1
-  start_block: 6000000000
+  start_block: 6000000
   filter_range: 10
-  go_back_retries: 2
+  max_go_back_retries: 2
   log_level: 1

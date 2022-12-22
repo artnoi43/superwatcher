@@ -150,7 +150,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 		// TODO: How many should we clear?
 		e.metadataTracker.ClearUntil(
-			result.LastGoodBlock - (emitterConfig.FilterRange * emitterConfig.GoBackRetries),
+			result.LastGoodBlock - (emitterConfig.FilterRange * emitterConfig.MaxGoBackRetries),
 		)
 
 		var lastRecordedBlock uint64
