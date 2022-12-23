@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
-	"github.com/artnoi43/superwatcher/pkg/logger"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -103,16 +102,18 @@ func (e *emitter) loopFilterLogs(
 				zap.Any("current_status", newStatus),
 			)
 
-			if err := e.filterLogs(
+			filterResult, err := e.poller.filterLogs(
 				loopCtx,
 				newStatus.FromBlock,
 				newStatus.ToBlock,
-			); err != nil {
+			)
+
+			if err != nil {
 				if errors.Is(err, errFromBlockReorged) {
 					// Continue to filter from fromBlock
 					updateStatus(true)
 
-					logger.Warn("fromBlock reorged", zap.Any("emitterStatus", newStatus))
+					e.debugger.Warn(1, "fromBlock reorged", zap.Any("emitterStatus", newStatus))
 					continue
 				}
 
@@ -126,6 +127,16 @@ func (e *emitter) loopFilterLogs(
 				return errors.Wrap(err, "unexpected filterLogs error")
 			}
 
+			// End loop
+			e.debugger.Debug(
+				1, "to be emitted",
+				zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
+				zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
+				zap.Uint64("lastGoodBlock", filterResult.LastGoodBlock),
+			)
+
+			e.emitFilterResult(filterResult)
+			e.SyncsWithEngine()
 			updateStatus(false)
 
 			e.debugger.Debug(

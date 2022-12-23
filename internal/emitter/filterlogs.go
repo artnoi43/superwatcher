@@ -19,18 +19,21 @@ import (
 // and sends *types.Log and *superwatcher.BlockInfo through w.logChan and w.reorgChan respectively.
 // If an error is encountered, filterLogs returns with error.
 // filterLogs should not be the one sending the error through w.errChan.
-func (e *emitter) filterLogs(
+func (e *poller) filterLogs(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
-) error {
+) (
+	*superwatcher.FilterResult,
+	error,
+) {
 	// Filter event logs with retries
 	eventLogs, err := gslutils.RetryWithReturn(
 		fmt.Sprintf("getLogs from %d to %d", fromBlock, toBlock),
 
 		func() ([]types.Log, error) {
 			// No error wrap because in retry mode
-			return e.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
+			return e.filterFunc(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
 				FromBlock: big.NewInt(int64(fromBlock)),
 				ToBlock:   big.NewInt(int64(toBlock)),
 				Addresses: e.addresses,
@@ -43,7 +46,7 @@ func (e *emitter) filterLogs(
 		gslutils.LastErrorOnly(true),
 	)
 	if err != nil {
-		return errors.Wrap(errFetchError, err.Error())
+		return nil, errors.Wrap(errFetchError, err.Error())
 	}
 
 	// Wait here for logs and headers
@@ -51,7 +54,7 @@ func (e *emitter) filterLogs(
 	e.debugger.Debug(2, "got headers and logs", zap.Int("logs", lenLogs))
 
 	// Clear all tracker's blocks before fromBlock - filterRange
-	until := fromBlock - e.conf.FilterRange
+	until := fromBlock - e.filterRange
 	e.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
 	e.tracker.clearUntil(until)
 
@@ -69,13 +72,13 @@ func (e *emitter) filterLogs(
 		if removedBlocks[blockNumber] {
 			reorgedBlock, foundInTracker := e.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
-				logger.Warn(
-					"blockInfo marked as reorged but was not found in tracker",
+				e.debugger.Warn(
+					1, "blockInfo marked as reorged but was not found in tracker",
 					zap.Uint64("blockNumber", blockNumber),
 					zap.String("freshHash", reorgedBlock.String()),
 				)
 
-				return errors.Wrapf(errProcessReorg, "reorgedBlock %d not found in tracker", blockNumber)
+				return nil, errors.Wrapf(errProcessReorg, "reorgedBlock %d not found in tracker", blockNumber)
 			}
 
 			logger.Info(
@@ -99,7 +102,7 @@ func (e *emitter) filterLogs(
 		}
 		hash, ok := mapFreshHashes[blockNumber]
 		if !ok {
-			return errors.Wrapf(errNoHash, "blockNumber %d", blockNumber)
+			return nil, errors.Wrapf(errNoHash, "blockNumber %d", blockNumber)
 		}
 
 		// Only add fresh, canonical blockInfo with interesting logs
@@ -121,28 +124,15 @@ func (e *emitter) filterLogs(
 	// **The reorged blocks different hashes have also been saved to tracker,
 	// so if they come back in the next loop, with the same hash here, they'll be marked as non-reorg blocks**.
 	if removedBlocks[fromBlock] {
-		return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock)
+		return nil, errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock)
 	}
 
 	// Publish filterResult via e.filterResultChan
 	filterResult.FromBlock = fromBlock
 	filterResult.ToBlock = toBlock
 	filterResult.LastGoodBlock = lastGoodBlock(filterResult)
-	e.emitFilterResult(filterResult)
 
-	// End loop
-	e.debugger.Debug(
-		1, "number of logs published by filterLogs",
-		zap.Int("eventLogs (filtered)", lenLogs),
-		zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
-		zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
-		zap.Uint64("lastGoodBlock", filterResult.LastGoodBlock),
-	)
-
-	// Waits until engine syncs
-	e.SyncsWithEngine()
-
-	return nil
+	return filterResult, nil
 }
 
 // lastGoodBlock computes `superwatcher.FilterResult.lastGoodBlock` based on |result|.

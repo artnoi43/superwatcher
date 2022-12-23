@@ -3,7 +3,9 @@ package emitter
 import (
 	"context"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -12,34 +14,42 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// emitter implements Watcher, and other than Config,
-// other fields of this structure are defined as ifaces,
-// to facil mock testing.
+// poller is a struct used to filter event logs and detecting chain reorg,
+// i.e. it produces superwatcher.FilterResult for the emitter.
+type poller struct {
+	topics    [][]common.Hash
+	addresses []common.Address
+
+	filterRange uint64
+	filterFunc  func(context.Context, ethereum.FilterQuery) ([]types.Log, error)
+	tracker     *blockInfoTracker
+
+	debugger *debugger.Debugger
+}
+
+// emitter is the default implementation for superwatcher.WatcherEmitter.
 type emitter struct {
 	// These fields are used for filtering event logs
 	conf *config.EmitterConfig
 
-	// Ethereum client for filtering logs
+	// client is an implementation of `superwatcher.EthClient`.
+	// client.FilterLogs method will be embed into emitterPoller.
 	client superwatcher.EthClient
 
-	// Addresses passed to client.FilterLogs
-	addresses []common.Address
-	// Topics passed to client.FilterLogs
-	topics [][]common.Hash
-	// Redis-store for tracking last recorded block
+	// stateDataGateway is used to get lastRecordedBlock to determine the next fromBlock
 	stateDataGateway superwatcher.GetStateDataGateway
-	// Tracker tracks known block hashes to detect chain reorgs
-	tracker *blockInfoTracker
 
-	// These fields are gateways via which
-	// external services interact with emitter
+	// poller filters logs and returns superwatcher.FilterResult for emitter to emit
+	poller *poller
 
-	filterResultChan chan<- *superwatcher.FilterResult
-	errChan          chan<- error
-	syncChan         <-chan struct{}
+	// These fields are gateways via which external components interact with emitter
 
-	// emitter.debug allows us to check if we should calls debugger
-	// when debugging in a large for loop. This should save some CPU time.
+	filterResultChan chan<- *superwatcher.FilterResult // Channel used to send result to consumer
+	errChan          chan<- error                      // Channel used to send emitter/emitterPoller errors
+	syncChan         <-chan struct{}                   // Channel used to sync with consumer
+
+	// emitter.debug allows us to check if we should calls debugger when debugging in a large for loop.
+	// This should save some CPU time.
 	debug    bool
 	debugger *debugger.Debugger
 }
@@ -55,21 +65,23 @@ func New(
 	filterResultChan chan<- *superwatcher.FilterResult,
 	errChan chan<- error,
 ) superwatcher.WatcherEmitter {
-	debugger := debugger.NewDebugger("emitter", conf.LogLevel)
-	debugger.Debug(1, "initializing emitter")
-
 	return &emitter{
+		poller: &poller{
+			topics:      topics,
+			addresses:   addresses,
+			filterRange: conf.FilterRange,
+			filterFunc:  client.FilterLogs,
+			tracker:     newTracker("emitter", conf.LogLevel),
+			debugger:    debugger.NewDebugger("emitterPoller", conf.LogLevel),
+		},
 		conf:             conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,
-		tracker:          newTracker("emitter", conf.LogLevel),
-		addresses:        addresses,
-		topics:           topics,
 		syncChan:         syncChan,
 		filterResultChan: filterResultChan,
 		errChan:          errChan,
 		debug:            conf.LogLevel > 0,
-		debugger:         debugger,
+		debugger:         debugger.NewDebugger("emitter", conf.LogLevel),
 	}
 }
 

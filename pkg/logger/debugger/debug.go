@@ -26,3 +26,10 @@ func (d *Debugger) Debug(level uint8, msg string, fields ...zap.Field) {
 		logger.Debug(msg, fields...)
 	}
 }
+
+func (d *Debugger) Warn(level uint8, msg string, fields ...zap.Field) {
+	if d.Level >= level {
+		msg = fmt.Sprintf("%s: %s", d.Key, msg)
+		logger.Warn(msg, fields...)
+	}
+}
