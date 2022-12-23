@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
@@ -28,9 +29,7 @@ func (e *emitter) sleep() {
 	time.Sleep(time.Second * time.Duration(e.conf.LoopInterval))
 }
 
-// loopFilterLogs is the emitter's main loop. It dynamically computes fromBlock and toBlock for `*emitter.filterLogs`,
-// and will only returns if (some) errors happened.
-func (e *emitter) loopFilterLogs(
+func (e *emitter) loopEmit(
 	ctx context.Context,
 	status *emitterStatus,
 ) error {
@@ -42,7 +41,7 @@ func (e *emitter) loopFilterLogs(
 	for {
 		// Don't sleep or log status on first loop
 		if !status.GoBackFirstStart {
-			e.debugger.Debug(1, "new loopFilterLogs loop")
+			e.debugger.Debug(1, "new loopEmit loop")
 			e.sleep()
 		}
 
@@ -74,15 +73,16 @@ func (e *emitter) loopFilterLogs(
 					continue
 				}
 
-				if errors.Is(err, errFetchError) {
+				if errors.Is(err, superwatcher.ErrFetchError) {
 					e.debugger.Debug(1, "fetch error", zap.Error(err))
+
 					continue
 				}
 
 				return errors.Wrap(err, "emitter failed to compute fromBlock and toBlock")
 			}
 
-			// updateStatus is called after e.filterLogs returned. It updates status to newStatus,
+			// updateStatus is called after `e.poller.poll` returned. It updates status to newStatus,
 			// and also increments the counter for tracking retries during reorg.
 			// If |isReorging| is true, then the emitter *goes back* until the chain stops reorging.
 			updateStatus := func(isReorging bool) {
@@ -98,18 +98,17 @@ func (e *emitter) loopFilterLogs(
 			}
 
 			e.debugger.Debug(
-				2, "calling filterLogs",
+				2, "calling poller.poll",
 				zap.Any("current_status", newStatus),
 			)
 
-			filterResult, err := e.poller.filterLogs(
+			filterResult, err := e.poller.Poll(
 				loopCtx,
 				newStatus.FromBlock,
 				newStatus.ToBlock,
 			)
-
 			if err != nil {
-				if errors.Is(err, errFromBlockReorged) {
+				if errors.Is(err, superwatcher.ErrFromBlockReorged) {
 					// Continue to filter from fromBlock
 					updateStatus(true)
 
@@ -117,19 +116,19 @@ func (e *emitter) loopFilterLogs(
 					continue
 				}
 
-				if errors.Is(err, errProcessReorg) {
+				if errors.Is(err, superwatcher.ErrProcessReorg) {
 					e.debugger.Debug(
 						1, "got errProcessReorg - contact prem@cleverse.com for reporting this bug",
 						zap.Error(err),
 					)
 				}
 
-				return errors.Wrap(err, "unexpected filterLogs error")
+				return errors.Wrap(err, "unexpected poller error")
 			}
 
 			// End loop
 			e.debugger.Debug(
-				1, "to be emitted",
+				1, "poller.poll returned successfully",
 				zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
 				zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
 				zap.Uint64("lastGoodBlock", filterResult.LastGoodBlock),
@@ -137,10 +136,11 @@ func (e *emitter) loopFilterLogs(
 
 			e.emitFilterResult(filterResult)
 			e.SyncsWithEngine()
+
 			updateStatus(false)
 
 			e.debugger.Debug(
-				1, "filterLogs returned successfully",
+				2, "ending this loop",
 				zap.Any("emitterStatus", newStatus),
 			)
 		}
@@ -235,7 +235,7 @@ func (e *emitter) computeFromBlockToBlock(
 // There are 3 possible cases when computing fromBlock and toBlock:
 // (1) `goBackFirstStart` - this is when this function call is called when the emitter just started.
 // The emitter will "go back" to `lastRecordedBlock - (filterRange * maxRetries)`
-// (2) `status.IsReorging` - this is when emitter.filterLogs detected that the previous fromBlock was reorged.
+// (2) `status.IsReorging` - this is when superwatcher.Poller.Poll detected that the previous fromBlock was reorged.
 // The emitter will "go back" to `previous fromBlock - filterRange`. This logic continues until fromBlock is no longer reorging.
 // (3) Normal cases - this should be the base case for computing fromBlock and toBlock.
 // The emitter will use `fromBlockToBlockNormal` function to compute the values.
@@ -311,7 +311,6 @@ func computeFromBlockToBlock(
 		}
 
 	} else {
-
 		// Call fromBlockToBlock in normal cases
 		// lastRecordedBlock = 80, filterRange = 10
 		// 71  - 90   [normalCase] -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10

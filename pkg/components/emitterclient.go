@@ -1,4 +1,4 @@
-package emitterclient
+package components
 
 import (
 	"github.com/artnoi43/superwatcher"
@@ -6,8 +6,8 @@ import (
 	"github.com/artnoi43/superwatcher/internal/emitterclient"
 )
 
-func New(
-	conf *config.EmitterConfig,
+func NewEmitterClient(
+	conf *config.Config,
 	syncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,

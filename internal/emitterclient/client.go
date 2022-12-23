@@ -6,10 +6,10 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// emitterClient is the actual implementation of Client.
+// emitterClient is the actual implementation of EmitterClient.
 // It uses channels to communicate with emitter.
 type emitterClient struct {
-	emitterConfig    *config.EmitterConfig
+	emitterConfig    *config.Config
 	emitterSyncChan  chan<- struct{}
 	filterResultChan <-chan *superwatcher.FilterResult
 	errChan          <-chan error
@@ -18,7 +18,7 @@ type emitterClient struct {
 }
 
 func New(
-	emitterConfig *config.EmitterConfig,
+	emitterConfig *config.Config,
 	emitterSyncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,
@@ -44,12 +44,12 @@ func (c *emitterClient) Shutdown() {
 	}
 }
 
-// WatcherNextFilterLogs sends a low-cost signal to emitter to return from emitter.filterLogs
+// WatcherNextFilterLogs sends a low-cost signal to emitter to progress to the next loop
 func (c *emitterClient) WatcherEmitterSync() {
 	c.emitterSyncChan <- struct{}{}
 }
 
-func (c *emitterClient) WatcherConfig() *config.EmitterConfig {
+func (c *emitterClient) WatcherConfig() *config.Config {
 	return c.emitterConfig
 }
 

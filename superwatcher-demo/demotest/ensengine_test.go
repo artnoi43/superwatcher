@@ -6,7 +6,6 @@ import (
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
@@ -96,19 +95,10 @@ func testServiceEngineENSV1(
 	superwatcher.GetStateDataGateway,
 	error,
 ) {
-	conf := &config.EmitterConfig{
-		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:       testCase.Param.StartBlock,
-		FilterRange:      10,
-		MaxGoBackRetries: 2,
-		LoopInterval:     0,
-		LogLevel:         4,
-	}
-
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine
 
 	components := servicetest.InitTestComponents(
-		conf,
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4),
 		ensEngine,
 		testCase.Param,
 		testCase.Events,

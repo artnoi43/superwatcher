@@ -123,7 +123,7 @@ to `FilterLogs` will returns blocks from the reorged chain.
 > Since we only need the hash from the header by calling `Hash()` method on the header,
 > we just need to implement `block.Hash()` and use that type in place of the normal header.
 
-The method is called after `ReorgSim.FilterLogs` in [`emitter.filterLogs`](../../internal/emitter/filterlogs.go),
+The method is called after `ReorgSim.FilterLogs` in [`emitter.poller.Poll`](../../internal/emitter/poller.go),
 so this method must NOT returns reorged blocks unless `ReorgSim.FilterLogs` had already returned such reorged blocks.
 
 > Both `ReorgSim.FilterLogs` and `ReorgSim.HeaderByNumber` uses `ReorgSim.chooseBlock` to, wait for it, _choose block_.

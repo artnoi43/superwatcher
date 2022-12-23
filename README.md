@@ -20,6 +20,9 @@ The code in this project is organized into the following packages:
    [`servicetest`](./pkg/servicetest/), or the chain reorg simulation code [`reorgsim`](./pkg/reorgsim/),
    or the mocked [`StateDataGateway`](./pkg/datagateway/) types, are provided here.
 
+   One package, [`pkg/components`](./pkg/components), is especially important for users, because it provides
+   the preferred way to initialize superwatcher components.
+
 3. [`config`](./config/) (public)
 
    This package defines basic superwatcher configuration that affects the pace and range of emitter,
@@ -36,6 +39,8 @@ The code in this project is organized into the following packages:
    running the service with its `main` at `superwatcher-demo/cmd/main.go`.
 
 ## superwatcher components
+
+> For more in-depth look at the components, see package [`components`](./pkg/components/)
 
 There are 3 main superwatcher components - (1) the emitter, (2) the emitter client,
 and (3) the engine. The flowchart below illustrates how the 3 components work together.
@@ -81,7 +86,7 @@ If no signal is received, the emitter blocks forever (for now).
 
    The emitter client is embedded into `WatcherEngine`. The emitter client linearly receives `FilterResult`
    from emitter, and then returning it to `WatcherEngine`. It also syncs with the emittter. If it fails to sync,
-   the emitter will not proceed to the next [`emitter.filterLogs`](./internal/emitter/filterlogs.go) loop.
+   the emitter will not proceed to the next loop.
 
 3. [`WatcherEngine`](./internal/engine/)
    The engine receives `FilterResult` from the emitter client, and passes the result to appropriate methods of `ServiceEngine`.
@@ -92,7 +97,9 @@ If no signal is received, the emitter blocks forever (for now).
 
 4. [`ServiceEngine` (example)](./superwatcher-demo/internal/subengines/uniswapv3factoryengine/)
 
-   The service engine is embedded into `WatcherEngine`, and it is what user injects into `WatcherEngine`. Because it is an interface, you can treat it like HTTP handlers - you can have a _router_ service engine that routes logs to other _service sub-engines_, who also implement `ServiceEngine`.
+   The service engine is embedded into `WatcherEngine`, and it is what user injects into `WatcherEngine`.
+   Because it is an interface, you can treat it like HTTP handlers - you can have a _router_ service engine that
+   routes logs to other _service sub-engines_, who also implement `ServiceEngine`.
 
 > From the chart, it may seem `EmitterClient` is somewhat extra bloat, but
 > it's better (to me) to abstract the emitter data retrieval away from the engine.

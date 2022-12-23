@@ -1,4 +1,4 @@
-package emitter
+package poller
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 )
 
 // blockInfoTracker stores the `superwatcher.BlockInfo` with blockNumber as key.
-// It is used by emitter to store `BlockInfo` from the last run of `emitter.filterLogs`
+// It is used by poller to store `BlockInfo` from the last call of `poller.poll`
 // to see if a block's hash has changed.
 // TODO: blockInfoTracker name needs revision!
 // TODO: Remove caller and logging

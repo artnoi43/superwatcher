@@ -26,7 +26,7 @@ func New(
 	serviceEngine superwatcher.ServiceEngine,
 	stateDataGateway superwatcher.SetStateDataGateway,
 	logLevel uint8,
-) superwatcher.WatcherEngine {
+) superwatcher.Engine {
 	debug := logLevel > 0
 
 	return &engine{

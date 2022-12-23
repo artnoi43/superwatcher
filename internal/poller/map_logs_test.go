@@ -1,4 +1,4 @@
-package emitter
+package poller
 
 import (
 	"encoding/json"
@@ -9,11 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
 func TestMapLogs(t *testing.T) {
-	for i, tc := range testCases {
+	for i, tc := range emittertest.TestCases {
 		b, _ := json.Marshal(tc)
 		t.Logf("testCase: %s", b)
 		err := testMapLogsV1(&tc)
@@ -24,7 +25,7 @@ func TestMapLogs(t *testing.T) {
 }
 
 // testMapLogsV1 tests function mapLogs with ReorgSimV1 (1 reorg)
-func testMapLogsV1(tc *testConfig) error {
+func testMapLogsV1(tc *emittertest.TestConfig) error {
 	tracker := newTracker("testProcessReorg", 3)
 	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 

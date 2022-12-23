@@ -2,10 +2,8 @@ package emitter
 
 import (
 	"context"
+	"sync"
 
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -14,23 +12,12 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// poller is a struct used to filter event logs and detecting chain reorg,
-// i.e. it produces superwatcher.FilterResult for the emitter.
-type poller struct {
-	topics    [][]common.Hash
-	addresses []common.Address
-
-	filterRange uint64
-	filterFunc  func(context.Context, ethereum.FilterQuery) ([]types.Log, error)
-	tracker     *blockInfoTracker
-
-	debugger *debugger.Debugger
-}
-
 // emitter is the default implementation for superwatcher.WatcherEmitter.
 type emitter struct {
+	sync.RWMutex
+
 	// These fields are used for filtering event logs
-	conf *config.EmitterConfig
+	conf *config.Config
 
 	// client is an implementation of `superwatcher.EthClient`.
 	// client.FilterLogs method will be embed into emitterPoller.
@@ -39,8 +26,8 @@ type emitter struct {
 	// stateDataGateway is used to get lastRecordedBlock to determine the next fromBlock
 	stateDataGateway superwatcher.GetStateDataGateway
 
-	// poller filters logs and returns superwatcher.FilterResult for emitter to emit
-	poller *poller
+	// poller.Poll filters logs and returns superwatcher.FilterResult for emitter to emit
+	poller superwatcher.EmitterPoller
 
 	// These fields are gateways via which external components interact with emitter
 
@@ -54,29 +41,20 @@ type emitter struct {
 	debugger *debugger.Debugger
 }
 
-// New returns a new `superwatcher.WatcherEmitter`
 func New(
-	conf *config.EmitterConfig,
+	conf *config.Config,
 	client superwatcher.EthClient,
 	stateDataGateway superwatcher.GetStateDataGateway,
-	addresses []common.Address,
-	topics [][]common.Hash,
+	poller superwatcher.EmitterPoller,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
 	filterResultChan chan<- *superwatcher.FilterResult,
 	errChan chan<- error,
-) superwatcher.WatcherEmitter {
+) superwatcher.Emitter {
 	return &emitter{
-		poller: &poller{
-			topics:      topics,
-			addresses:   addresses,
-			filterRange: conf.FilterRange,
-			filterFunc:  client.FilterLogs,
-			tracker:     newTracker("emitter", conf.LogLevel),
-			debugger:    debugger.NewDebugger("emitterPoller", conf.LogLevel),
-		},
 		conf:             conf,
 		client:           client,
 		stateDataGateway: stateDataGateway,
+		poller:           poller,
 		syncChan:         syncChan,
 		filterResultChan: filterResultChan,
 		errChan:          errChan,
@@ -85,7 +63,21 @@ func New(
 	}
 }
 
-// Loop wraps loopFilterLogs to provide graceful shutdown mechanism for emitter.
+func (e *emitter) Poller() superwatcher.EmitterPoller {
+	e.Lock()
+	defer e.Unlock()
+
+	return e.poller
+}
+
+func (e *emitter) SetPoller(poller superwatcher.EmitterPoller) {
+	e.Lock()
+	defer e.Unlock()
+
+	e.poller = poller
+}
+
+// Loop wraps loopEmit to provide graceful shutdown mechanism for emitter.
 // When |ctx| is canceled elsewhere, Loop calls *emitter.shutdown and returns value of ctx.Err()
 func (e *emitter) Loop(ctx context.Context) error {
 	status := new(emitterStatus)
@@ -98,9 +90,9 @@ func (e *emitter) Loop(ctx context.Context) error {
 			return errors.Wrap(ctx.Err(), ErrEmitterShutdown.Error())
 
 		default:
-			if err := e.loopFilterLogs(ctx, status); err != nil {
-				e.debugger.Debug(1, "loopFilterLogs returned", zap.Any("status", status), zap.Error(err))
-				e.emitError(errors.Wrap(err, "error in loopFilterLogs"))
+			if err := e.loopEmit(ctx, status); err != nil {
+				e.debugger.Debug(1, "loopEmit returned", zap.Any("status", status), zap.Error(err))
+				e.emitError(errors.Wrap(err, "error in loopEmit"))
 			}
 		}
 	}

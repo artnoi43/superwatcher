@@ -1,4 +1,4 @@
-package emitter
+package poller
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -50,6 +50,11 @@ func mapLogs(
 
 		// Add all new logs to mapFreshLogs
 		mapFreshLogs[number] = append(mapFreshLogs[number], log)
+	}
+
+	// i.e. poller.DoReorg == false
+	if tracker == nil {
+		return mapRemovedBlocks, mapFreshHashes, mapFreshLogs
 	}
 
 	// Compare all known (tracker) block hashes to new ones

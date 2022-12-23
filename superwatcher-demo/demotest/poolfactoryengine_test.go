@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
@@ -70,17 +69,10 @@ func testServiceEnginePoolFactoryV1(
 	superwatcher.GetStateDataGateway,
 	error,
 ) {
-	conf := &config.EmitterConfig{
-		// We use fakeRedis and fakeEthClient, so no need for token strings.
-		StartBlock:       testCase.Param.StartBlock,
-		FilterRange:      10,
-		MaxGoBackRetries: 2,
-		LoopInterval:     0,
-	}
-
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
+
 	components := servicetest.InitTestComponents(
-		conf,
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3),
 		poolFactoryEngine,
 		testCase.Param,
 		testCase.Events,

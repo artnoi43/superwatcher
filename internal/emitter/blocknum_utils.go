@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// fromBlockToBlockNormal returns fromBlock and toBlock for emitter.filterLogs in **normal** circumstances.
+// fromBlockToBlockNormal returns fromBlock and toBlock for superwatcher.Poller.Poll in **normal** circumstances.
 // If the chain is reorging, or if there is any exception, use something else to compute the numbers.
 func fromBlockToBlockNormal(
 	emitterStartBlock uint64,
@@ -16,7 +16,6 @@ func fromBlockToBlockNormal(
 	fromBlock uint64,
 	toBlock uint64,
 ) {
-
 	// lastRecordedBlock = 80, filterRange = 10
 	// 71  - 90   [normalCase] -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10
 	// 81  - 100  [normalCase] -> lastRecordedBlock = 100, lookBack = 10, fwdRange = 100 - 90   = 10
@@ -49,7 +48,6 @@ func fromBlockToBlockIsReorging(
 	uint64,
 	error,
 ) {
-
 	// The lookBack range will grow after each retries, but not the forward range
 	// lastRecordedBlock = 80, filterRange = 10, maxGoBackRetries = 3
 	// 71  - 90   [normalCase]                -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80   = 10

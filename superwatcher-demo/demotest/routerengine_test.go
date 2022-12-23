@@ -5,7 +5,6 @@ import (
 
 	"github.com/artnoi43/gsl/gslutils"
 
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
@@ -39,17 +38,8 @@ func TestServiceEngineRouterV1(t *testing.T) {
 		dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
 		router := routerengine.NewMockRouter(logLevel, dgwENS, dgwPoolFactory)
 
-		conf := &config.EmitterConfig{
-			// We use fakeRedis and fakeEthClient, so no need for token strings.
-			StartBlock:    testCase.Param.StartBlock,
-			FilterRange:   10,
-			MaxGoBackRetries: 2,
-			LoopInterval:  0,
-			LogLevel:      logLevel,
-		}
-
 		components := servicetest.InitTestComponents(
-			conf,
+			servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4),
 			router,
 			testCase.Param,
 			testCase.Events,

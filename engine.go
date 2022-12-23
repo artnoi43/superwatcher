@@ -2,7 +2,10 @@ package superwatcher
 
 import "context"
 
-// WatcherEngine executes business service logic with ServiceEngine
-type WatcherEngine interface {
+// Engine receives FilterResult emitted from Emitter
+// and executes business service logic on FilterResult with ServiceEngine.
+type Engine interface {
+	// Loop is the entry point for Engine.
+	// Call it in a different Goroutine than Emitter.Loop to make both run concurrently.
 	Loop(context.Context) error
 }

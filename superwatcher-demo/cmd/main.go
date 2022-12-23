@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,7 +14,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/initsuperwatcher"
+	spwconf "github.com/artnoi43/superwatcher/config"
+	"github.com/artnoi43/superwatcher/pkg/components"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
 	"github.com/artnoi43/superwatcher/superwatcher-demo/config"
@@ -26,6 +28,55 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
 )
+
+// This demo function calls components.NewDefault, which is the preferred way to init superwatcher for most cases.
+func newSuperwatcherNoob(
+	conf *spwconf.Config,
+	ethClient superwatcher.EthClient,
+	addresses []common.Address,
+	topics []common.Hash,
+	stateDataGateway superwatcher.StateDataGateway,
+	serviceEngine superwatcher.ServiceEngine,
+) (superwatcher.Emitter, superwatcher.Engine) {
+	return components.NewDefault(
+		conf,
+		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
+		ethClient,
+		// Both data gateways can be implemented separately by different structs,
+		// but here in the demo it's just using default implementation.
+		superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock), // stateDataGateway alone is fine too
+		superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock), // stateDataGateway alone is fine too
+		addresses,
+		[][]common.Hash{topics},
+		serviceEngine,
+	)
+}
+
+// This demo function demonstrates how users can use the components package to init superwatcher components
+func newSuperwatcherCustom(
+	conf *spwconf.Config,
+	ethClient superwatcher.EthClient,
+	addresses []common.Address,
+	topics []common.Hash,
+	stateDataGateway superwatcher.StateDataGateway,
+	serviceEngine superwatcher.ServiceEngine,
+) (superwatcher.Emitter, superwatcher.Engine) {
+	errChan := make(chan error)
+	syncChan := make(chan struct{})
+	resultChan := make(chan *superwatcher.FilterResult)
+
+	emitter := components.NewEmitter(conf, ethClient, stateDataGateway, nil, syncChan, resultChan, errChan)
+	emitterClient := components.NewEmitterClient(conf, syncChan, resultChan, errChan)
+	engine := components.NewEngine(emitterClient, serviceEngine, stateDataGateway, conf.LogLevel)
+	poller := components.NewPoller(nil, nil, true, conf.FilterRange, ethClient.FilterLogs, conf.LogLevel)
+
+	poller.SetAddresses(addresses)
+	poller.SetTopics([][]common.Hash{topics})
+
+	emitter.SetPoller(poller)
+
+	return emitter, engine
+}
 
 func main() {
 	conf, err := soyutils.ReadFileYAMLPointer[config.Config]("./superwatcher-demo/config/config.yaml")
@@ -88,16 +139,12 @@ func main() {
 		conf.SuperWatcherConfig.LogLevel,
 	)
 
-	watcherEmitter, watcherEngine := initsuperwatcher.New(
+	watcherEmitter, watcherEngine := newSuperwatcherNoob(
 		conf.SuperWatcherConfig,
-		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
 		ethClient,
-		// Both data gateways can be implemented separately by different structs,
-		// but here in the demo it's just using default implementation.
-		superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock), // stateDataGateway alone is fine too
-		superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock), // stateDataGateway alone is fine too
 		emitterAddresses,
-		[][]common.Hash{emitterTopics},
+		emitterTopics,
+		stateDataGateway,
 		demoEngine,
 	)
 
@@ -130,6 +177,12 @@ func main() {
 		if err := watcherEngine.Loop(ctx); err != nil {
 			logger.Error("DEMO: engine returned an error", zap.Error(err))
 		}
+	}()
+
+	// Demo how to use SetDoReorg
+	go func() {
+		time.Sleep(5 * time.Second)
+		watcherEmitter.Poller().SetDoReorg(false)
 	}()
 
 	wg.Wait()

@@ -1,4 +1,4 @@
-package emitter
+package superwatcher
 
 import (
 	"testing"
@@ -9,29 +9,30 @@ import (
 func TestWrapErrBlockNumber(t *testing.T) {
 	baseErr := errors.New("failed to filterLogs")
 	err := wrapErrFetchError(baseErr)
-	if !errors.Is(err, errFetchError) {
+	if !errors.Is(err, ErrFetchError) {
 		t.Error("err is not errFetchError")
 	}
 
 	err = mockErrNoHash()
-	if !errors.Is(err, errProcessReorg) {
+	if !errors.Is(err, ErrProcessReorg) {
 		t.Error("err is not errProcessReorg")
 	}
 
 	err = mockErrFromBlockReorged()
-	if !errors.Is(err, errFromBlockReorged) {
+	if !errors.Is(err, ErrFromBlockReorged) {
 		t.Error("err is not errFromBlockReorged")
 	}
 }
 
 func wrapErrFetchError(err error) error {
-	return errors.Wrap(errFetchError, err.Error())
+	return errors.Wrap(ErrFetchError, err.Error())
 }
 
 func mockErrNoHash() error {
-	return errors.Wrapf(errNoHash, "blockNumber %d", 69)
+	err := errors.Wrap(ErrProcessReorg, "no block hash")
+	return errors.Wrapf(err, "blockNumber %d", 69)
 }
 
 func mockErrFromBlockReorged() error {
-	return errors.Wrapf(errFromBlockReorged, "fromBlock %d was removed (chain reorganization)", 69)
+	return errors.Wrapf(ErrFromBlockReorged, "fromBlock %d was removed (chain reorganization)", 69)
 }

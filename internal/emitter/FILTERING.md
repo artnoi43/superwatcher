@@ -2,23 +2,23 @@
 
 The emitter's main purpose is to filter Ethereum event logs.
 For practical reasons, this is done in a progressive ranged fashion, with the forward range
-being determined by [`config.EmitterConfig.FilterRange`](../../config/config.go).
+being determined by [`config.Config.FilterRange`](../../config/config.go).
 
-The emitter filters logs using [`*emitter.filterLogs(fromBlock, toBlock)`](./filterlogs.go),
+The emitter `e` filters logs using [`e.poller.poll(fromBlock, toBlock)`](./poller.go),
 which only takes in 2 numbers denoting the start and end of the filter range.
 The start of the filter range is called `fromBlock`, and the end of each filter loop is called `toBlock`.
 
-This method is called repeatedly in a for loop by [`*emitter.loopFilterLogs`](./loop_filterlogs.go),
+This method is called repeatedly in a for loop by [`*emitter.loopEmit`](./loop_filterlogs.go),
 which is at the center of this document.
 
-**At the end of each call to `*emitter.filterLogs`, a `lastRecordedBlock` is saved to some database,
+**At the end of each call to `poller.poll`, a `lastRecordedBlock` must be saved to some database by user code,
 and that value is later used in the subsequent loop as the new basis for next `fromBlock`**.
 
-As `*emitter.loopFilterLogs` executes, it keeps tracks of `emitterStatus` to see which logic it should
+As `*emitter.loopEmit` executes, it keeps tracks of `emitterStatus` to see which logic it should
 use for determining `fromBlock` and `toBlock`. The logic for determining `fromBlock` and `toBlock` is different
 for the 3 main categories of possible emitter states.
 
-The 3 main possible emitter states as seen in `*emitter.loopFilterLogs` are:
+The 3 main possible emitter states as seen in `*emitter.loopEmit` are:
 
 1. First loop (first run)
 
@@ -38,7 +38,7 @@ The 3 main possible emitter states as seen in `*emitter.loopFilterLogs` are:
 
 2. The whole recent range was reorged (previous `fromBlock` was reorged)
 
-   This can be detected by checking the error returned from `*emitter.filterLogs` against `errFromBlockReorged`.
+   This can be detected by checking the error returned from `poller.Poll` against `superwatcher.ErrFromBlockReorged`.
    If this happens, it means that the chain is now reorging, so we need to _go back_ until all blocks are
    canon again. If the chain is reorging for multiple loops, then we'll see that the `fromBlock` keeps going back,
    while `toBlock` stays the same.

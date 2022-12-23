@@ -1,18 +1,17 @@
-package engine
+package components
 
 import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/engine"
-	"github.com/artnoi43/superwatcher/pkg/components/emitterclient"
 )
 
-func New(
+func NewEngine(
 	emitterClient superwatcher.EmitterClient,
 	serviceEngine superwatcher.ServiceEngine,
 	stateDataGateway superwatcher.SetStateDataGateway,
 	logLevel uint8,
-) superwatcher.WatcherEngine {
+) superwatcher.Engine {
 	return engine.New(
 		emitterClient,
 		serviceEngine,
@@ -21,24 +20,25 @@ func New(
 	)
 }
 
-// New creates a new emitterClient, and pair it with an engine
-func NewWithClient(
-	conf *config.EmitterConfig,
+// NewEngineWithEmitterClient creates a new superwatcher.Engine, and pair it with an superwatcher.EmitterClient.
+// This is the preferred way of creating a new superwatcher.Engine
+func NewEngineWithEmitterClient(
+	conf *config.Config,
 	serviceEngine superwatcher.ServiceEngine,
 	stateDataGateway superwatcher.SetStateDataGateway,
 	syncChan chan<- struct{},
 	filterResultChan <-chan *superwatcher.FilterResult,
 	errChan <-chan error,
-) superwatcher.WatcherEngine {
+) superwatcher.Engine {
 	// TODO: Do we still need EmitterClient?
-	emitterClient := emitterclient.New(
+	emitterClient := NewEmitterClient(
 		conf,
 		syncChan,
 		filterResultChan,
 		errChan,
 	)
 
-	return New(
+	return NewEngine(
 		emitterClient,
 		serviceEngine,
 		stateDataGateway,
