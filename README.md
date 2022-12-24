@@ -1,3 +1,8 @@
+<!-- markdownlint-configure-file {
+    "line_length": { "code_blocks": false, "line_length": 100 },
+    "code": { "style": "consistent" }
+} -->
+
 # superwatcher
 
 superwatcher is a building block for filtering Ethereum logs,
@@ -35,8 +40,8 @@ The code in this project is organized into the following packages:
 
 5. [`superwatcher-demo`](./superwatcher-demo/) (public)
 
-   This package provides some context and examples of how to use superwatcher to build services. You can try
-   running the service with its `main` at `superwatcher-demo/cmd/main.go`.
+   This package provides some context and examples of how to use superwatcher to build services.
+   You can try running the service with its `main` at `superwatcher-demo/cmd/main.go`.
 
 ## superwatcher components
 
@@ -45,31 +50,33 @@ The code in this project is organized into the following packages:
 There are 3 main superwatcher components - (1) the emitter, (2) the emitter client,
 and (3) the engine. The flowchart below illustrates how the 3 components work together.
 
-                            Blockchain
-                                │
-                                │  logs []types.Log
-                                │  blockHashes []common.Hash
-                                │
-                                ▼
-                          WatcherEmitter
-                                │
-                                │  FilterResult {
-                                │     GoodBlocks
-                                │     ReorgedBlocks
-                                │  }
-                                │
-                                │  error
-                                ▼
-    ┌─────────────────────────────────────────────────────────────┐
-    │                      EmitterClient                          │
-    │                           │                                 │
-    │                           ▼                                 │
-    │                      WatcherEngine                          │
-    │       ┌───────────────────┼─────────────────────┐           │
-    │       ▼                   ▼                     ▼           │
-    │  HandleGoogLogs    HandleReorgedLogs    HandleEmitterError  │
-    │                                                             │
-    └─────────────────────────────────────────────────────────────┘
+```text
+                        Blockchain
+                            │
+                            │  logs []types.Log
+                            │  blockHashes []common.Hash
+                            │
+                            ▼
+                      WatcherEmitter
+                            │
+                            │  FilterResult {
+                            │     GoodBlocks
+                            │     ReorgedBlocks
+                            │  }
+                            │
+                            │  error
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      EmitterClient                          │
+│                           │                                 │
+│                           ▼                                 │
+│                      WatcherEngine                          │
+│       ┌───────────────────┼─────────────────────┐           │
+│       ▼                   ▼                     ▼           │
+│  HandleGoogLogs    HandleReorgedLogs    HandleEmitterError  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
 1. [`WatcherEmitter`](./internal/emitter/)
 
@@ -79,27 +86,28 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
    reorged by comparing the block hashes across each loop.
 
    Then it collects everything into `FilterResult` and emits the result for this loop.
-
-If no signal is received, the emitter blocks forever (for now).
+   If no signal is received, the emitter blocks forever (for now).
 
 2. [`EmiiterClient`](./internal/emitterclient/)
 
    The emitter client is embedded into `WatcherEngine`. The emitter client linearly receives `FilterResult`
-   from emitter, and then returning it to `WatcherEngine`. It also syncs with the emittter. If it fails to sync,
-   the emitter will not proceed to the next loop.
+   from emitter, and then returning it to `WatcherEngine`. It also syncs with the emittter.
+   If it fails to sync, the emitter will not proceed to the next loop.
 
 3. [`WatcherEngine`](./internal/engine/)
-   The engine receives `FilterResult` from the emitter client, and passes the result to appropriate methods of `ServiceEngine`.
-   It calls `ServiceEngine.HandleReorgedLogs` first, before `ServiceEngine.HandleGoodLogs`, so that the service can undo or fix
-   any actions it had performed on the now bad logs before it processes the new, reorged logs.
+   The engine receives `FilterResult` from the emitter client, and passes the result to appropriate
+   methods of `ServiceEngine`. It calls `ServiceEngine.HandleReorgedLogs` first, before `ServiceEngine.HandleGoodLogs`,
+   so that the service can undo or fix any actions it had performed on the now bad logs before
+   it processes the new, reorged logs.
 
-   In addition to passing data around, it also keeps track of the log processing state to avoid double processing of the same data.
+   In addition to passing data around, it also keeps track of the log processing state to
+   avoid double processing of the same data.
 
 4. [`ServiceEngine` (example)](./superwatcher-demo/internal/subengines/uniswapv3factoryengine/)
 
    The service engine is embedded into `WatcherEngine`, and it is what user injects into `WatcherEngine`.
-   Because it is an interface, you can treat it like HTTP handlers - you can have a _router_ service engine that
-   routes logs to other _service sub-engines_, who also implement `ServiceEngine`.
+   Because it is an interface, you can treat it like HTTP handlers - you can have a _router_
+   service engine that routes logs to other _service sub-engines_, who also implement `ServiceEngine`.
 
 > From the chart, it may seem `EmitterClient` is somewhat extra bloat, but
 > it's better (to me) to abstract the emitter data retrieval away from the engine.
@@ -115,18 +123,20 @@ multiple contracts or business logic units.
 
 An example of multiple `ServiceEngine`s would be something like this:
 
-                                                             ┌───►PoolFactoryEngine
-                                                             │    (ServiceEngine)
-                                        ┌──►UniswapV3Engine──┤
-                                        │   (ServiceEngine)  │
-                                        │                    └───►LiquidityPoolEngine
-                                        │                         (ServiceEngine)
-    WatcherEngine ───► Service router ──┼──►CurveV2Engine
-                       (ServiceEngine)  │   (ServiceEngine)
-                                        │
-                                        │
-                                        └──►ENSEngine
-                                            (ServiceEngine)
+```text
+                                                         ┌───►PoolFactoryEngine
+                                                         │    (ServiceEngine)
+                                    ┌──►UniswapV3Engine──┤
+                                    │   (ServiceEngine)  │
+                                    │                    └───►LiquidityPoolEngine
+                                    │                         (ServiceEngine)
+WatcherEngine ───► Service router ──┼──►CurveV2Engine
+                   (ServiceEngine)  │   (ServiceEngine)
+                                    │
+                                    │
+                                    └──►ENSEngine
+                                        (ServiceEngine)
+```
 
 ## Using superwatcher
 
@@ -142,17 +152,18 @@ After you have successfully init both components, start both _concurrently_ with
 The data structure emitted by the emitter is `FilterResult`, which represents the result
 of each `emitter.FilterLogs` call. The important structure fields are:
 
-`FilterResult.GoodBlocks` is any new blocks filtered. Duplicate good blocks will reappear if they are still in range,
-but the engine should be able to skip all such duplicate blocks, and thus the `ServiceEngine` code only sees new,
-good blocks it never saw.
+`FilterResult.GoodBlocks` is any new blocks filtered. Duplicate good blocks will reappear
+if they are still in range, but the engine should be able to skip all such duplicate blocks,
+and thus the `ServiceEngine` code only sees new, good blocks it never saw.
 
-`FilterResult.ReorgedBlocks` is any `GoodBlocks` from previous loops that the emitter saw with different block hashes.
-This means that any `ReorgedBlocks` was once a `GoodBlocks`. `ServiceEngine` is expected to revert or fix any actions
-performed when the blocks were still considered canonical.
+`FilterResult.ReorgedBlocks` is any `GoodBlocks` from previous loops that the emitter saw with
+different block hashes. This means that any `ReorgedBlocks` was once a `GoodBlocks`.
+`ServiceEngine` is expected to revert or fix any actions performed when the removed blocks were still
+considered canonical.
 
 Let's say this is our pre-fork blockchain (annotated with block numbers and block hashes):
 
-```
+```text
 Pre-fork:
 
 [{10:0x10}, {11:0x11}, {12:0x12}, {13:0x13}]
@@ -164,29 +175,33 @@ New chain:
 [{10:0x10}, {11:0x11}, {12:0x1212}, {13:0x1313}]
 ```
 
-Now let's say the emitter filters with a range of 2 blocks, with no look back blocks, this means that the engine will
-see the results as the following:
+Now let's say the emitter filters with a range of 2 blocks, with no look back blocks, this means that
+the engine will see the results as the following:
 
-```
+```text
 Loop 0 FilterResult: {GoodBlocks: [{10:0x10},{11:0x11}], ReorgedBlocks:[]}
 
-                            a GoodBlocks reappears
+
+                             a GoodBlock reappears
                                         ▼
 Loop 1 FilterResult: {GoodBlocks: [{11:0x11},{12:0x12}], ReorgedBlocks:[]}
 
-                                                                  was once a GoodBlocks
-                                                                            ▼
+
+                                   we have not seen 13:0x13     was once a GoodBlock
+                                                ▼                          ▼
 Loop 2 FilterResult: {GoodBlocks: [12:0x1212},13:0x1313], ReorgedBlocks:[12:0x12]}
 
-                            a GoodBlocks reappears
+
+                            a GoodBlock reappears
                                         ▼
 Loop 3 FilterResult: {GoodBlocks: [{13:0x1313},{14:0x14}], ReorgedBlocks:[]}
 ```
 
-You can see that the once good `12:0x12` comes back in ReorgedBlocks even after its hash changed on the chain, and
-the new log from the forked chain appears as GoodBlocks in that round.
+You can see that the once good `12:0x12` comes back in ReorgedBlocks even after its hash changed
+on the chain, and the new log from the forked chain appears as GoodBlocks in that round.
 
-After emitting the result, emitter waits before continuing the next loop until the client sends the sync signal.
+After emitting the result, emitter waits before continuing the next loop until the client syncs
+with the engine by sending a lightweight signal.
 
 ## Future
 
