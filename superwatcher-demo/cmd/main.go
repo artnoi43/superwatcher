@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"os/signal"
-	"sync"
 	"syscall"
-	"time"
 
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,7 +13,6 @@ import (
 
 	// Most application/service code should only import these superwatcher packages, not `internal`.
 	"github.com/artnoi43/superwatcher"
-	spwconf "github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/components"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
@@ -29,56 +26,6 @@ import (
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/superwatcher-demo/internal/subengines/uniswapv3factoryengine"
 )
-
-// This demo function calls components.NewDefault, which is the preferred way to init superwatcher for most cases.
-func newSuperwatcherNoob(
-	conf *spwconf.Config,
-	ethClient superwatcher.EthClient,
-	addresses []common.Address,
-	topics []common.Hash,
-	stateDataGateway superwatcher.StateDataGateway,
-	serviceEngine superwatcher.ServiceEngine,
-) (superwatcher.Emitter, superwatcher.Engine) {
-	return components.NewDefault(
-		conf,
-		// Wraps ethClient to make HeaderByNumber returns superwatcher.EmitterBlockHeader
-		ethClient,
-		// Both data gateways can be implemented separately by different structs,
-		// but here in the demo it's just using default implementation.
-		superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock), // stateDataGateway alone is fine too
-		superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock), // stateDataGateway alone is fine too
-		addresses,
-		[][]common.Hash{topics},
-		serviceEngine,
-	)
-}
-
-// This demo function demonstrates how users can use the components package
-// to init superwatcher components individually
-func newSuperwatcherCustom( //nolint:unused
-	conf *spwconf.Config,
-	ethClient superwatcher.EthClient,
-	addresses []common.Address,
-	topics []common.Hash,
-	stateDataGateway superwatcher.StateDataGateway,
-	serviceEngine superwatcher.ServiceEngine,
-) (superwatcher.Emitter, superwatcher.Engine) {
-	errChan := make(chan error)
-	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.FilterResult)
-
-	emitter := components.NewEmitter(conf, ethClient, stateDataGateway, nil, syncChan, resultChan, errChan)
-	emitterClient := components.NewEmitterClient(conf, syncChan, resultChan, errChan)
-	engine := components.NewEngine(emitterClient, serviceEngine, stateDataGateway, conf.LogLevel)
-	poller := components.NewPoller(nil, nil, true, conf.FilterRange, ethClient.FilterLogs, conf.LogLevel)
-
-	poller.SetAddresses(addresses)
-	poller.SetTopics([][]common.Hash{topics})
-
-	emitter.SetPoller(poller)
-
-	return emitter, engine
-}
 
 func main() {
 	conf, err := soyutils.ReadFileYAMLPointer[config.Config]("./superwatcher-demo/config/config.yaml")
@@ -111,14 +58,6 @@ func main() {
 		panic("new stateDataGateway failed: " + err.Error())
 	}
 
-	ctx, cancel := signal.NotifyContext(
-		context.Background(),
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGQUIT,
-		syscall.SIGTERM,
-	)
-
 	// Hard-coded topic values for testing
 	demoContracts := hardcode.DemoContracts(
 		hardcode.Uniswapv3Factory,
@@ -141,53 +80,77 @@ func main() {
 		conf.SuperWatcherConfig.LogLevel,
 	)
 
-	watcherEmitter, watcherEngine := newSuperwatcherNoob(
+	watcher := components.NewSuperWatcherDefault(
 		conf.SuperWatcherConfig,
 		ethClient,
-		emitterAddresses,
-		emitterTopics,
+		stateDataGateway,
 		stateDataGateway,
 		demoEngine,
+		emitterAddresses,
+		[][]common.Hash{emitterTopics},
 	)
 
-	// Graceful shutdown
-	defer func() {
-		// Cancel context to stop both superwatcher emitter and engine
-		cancel()
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+	)
 
-		ethClient.Close()
-		if err := rdb.Close(); err != nil {
-			logger.Error(
-				"error during graceful shutdown - Redis client not properly closed",
-				zap.Error(err),
-			)
-		}
+	if err := watcher.Run(ctx, cancel); err != nil {
+		logger.Debug("watcher.Run exited", zap.Error(err))
+	}
 
-		logger.Info("graceful shutdown successful")
-	}()
+	// Alternatively, we can run the components manually
 
-	go func() {
-		if err := watcherEmitter.Loop(ctx); err != nil {
-			logger.Error("DEMO: emitter returned an error", zap.Error(err))
-		}
-	}()
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := watcherEngine.Loop(ctx); err != nil {
-			logger.Error("DEMO: engine returned an error", zap.Error(err))
-		}
-	}()
-
-	// Demo how to use SetDoReorg
-	go func() {
-		time.Sleep(5 * time.Second)
-		watcherEmitter.Poller().SetDoReorg(false)
-	}()
-
-	wg.Wait()
+	// watcherEmitter, watcherEngine := newSuperWatcherPreferred(
+	// 	conf.SuperWatcherConfig,
+	// 	ethClient,
+	// 	emitterAddresses,
+	// 	emitterTopics,
+	// 	stateDataGateway,
+	// 	demoEngine,
+	// )
+	//
+	// // Graceful shutdown
+	// defer func() {
+	// 	// Cancel context to stop both superwatcher emitter and engine
+	// 	cancel()
+	//
+	// 	ethClient.Close()
+	// 	if err := rdb.Close(); err != nil {
+	// 		logger.Error(
+	// 			"error during graceful shutdown - Redis client not properly closed",
+	// 			zap.Error(err),
+	// 		)
+	// 	}
+	//
+	// 	logger.Info("graceful shutdown successful")
+	// }()
+	//
+	// go func() {
+	// 	if err := watcherEmitter.Loop(ctx); err != nil {
+	// 		logger.Error("DEMO: emitter returned an error", zap.Error(err))
+	// 	}
+	// }()
+	//
+	// var wg sync.WaitGroup
+	// wg.Add(1)
+	// go func() {
+	// 	defer wg.Done()
+	// 	if err := watcherEngine.Loop(ctx); err != nil {
+	// 		logger.Error("DEMO: engine returned an error", zap.Error(err))
+	// 	}
+	// }()
+	//
+	// // Demo how to use SetDoReorg
+	// go func() {
+	// 	time.Sleep(5 * time.Second)
+	// 	watcherEmitter.Poller().SetDoReorg(false)
+	// }()
+	//
+	// wg.Wait()
 }
 
 func contractsToServices(

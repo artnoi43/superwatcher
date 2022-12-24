@@ -106,6 +106,30 @@ func (p *poller) Topics() [][]common.Hash {
 	return p.topics
 }
 
+func (p *poller) AddAddresses(addresses ...common.Address) {
+	p.Lock()
+	defer p.Unlock()
+
+	if len(p.addresses) == 0 {
+		p.addresses = addresses
+		return
+	}
+
+	p.addresses = append(p.addresses, addresses...)
+}
+
+func (p *poller) AddTopics(topics ...[]common.Hash) {
+	p.Lock()
+	defer p.Unlock()
+
+	if len(p.topics) == 0 {
+		p.topics = topics
+		return
+	}
+
+	p.topics = append(p.topics, topics...)
+}
+
 func (p *poller) SetAddresses(addresses []common.Address) {
 	p.Lock()
 	defer p.Unlock()

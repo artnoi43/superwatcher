@@ -82,9 +82,9 @@ func RunServiceTestComponents(testComponents *TestComponents) (
 		testComponents.client,
 		testComponents.dataGatewayGet,
 		testComponents.dataGatewaySet,
-		nil,
-		nil,
 		testComponents.serviceEngine,
+		nil,
+		nil,
 	)
 
 	return testComponents.dataGatewayGet, RunService(emitter, engine)

@@ -20,6 +20,14 @@ If you know what you are doing, then you can create each individual component ma
 Make sure to connect the all components together before you start calling `Loop`
 on both `Emitter` and `Engine`.
 
+## `NewSuperWatcherDefault` and `NewSuperWatcher`
+
+This package also defines type `superWatcher`, which implements `superwatcher.SuperWatcher`.
+This type encapsulates all other internal types' methods in `*superWatcher.Run` method,
+which starts `superwatcher.Emitter` and `superwatcher.Engine` concurrently.
+
+To use type `superWatcher`, call either `NewSuperWatcherDefault` or `NewSuperWatcher`.
+
 ## Initializing only parts of superwatcher
 
 ### The 4 components

@@ -48,7 +48,7 @@ func (e *emitter) loopEmit(
 		select {
 		// Graceful shutdown in main
 		case <-ctx.Done():
-			return errors.Wrap(ctx.Err(), "exitting loopEmit")
+			return errors.Wrap(ctx.Err(), "exiting loopEmit")
 
 		default:
 			// Compute current fromBlock and toBlock

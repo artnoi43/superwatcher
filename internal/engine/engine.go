@@ -39,12 +39,17 @@ func New(
 	}
 }
 
+// Loop is the entrypoint for `engine`. It exits if `e.handleResults` or `e.handleEmitterError`
+// returns an error. Upon returning, it calls e.shutdown(), which in turn shutdowns the EmitterClient.
 func (e *engine) Loop(ctx context.Context) error {
 	go func() {
 		defer e.shutdown()
 
 		if err := e.handleResults(ctx); err != nil {
-			e.debugger.Debug(1, "engine.run exited", zap.Error(err))
+			e.debugger.Debug(
+				1, "engine.run exited",
+				zap.Error(err),
+			)
 		}
 	}()
 

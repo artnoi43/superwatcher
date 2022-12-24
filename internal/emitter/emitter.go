@@ -100,6 +100,7 @@ func (e *emitter) Loop(ctx context.Context) error {
 
 // Shutdowns closes `e.filterResultChan` and `e.errChan`.
 func (e *emitter) Shutdown() {
+	e.debugger.Debug(1, "shutting down emitter - closing channels")
 	close(e.filterResultChan)
 	close(e.errChan)
 }

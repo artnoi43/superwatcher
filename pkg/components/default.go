@@ -9,15 +9,16 @@ import (
 
 // NewDefault returns default implementations of WatcherEmitter and WatcherEngine.
 // The EmitterClient is initialized and embedded to the returned engine within this function.
-// This is the preferred way for initializing superwatcher components.
+// This is the preferred way for initializing superwatcher components. If you don't need to
+// interact with these components, you can use `NewSuperWatcherDefault` instead.
 func NewDefault(
 	conf *config.Config,
 	ethClient superwatcher.EthClient,
 	getStateDataGateway superwatcher.GetStateDataGateway,
 	setStateDataGateway superwatcher.SetStateDataGateway,
+	serviceEngine superwatcher.ServiceEngine,
 	addresses []common.Address,
 	topics [][]common.Hash,
-	serviceEngine superwatcher.ServiceEngine,
 ) (
 	superwatcher.Emitter,
 	superwatcher.Engine,
