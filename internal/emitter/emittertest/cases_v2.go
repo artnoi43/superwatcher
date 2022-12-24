@@ -8,6 +8,40 @@ import (
 
 var TestCasesV2 = []TestConfig{
 	{
+		FromBlock: 15944400,
+		ToBlock:   15944500,
+		LogsFiles: []string{
+			logsPath + "/logs_poolfactory.json",
+			logsPath + "/logs_lp.json",
+		},
+		Param: reorgsim.BaseParam{
+			StartBlock: 15944390,
+		},
+		Events: []reorgsim.ReorgEvent{
+			{
+				ReorgBlock: 15944419,
+				MovedLogs: map[uint64][]reorgsim.MoveLogs{
+					15944419: {
+						{
+							NewBlock: 15944455,
+							TxHashes: []common.Hash{
+								common.HexToHash("0x41e29790ca68bd08062b3ed1670216d49ef458dbe398fafda3918f2322c18068"),
+							},
+						},
+					},
+					15944455: {
+						{
+							NewBlock: 15944498,
+							TxHashes: []common.Hash{
+								common.HexToHash("0x620be69b041f986127322985854d3bc785abe1dc9f4df49173409f15b7515164"),
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+	{
 		FromBlock: 15966500,
 		ToBlock:   15966540,
 		LogsFiles: []string{

@@ -2,6 +2,7 @@ package emittertest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -20,12 +21,17 @@ import (
 // TestEmitterV2 uses TestCasesV2 to call emitterTestTemplateV2.
 // V2 means that there are > 1 ReorgEvent for the test case.
 func TestEmitterV2(t *testing.T) {
-	for _, tc := range TestCasesV2 {
-		emitterTestTemplateV2(t, tc)
+	for i, tc := range TestCasesV2 {
+		t.Run("TestEmitterV2", func(t *testing.T) {
+			emitterTestTemplateV2(t, i+1, tc)
+		})
 	}
 }
 
-func emitterTestTemplateV2(t *testing.T, tc TestConfig) {
+func emitterTestTemplateV2(t *testing.T, caseNumber int, tc TestConfig) {
+	b, _ := json.Marshal(tc)
+	t.Logf("testConfig for case %d: %s", caseNumber, b)
+
 	type serviceConfig struct {
 		SuperWatcherConfig *config.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
 	}
