@@ -55,10 +55,10 @@ type ReorgSim struct {
 	reorgedChains []blockChain
 	// forked tracks whether reorgChains[i] was forked (used)
 	forked []bool
+	// seenReorgedBlock tracks ReorgEvent.ReorgBlock
+	seenReorgedBlock map[uint64]int
 	// currentBlock tracks the current block for the fake blockChain and is used for exclusively in BlockByNumber
 	currentBlock uint64
-	// filterLogsCounter is used to switch chain for a blockNumber, after certain number of calls to FilterLogs
-	filterLogsCounter map[uint64]int
 
 	debugger *debugger.Debugger
 }
@@ -92,7 +92,7 @@ func newReorgSim(
 		reorgedChains:     reorgedChains,
 		currentReorgEvent: 0,
 		forked:            make([]bool, len(events)),
-		filterLogsCounter: make(map[uint64]int),
+		seenReorgedBlock:  make(map[uint64]int),
 		debugger:          debugger.NewDebugger(name, logLevel),
 	}, nil
 }

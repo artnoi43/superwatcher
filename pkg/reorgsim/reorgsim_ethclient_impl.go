@@ -4,7 +4,6 @@ package reorgsim
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
@@ -12,85 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )
-
-const (
-	methodFilterLogs     = "filterLogs"
-	methodHeaderByNumber = "headerByNumber"
-)
-
-func (r *ReorgSim) chooseBlock(blockNumber uint64, caller string) (*block, int) {
-	r.Lock()
-	defer r.Unlock()
-
-	b, found := r.chain[blockNumber]
-	if !found || b == nil {
-		return nil, r.currentReorgEvent
-	}
-
-	logFunc := func(prefix string, blockHash string) {
-		r.debugger.Debug(
-			2,
-			fmt.Sprintf("%s chooseBlock", prefix),
-			zap.Uint64("blockNumber", b.blockNumber),
-			zap.String("blockHash", blockHash),
-			zap.Int("currentReorgEvent", r.currentReorgEvent),
-			zap.Bools("forked", r.forked),
-			zap.String("caller", caller),
-			zap.Bool("toBeForked", b.toBeForked),
-			zap.Int("seen", r.filterLogsCounter[b.blockNumber]),
-		)
-	}
-
-	if b.toBeForked {
-		var n int
-		switch caller {
-		case methodFilterLogs:
-			n = 1 // reorgSim.FilterLogs returns reorged blocks first
-			// case headerByNumber:
-			// 	n = 2
-		default:
-			panic("unexpected call to chooseBlock by \"" + caller + "\"")
-		}
-
-		// Only trigger new reorg if filterLogsCounter is >= n
-		if r.filterLogsCounter[blockNumber] >= n {
-			var currentChain blockChain
-			var lastReorg bool
-			if r.currentReorgEvent < len(r.events) {
-				currentChain = r.reorgedChains[r.currentReorgEvent]
-			} else {
-				currentChain = r.reorgedChains[len(r.reorgedChains)-1]
-				lastReorg = true
-			}
-
-			b, found = currentChain[blockNumber]
-			if !found {
-				return nil, r.currentReorgEvent
-			}
-
-			if !lastReorg {
-				if !r.forked[r.currentReorgEvent] {
-					r.debugger.Debug(
-						1, "REORGED!",
-						zap.Uint64("blockNumber", blockNumber),
-					)
-
-					r.chain = currentChain
-					r.currentBlock = blockNumber
-					r.forked[r.currentReorgEvent] = true
-					r.currentReorgEvent++
-				}
-			}
-		}
-	}
-
-	if caller == methodFilterLogs && b.toBeForked {
-		r.filterLogsCounter[blockNumber]++
-	}
-
-	logFunc("current chain", gslutils.StringerToLowerString(b.hash))
-	return b, r.currentReorgEvent
-}
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
 	if query.FromBlock == nil {
@@ -107,12 +27,22 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 		to = from
 	}
 
+	r.forkChain(from, to)
+
 	var logs []types.Log
 	for number := from; number <= to; number++ {
-		b, _ := r.chooseBlock(number, methodFilterLogs)
+		b := r.chain[number]
 		if b == nil || len(b.logs) == 0 {
 			continue
 		}
+
+		r.debugger.Debug(
+			3, "FilterLogs block",
+			zap.Uint64("blockNumber", b.blockNumber),
+			zap.String("blockHash", b.hash.String()),
+			zap.Bool("toBeForked", b.toBeForked),
+			zap.Bool("forked", b.reorgedHere),
+		)
 
 		appendFilterLogs(&b.logs, &logs, query.Addresses, query.Topics)
 	}
@@ -129,11 +59,69 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 		return r.currentBlock, nil
 	}
 
-	currentBlock := r.currentBlock
+	currentBlock := r.currentBlock // currentBlock will be returned
 	if currentBlock >= r.param.ExitBlock {
 		return currentBlock, errors.Wrapf(ErrExitBlockReached, "exit block %d reached", r.param.ExitBlock)
 	}
 
 	r.currentBlock = currentBlock + r.param.BlockProgress
 	return currentBlock, nil
+}
+
+func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
+	if len(r.events) == 0 {
+		return
+	}
+
+	var filterRange []uint64
+	for i := fromBlock; i <= toBlock; i++ {
+		filterRange = append(filterRange, i)
+	}
+
+	if r.currentReorgEvent >= len(r.events) {
+		return
+	}
+
+	event := r.events[r.currentReorgEvent]
+	// If event.ReorgBlock is within range
+	if gslutils.Contains(filterRange, event.ReorgBlock) {
+
+		r.seenReorgedBlock[event.ReorgBlock]++
+
+		if r.seenReorgedBlock[event.ReorgBlock] < 1 {
+			return
+		}
+
+		r.debugger.Debug(
+			1, "REORG!",
+			zap.Int("eventIndex", r.currentReorgEvent),
+			zap.Uint64("currentBlock", r.currentBlock),
+			zap.Uint64("reorgBlock", event.ReorgBlock),
+		)
+
+		var currentChain blockChain
+		var lastReorg bool
+		if r.currentReorgEvent < len(r.events) {
+			currentChain = r.reorgedChains[r.currentReorgEvent]
+		} else {
+			currentChain = r.reorgedChains[len(r.reorgedChains)-1]
+			lastReorg = true
+		}
+
+		if !lastReorg {
+			if !r.forked[r.currentReorgEvent] {
+				r.chain = currentChain
+				r.forked[r.currentReorgEvent] = true
+				r.currentBlock = event.ReorgBlock
+				r.currentReorgEvent++
+			}
+		}
+	}
+
+	r.debugger.Debug(
+		1, "ForkChain",
+		zap.Uint64("reorgedBlock blockNumber", event.ReorgBlock),
+		zap.Int("currentReorgEvent", r.currentReorgEvent),
+		zap.Bools("forked", r.forked),
+	)
 }
