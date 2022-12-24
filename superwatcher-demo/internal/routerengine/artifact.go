@@ -46,5 +46,3 @@ func filterArtifacts(
 
 	return nil
 }
-
-type artifactStore map[subengines.SubEngineEnum][]superwatcher.Artifact

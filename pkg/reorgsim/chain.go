@@ -45,7 +45,7 @@ func (chain blockChain) moveLogs(
 ) {
 	// A slice of unique blockNumbers that logs will be moved from.
 	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain.
-	var moveFromBlocks = make([]uint64, len(movedLogs))
+	moveFromBlocks := make([]uint64, len(movedLogs))
 	// A slice of unique blockNumbers that logs will be moved to.
 	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain.
 	var moveToBlocks []uint64

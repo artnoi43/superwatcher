@@ -37,7 +37,8 @@ func mapLogs(
 		// Add new blockNumber hash
 		if h, ok := mapFreshHashes[number]; !ok {
 			mapFreshHashes[number] = log.BlockHash
-		} else {
+
+		} else if ok {
 			if h != log.BlockHash {
 				logger.Panic(
 					"fresh logs on same block has different blockHash",

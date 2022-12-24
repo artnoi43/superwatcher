@@ -51,7 +51,6 @@ func (e *emitter) loopEmit(
 			return errors.Wrap(ctx.Err(), "exitting loopEmit")
 
 		default:
-
 			// Compute current fromBlock and toBlock
 			newStatus, err := e.computeFromBlockToBlock(
 				loopCtx,
@@ -79,7 +78,7 @@ func (e *emitter) loopEmit(
 				return errors.Wrap(err, "emitter failed to compute fromBlock and toBlock")
 			}
 
-			// updateStatus is called after `e.poller.poll` returned. It updates status to newStatus,
+			// updateStatus is called after `e.poller.Poll` returned. It updates status to newStatus,
 			// and also increments the counter for tracking retries during reorg.
 			// If |isReorging| is true, then the emitter *goes back* until the chain stops reorging.
 			updateStatus := func(isReorging bool) {
@@ -155,14 +154,7 @@ func (e *emitter) computeFromBlockToBlock(
 	*emitterStatus,
 	error,
 ) {
-	// Get chain's tallest block number and compare it with lastRecordedBlock
-	var err error
-	currentBlock, err := e.client.BlockNumber(ctx)
-	if err != nil {
-		return prevStatus, errors.Wrap(err, "failed to get current block number from node")
-	}
-
-	// lastRecordedBlock was saved by engine.
+	// lastRecordedBlock was saved externally by engine.
 	// The value to be saved should be superwatcher.FilterResult.LastGoodBlock
 	lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 	if err != nil {
@@ -178,14 +170,19 @@ func (e *emitter) computeFromBlockToBlock(
 		lastRecordedBlock = e.conf.StartBlock
 	}
 
+	// Get chain's tallest block number and compare it with lastRecordedBlock
+	currentBlock, err := e.client.BlockNumber(ctx)
+	if err != nil {
+		return prevStatus, errors.Wrap(err, "failed to get current block number from node")
+	}
+
 	e.debugger.Debug(
-		2,
-		"recent blocks",
+		2, "recent blocks",
 		zap.Uint64("currentChainBlock", currentBlock),
 		zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 	)
 
-	// Continue if there's no new block yet
+	// Return now if there's no new block
 	if lastRecordedBlock == currentBlock {
 		if !prevStatus.GoBackFirstStart {
 			return prevStatus, errors.Wrapf(errNoNewBlock, "block %d", currentBlock)
@@ -273,8 +270,7 @@ func computeFromBlockToBlock(
 		)
 
 		debugger.Debug(
-			1,
-			"emitter: first run, going back",
+			1, "emitter: first run, going back",
 			zap.Uint64("lastRecordedBlock", lastRecordedBlock),
 			zap.Uint64("goBack", goBack),
 			zap.Uint64("fromBlock", fromBlock),

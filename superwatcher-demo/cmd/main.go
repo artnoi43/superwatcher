@@ -13,6 +13,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
+	// Most application/service code should only import these superwatcher packages, not `internal`.
 	"github.com/artnoi43/superwatcher"
 	spwconf "github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/components"
@@ -52,8 +53,9 @@ func newSuperwatcherNoob(
 	)
 }
 
-// This demo function demonstrates how users can use the components package to init superwatcher components
-func newSuperwatcherCustom(
+// This demo function demonstrates how users can use the components package
+// to init superwatcher components individually
+func newSuperwatcherCustom( //nolint:unused
 	conf *spwconf.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
