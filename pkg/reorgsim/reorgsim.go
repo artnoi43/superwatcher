@@ -130,15 +130,15 @@ func NewReorgSimFromLogsFiles(
 	)
 }
 
-func (r *ReorgSim) Chain() blockChain {
+func (r *ReorgSim) Chain() blockChain { //nolint:revive
 	return r.chain
 }
 
-func (r *ReorgSim) ReorgedChains() []blockChain {
+func (r *ReorgSim) ReorgedChains() []blockChain { //nolint:revive
 	return r.reorgedChains
 }
 
-func (r *ReorgSim) ReorgedChain(i int) blockChain {
+func (r *ReorgSim) ReorgedChain(i int) blockChain { //nolint:revive
 	return r.reorgedChains[i]
 }
 

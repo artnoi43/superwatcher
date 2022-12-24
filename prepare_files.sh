@@ -3,6 +3,15 @@
 # Execute this script to prepare superwatcher misc files,
 # including copying config example
 
-mkdir -pv ./tmp ./pkg/reorgsim/tmp;
-touch ./tmp/fakeredis.db ./pkg/reorgsim/tmp/fakeredis.db;
-cp -v ./superwatcher-demo/config/config.yaml.example ./superwatcher-demo/config/config.yaml;
+DB_PATHS=( "./tmp" "./pkg/tmp" "./pkg/reorgsim/tmp" "./pkg/datagateway/tmp" )
+
+for d in "${DB_PATHS[@]}"; do
+    echo "preparing $d";
+
+    mkdir -pv $d;
+    touch "$d/fakeredis.db";
+done;
+
+[ ! -f "./superwatcher-demo/config/config.yaml" ]\
+ && "echo copying demo config file"\
+ && cp -v ./superwatcher-demo/config/config.yaml.example ./superwatcher-demo/config/config.yaml;

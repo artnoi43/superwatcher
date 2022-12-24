@@ -46,10 +46,13 @@ func TestServiceEnginePoolFactoryV1(t *testing.T) {
 		}
 
 		for _, result := range results {
-			expectedReorgedHash := reorgsim.PRandomHash(result.BlockCreated)
+			expectedReorgedHash := reorgsim.ReorgHash(result.BlockCreated, 0)
 			if result.BlockCreated >= testCase.Events[0].ReorgBlock {
 				if result.BlockHash != expectedReorgedHash {
-					t.Fatalf("blockHash not reorged")
+					t.Fatalf(
+						"unexpected reorgedBlockHash - expecting %s, got %s",
+						expectedReorgedHash.String(), result.BlockHash.String(),
+					)
 				}
 
 				continue

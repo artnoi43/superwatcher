@@ -70,13 +70,15 @@ func TestServiceEngineENSV1(t *testing.T) {
 		for _, result := range results {
 			if result.BlockNumber >= testCase.Events[0].ReorgBlock {
 				t.Log("checking block", result.BlockNumber)
-				// Since reorged block uses hash from deterministic PRandomHash,
-				// we can check for equality this way
-				expectedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockNumber))
+
+				expectedHash := gslutils.StringerToLowerString(
+					reorgsim.ReorgHash(result.BlockNumber, 0),
+				)
 
 				if result.BlockHash != expectedHash {
 					t.Fatalf("unexpected block %d hash (ens): expecting %s, got %s", result.BlockNumber, expectedHash, result.BlockHash)
 				}
+
 				if result.ID == "" {
 					t.Fatal("empty ENS ID -- should not happen")
 				}

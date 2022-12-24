@@ -20,11 +20,12 @@ type MoveLogs struct {
 }
 
 // reorg calls `*block.reorg` on every block whose blockNumber is greater than |reorgedBlock|.
-// Unlike `*block.reorg`, which returns a `*block`, c.reorg(reorgedBlock) modifies c in-place.
-func (chain blockChain) reorg(reorgedBlock uint64) {
+// |reorgIndex| is used to generate different hash for the same block in different ReorgEvent.
+// Unlike `*block.reorg`, which returns a `*block`, `c.reorg` modifies c in-place.
+func (chain blockChain) reorg(reorgedBlock uint64, reorgIndex int) {
 	for number, block := range chain {
 		if number >= reorgedBlock {
-			chain[number] = block.reorg()
+			chain[number] = block.reorg(reorgIndex)
 		}
 	}
 }
@@ -155,7 +156,7 @@ func NewBlockChain(
 
 		// Reorg and move logs
 		forkedChain := copyBlockChain(prevChain)
-		forkedChain.reorg(event.ReorgBlock)
+		forkedChain.reorg(event.ReorgBlock, i)
 		moveFromBlocks, moveToBlocks := forkedChain.moveLogs(event.MovedLogs)
 
 		// Ensure that all moveFromBlock exist in forkedChain.
@@ -168,12 +169,14 @@ func NewBlockChain(
 			}
 
 			if b, ok := forkedChain[prevFrom]; !ok || b == nil {
-				forkedChain[prevFrom] = &block{
+				fromBlock := &block{
 					blockNumber: prevFrom,
-					hash:        RandomHash(prevFrom),
 					reorgedHere: prevFrom == event.ReorgBlock,
 					toBeForked:  true,
 				}
+
+				fromBlock.reorg(i)
+				forkedChain[prevFrom] = fromBlock
 			}
 		}
 
@@ -187,12 +190,14 @@ func NewBlockChain(
 			}
 
 			if _, ok := prevChain[forkedTo]; !ok {
-				prevChain[forkedTo] = &block{
+				toBlock := &block{
 					blockNumber: forkedTo,
-					hash:        RandomHash(forkedTo),
 					reorgedHere: forkedTo == event.ReorgBlock,
 					toBeForked:  true,
 				}
+
+				toBlock.reorg(i)
+				prevChain[forkedTo] = toBlock
 			}
 		}
 
@@ -224,7 +229,7 @@ func newBlockChainReorgSimple(
 
 	// |reorgedChain| will differ from |oldChain| after |reorgedBlock|
 	reorgedChain := copyBlockChain(chain)
-	reorgedChain.reorg(reorgedBlock)
+	reorgedChain.reorg(reorgedBlock, 0)
 
 	return chain, reorgedChain
 }
@@ -256,12 +261,13 @@ func NewBlockChainReorgMoveLogs(
 			// This created block will need to have non-deterministic blockHash via RandomHash()
 			// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
 			if _, ok := chain[moveToBlock]; !ok {
-				chain[moveToBlock] = &block{
+				toBlock := &block{
 					blockNumber: moveToBlock,
-					hash:        RandomHash(moveToBlock),
 					reorgedHere: moveToBlock == event.ReorgBlock,
 					toBeForked:  true,
 				}
+
+				chain[moveToBlock] = toBlock
 			}
 		}
 	}

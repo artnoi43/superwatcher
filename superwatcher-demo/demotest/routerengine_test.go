@@ -72,7 +72,7 @@ func TestServiceEngineRouterV1(t *testing.T) {
 				t.Errorf("emptyDomain name for resultENS id: %s", result.ID)
 			}
 
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockNumber))
+			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
 
 			if result.BlockNumber < testCase.Events[0].ReorgBlock {
 				if result.BlockHash == expectedReorgedHash {

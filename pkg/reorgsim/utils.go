@@ -12,7 +12,7 @@ import (
 func InitLogsFromFiles(filenames ...string) []types.Log {
 	var logs []types.Log
 	for _, filename := range filenames {
-		fileLogs := readJsonLogs(filename)
+		fileLogs := readLogsJSON(filename)
 		logs = append(logs, fileLogs...)
 	}
 
@@ -24,7 +24,7 @@ func InitLogsFromFiles(filenames ...string) []types.Log {
 func InitMappedLogsFromFiles(filenames ...string) map[uint64][]types.Log {
 	hardcodedLogs := []types.Log{}
 	for _, filename := range filenames {
-		logs := readJsonLogs(filename)
+		logs := readLogsJSON(filename)
 		hardcodedLogs = append(hardcodedLogs, logs...)
 	}
 	mappedLogs := mapLogsToNumber(hardcodedLogs)
@@ -41,7 +41,7 @@ func mapLogsToNumber(logs []types.Log) map[uint64][]types.Log {
 	return m
 }
 
-func mapLogsToTxHash(logs []types.Log) map[common.Hash][]types.Log {
+func mapLogsToTxHash(logs []types.Log) map[common.Hash][]types.Log { //nolint:unused
 	m := make(map[common.Hash][]types.Log)
 	for _, log := range logs {
 		m[log.TxHash] = append(m[log.TxHash], log)
@@ -50,7 +50,7 @@ func mapLogsToTxHash(logs []types.Log) map[common.Hash][]types.Log {
 	return m
 }
 
-func readJsonLogs(filename string) []types.Log {
+func readLogsJSON(filename string) []types.Log {
 	b, err := os.ReadFile(filename)
 	if err != nil {
 		panic(err.Error())

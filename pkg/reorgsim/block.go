@@ -32,21 +32,22 @@ func (b *block) Logs() []types.Log {
 
 // reorg takes a block, and simulates chain reorg on that block
 // by changing the hash, and changing the logs' block hashes.
-func (b *block) reorg() *block {
-	// TODO: implement
-	newBlockHash := PRandomHash(b.blockNumber)
+// math.RandInt(seed) is mixed with b.blockNumber to produce different
+// block hash for the same block across different chains created by []ReorgEvent.
+func (b *block) reorg(reorgIndex int) *block {
+	reorgedHash := ReorgHash(b.blockNumber, reorgIndex)
 
 	logs := make([]types.Log, len(b.logs))
 	copy(logs, b.logs)
 
 	// Use index to access logs so that the internal array members change value too.
 	for i := range logs {
-		logs[i].BlockHash = newBlockHash
+		logs[i].BlockHash = reorgedHash
 	}
 
 	return &block{
 		blockNumber: b.blockNumber,
-		hash:        newBlockHash,
+		hash:        reorgedHash,
 		logs:        logs,
 		reorgedHere: b.reorgedHere,
 		toBeForked:  true,

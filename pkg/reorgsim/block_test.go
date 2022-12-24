@@ -2,6 +2,7 @@ package reorgsim
 
 import (
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -18,13 +19,13 @@ func TestReorg(t *testing.T) {
 
 	b := block{
 		blockNumber: blockNumber,
-		hash:        RandomHash(70),
+		hash:        common.BigToHash(big.NewInt(69)),
 		logs:        blockLogs,
 		reorgedHere: false,
 		toBeForked:  true,
 	}
 
-	_b := b.reorg()
+	_b := b.reorg(0)
 	newLogsByTxHash := mapLogsToTxHash(_b.logs)
 	fmt.Println("newLogs by TxHash")
 	prontMapLen(newLogsByTxHash, "txHash", "len(logs)")
