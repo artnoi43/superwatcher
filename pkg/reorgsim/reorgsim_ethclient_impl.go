@@ -5,7 +5,6 @@ package reorgsim
 import (
 	"context"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -73,21 +72,14 @@ func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
 		return
 	}
 
-	var filterRange []uint64
-	for i := fromBlock; i <= toBlock; i++ {
-		filterRange = append(filterRange, i)
-	}
-
 	if r.currentReorgEvent >= len(r.events) {
 		return
 	}
 
 	event := r.events[r.currentReorgEvent]
 	// If event.ReorgBlock is within range
-	if gslutils.Contains(filterRange, event.ReorgBlock) {
-
+	if fromBlock <= event.ReorgBlock && toBlock >= event.ReorgBlock {
 		r.seenReorgedBlock[event.ReorgBlock]++
-
 		if r.seenReorgedBlock[event.ReorgBlock] < 1 {
 			return
 		}
