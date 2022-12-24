@@ -3,7 +3,6 @@ package emittertest
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -65,10 +64,6 @@ func emitterTestTemplateV2(t *testing.T, tc TestConfig) {
 	testPoller := poller.New(nil, nil, conf.DoReorg, conf.FilterRange, sim.FilterLogs, conf.LogLevel)
 	testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, filterResultChan, errChan)
 
-	movedHashes, logsDest := reorgsim.LogsFinalDst(tc.Events)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -82,40 +77,36 @@ func emitterTestTemplateV2(t *testing.T, tc TestConfig) {
 		}
 	}()
 
+	movedHashes, logsDest := reorgsim.LogsFinalDst(tc.Events)
+
 	var reached = make(map[common.Hash]bool)
-	go func() {
-		defer wg.Done()
-
-		for {
-			result := <-filterResultChan
-			if result == nil {
-				break
-			}
-
-			for _, b := range result.GoodBlocks {
-				for _, log := range b.Logs {
-					if !gslutils.Contains(movedHashes, log.TxHash) {
-						continue
-					}
-
-					dest := logsDest[log.TxHash]
-
-					if b.Number != dest {
-						// Explicitly marked as false here
-						reached[log.TxHash] = false
-						continue
-					}
-
-					reached[log.TxHash] = true
-				}
-			}
-
-			fakeRedis.SetLastRecordedBlock(nil, result.LastGoodBlock)
-			syncChan <- struct{}{}
+	for {
+		result := <-filterResultChan
+		if result == nil {
+			break
 		}
-	}()
 
-	wg.Wait()
+		for _, b := range result.GoodBlocks {
+			for _, log := range b.Logs {
+				if !gslutils.Contains(movedHashes, log.TxHash) {
+					continue
+				}
+
+				dest := logsDest[log.TxHash]
+
+				if b.Number != dest {
+					// Explicitly marked as false here
+					reached[log.TxHash] = false
+					continue
+				}
+
+				reached[log.TxHash] = true
+			}
+		}
+
+		fakeRedis.SetLastRecordedBlock(nil, result.LastGoodBlock)
+		syncChan <- struct{}{}
+	}
 
 	t.Log("reached", reached)
 	for txHash := range reached {
