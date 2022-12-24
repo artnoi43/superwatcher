@@ -1,3 +1,5 @@
+<!-- markdownlint-configure-file { "MD013": false } -->
+
 # Package `demotest`
 
 demotest is a test package using [`servicetest`](../../pkg/servicetest/) for superwatcher-demo.

@@ -48,15 +48,17 @@ func (e *emitter) loopEmit(
 		select {
 		// Graceful shutdown in main
 		case <-ctx.Done():
-			return ctx.Err()
+			return errors.Wrap(ctx.Err(), "exitting loopEmit")
 
 		default:
+
+			// Compute current fromBlock and toBlock
 			newStatus, err := e.computeFromBlockToBlock(
 				loopCtx,
 				status,
 			)
 
-			// If first run and there's no new block
+			// If first run and there's no new block, we'll call poller in this loop
 			if status.GoBackFirstStart && errors.Is(err, errNoNewBlock) {
 				err = nil
 			}
@@ -70,11 +72,6 @@ func (e *emitter) loopEmit(
 						zap.Uint64("currentBlock", newStatus.CurrentBlock),
 						zap.Uint64("lastRecordedBlock", newStatus.LastRecordedBlock),
 					)
-					continue
-				}
-
-				if errors.Is(err, superwatcher.ErrFetchError) {
-					e.debugger.Debug(1, "fetch error", zap.Error(err))
 
 					continue
 				}
@@ -255,7 +252,8 @@ func computeFromBlockToBlock(
 	var err error
 	var fromBlock, toBlock, goBack uint64
 
-	if prevStatus.GoBackFirstStart {
+	switch {
+	case prevStatus.GoBackFirstStart:
 
 		// Start with going back for filterRange * goBackRetries blocks if watcher was restarted
 		// lastRecordedBlock = 80, filterRange = 10, maxRetries = 5
@@ -282,7 +280,7 @@ func computeFromBlockToBlock(
 			zap.Uint64("fromBlock", fromBlock),
 		)
 
-	} else if prevStatus.IsReorging {
+	case prevStatus.IsReorging:
 
 		// The lookBack range will grow after each retries, but not the forward range
 		// lastRecordedBlock = 80, filterRange = 10
@@ -310,7 +308,7 @@ func computeFromBlockToBlock(
 			)
 		}
 
-	} else {
+	default:
 		// Call fromBlockToBlock in normal cases
 		// lastRecordedBlock = 80, filterRange = 10
 		// 71  - 90   [normalCase] -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10

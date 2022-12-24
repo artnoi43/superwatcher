@@ -21,10 +21,10 @@ type MoveLogs struct {
 
 // reorg calls `*block.reorg` on every block whose blockNumber is greater than |reorgedBlock|.
 // Unlike `*block.reorg`, which returns a `*block`, c.reorg(reorgedBlock) modifies c in-place.
-func (c blockChain) reorg(reorgedBlock uint64) {
-	for number, block := range c {
+func (chain blockChain) reorg(reorgedBlock uint64) {
+	for number, block := range chain {
 		if number >= reorgedBlock {
-			c[number] = block.reorg()
+			chain[number] = block.reorg()
 		}
 	}
 }
@@ -37,27 +37,31 @@ func (c blockChain) reorg(reorgedBlock uint64) {
 // the 2nd of which is a slice of blocks to which logs are moved.
 // NOTE: Do not use this function directly, since it only moves logs to new blocks and does not reorg blocks.
 // It is meant to be used inside NewBlockChainReorgMoveLogs, and NewBlockChain
-func (c blockChain) moveLogs(
+func (chain blockChain) moveLogs(
 	movedLogs map[uint64][]MoveLogs,
 ) (
 	[]uint64, // Blocks from which logs are moved from
 	[]uint64, // Blocks to which logs are moved to
 ) {
+	// A slice of unique blockNumbers that logs will be moved from.
+	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain.
+	var moveFromBlocks = make([]uint64, len(movedLogs))
 	// A slice of unique blockNumbers that logs will be moved to.
 	// Might be useful to caller, maybe to create empty blocks (no logs) for the old chain.
-	var moveFromBlocks []uint64
 	var moveToBlocks []uint64
 
+	var c int
 	for moveFromBlock, moves := range movedLogs {
-		b, ok := c[moveFromBlock]
+		b, ok := chain[moveFromBlock]
 		if !ok {
 			panic(fmt.Sprintf("logs moved from non-existent block %d", moveFromBlock))
 		}
 
-		moveFromBlocks = append(moveFromBlocks, moveFromBlock)
+		moveFromBlocks[c] = moveFromBlock
+		c++
 
 		for _, move := range moves {
-			targetBlock, ok := c[move.NewBlock]
+			targetBlock, ok := chain[move.NewBlock]
 			if !ok {
 				panic(fmt.Sprintf("logs moved to non-existent block %d", move.NewBlock))
 			}
@@ -131,15 +135,15 @@ func NewBlockChain(
 	logs map[uint64][]types.Log,
 	events []ReorgEvent,
 ) (
-	blockChain, // Original chain
-	[]blockChain, // Reorged chains
+	blockChain, //nolint:revive
+	[]blockChain, //nolint:revive
 ) {
 	if len(events) == 0 {
 		return newBlockChain(logs, NoReorg), nil
 	}
 
 	chain := newBlockChain(logs, events[0].ReorgBlock)
-	var reorgedChains = make([]blockChain, len(events))
+	reorgedChains := make([]blockChain, len(events))
 
 	for i, event := range events {
 		var prevChain blockChain
@@ -232,8 +236,8 @@ func NewBlockChainReorgMoveLogs(
 	mappedLogs map[uint64][]types.Log,
 	event ReorgEvent,
 ) (
-	blockChain,
-	blockChain,
+	blockChain, //nolint:revive
+	blockChain, //nolint:revive
 ) {
 	for blockNumber := range event.MovedLogs {
 		if blockNumber < event.ReorgBlock {

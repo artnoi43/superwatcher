@@ -1,3 +1,5 @@
+<!-- markdownlint-configure-file { "MD013": false } -->
+
 # Package `engine`
 
 This package defines the superwatcher engine (core engine), a component implementing `superwatcher.WatcherEngine`
@@ -27,7 +29,7 @@ In addition to keeping processing states, the engine also stores the so-called a
 The artifacts returned by the `ServiceEngine` is in the form of `map[common.Hash][]superwatcher.Artifact`,
 with the block hash as map key.
 
-** Inside the engine `metadataTracker`, artifacts storage keys are formatted strings of `"$number:$hash"`**,
+**Inside the engine `metadataTracker`, artifacts storage keys are formatted strings of `"$number:$hash"`**,
 and maybe particularly useful if the service code needs to process a transaction with multiple logs
 from multiple contracts.
 

@@ -1,3 +1,5 @@
+<!-- markdownlint-configure-file { "MD013": false } -->
+
 # Chain reorg mock code
 
 Package `reorgsim` provides a very basic mocked [`superwatcher.EthClient`](../../ethclient.go),

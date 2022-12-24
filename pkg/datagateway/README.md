@@ -1,3 +1,5 @@
+<!-- markdownlint-configure-file { "MD013": false } -->
+
 # Package `datagateway`
 
 datagateway provides helper functions and example implementation for `superwatcher.StateDataGateway`.

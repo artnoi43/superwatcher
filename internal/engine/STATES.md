@@ -1,3 +1,5 @@
+<!-- markdownlint-configure-file { "MD013": false } -->
+
 # State transition in managed engine
 
 The `superwatcher.WatcherEngine` implementation in this package is a managed engine,
@@ -19,7 +21,7 @@ again in `WatcherEngine.handleResults`.
 In this example, the same block reappears 3 times, with eventSeeBlock being fired
 every time the block appears.
 
-```
+```text
 Loop 0: {
     stateNull + eventSeeBlock > stateSeen + eventProcess > stateHandled
 }
@@ -52,7 +54,7 @@ If a block number and is reorged multiple times, then the loops will look like t
 > Each loop result is also constructed with demo purposes - I assume that the filter range was very large
 > and the target block still remains in emitter's range well up to Loop 11.
 
-```
+```text
 # Block {number:69,hash:0x1a} first appears
 Loop 0: {
     {number:69,hash:0x1a}: stateNull + eventSeeBlock > stateSeen + eventProcess > stateHandled
