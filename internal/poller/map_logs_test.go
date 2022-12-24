@@ -14,7 +14,7 @@ import (
 )
 
 func TestMapLogs(t *testing.T) {
-	for i, tc := range emittertest.TestCases {
+	for i, tc := range emittertest.TestCasesV1 {
 		b, _ := json.Marshal(tc)
 		t.Logf("testCase: %s", b)
 		err := testMapLogsV1(&tc)

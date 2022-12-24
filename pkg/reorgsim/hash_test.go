@@ -21,32 +21,41 @@ func TestPRandomHash(t *testing.T) {
 func TestReorgHash(t *testing.T) {
 	// tests map blockNumber and reorgIndex for func ReorgHash.
 	// No combinations of these should cause collisions.
-	tests := map[uint64]int{
-		69:  1,
-		70:  0,
-		1:   69,
-		0:   70,
-		150: 7,
-		151: 6,
-		7:   151,
-		6:   150,
-		5:   70,
+	type param struct {
+		blockNumber uint64
+		reorgIndex  int
+	}
+
+	tests := []param{
+		{blockNumber: 69, reorgIndex: 1},
+		{blockNumber: 69, reorgIndex: -1},
+		{blockNumber: 70, reorgIndex: 0},
+		{blockNumber: 1, reorgIndex: 69},
+		{blockNumber: 0, reorgIndex: 70},
+		{blockNumber: 150, reorgIndex: 7},
+		{blockNumber: 151, reorgIndex: 6},
+		{blockNumber: 7, reorgIndex: 151},
+		{blockNumber: 6, reorgIndex: 150},
+		{blockNumber: 6, reorgIndex: 151},
+		{blockNumber: 500, reorgIndex: 151},
 	}
 
 	seen := make(map[common.Hash]bool)
-	for blockNumber, reorgIndex := range tests {
-		h := ReorgHash(blockNumber, reorgIndex)
+	for _, test := range tests {
+		// Check for collision
+		h := ReorgHash(test.blockNumber, test.reorgIndex)
 		if seen[h] {
-			t.Fatal("got hash collisions")
+			t.Fatal("got collisions from ReorgHash")
 		}
 
 		seen[h] = true
 
-		h1 := ReorgHash(blockNumber, reorgIndex)
+		// Check for non-deterministic behaviour
+		h1 := ReorgHash(test.blockNumber, test.reorgIndex)
 		if h != h1 {
 			t.Fatalf(
 				"ReorgHash(%d, %d) is not deterministic: expecting %s, got %s",
-				blockNumber, reorgIndex, h.String(), h1.String(),
+				test.blockNumber, test.reorgIndex, h.String(), h1.String(),
 			)
 		}
 	}

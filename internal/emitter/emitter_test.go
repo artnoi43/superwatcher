@@ -41,7 +41,7 @@ func TestEmitterAllCases(t *testing.T) {
 	allCasesAlreadyRun = true
 
 	_, verbose := getFlagValues()
-	for i := range emittertest.TestCases {
+	for i := range emittertest.TestCasesV1 {
 		testName := fmt.Sprintf("Case:%d", i+1)
 		t.Run(testName, func(t *testing.T) {
 			emitterTestTemplateV1(t, i+1, verbose)
@@ -69,7 +69,7 @@ func TestEmitterByCase(t *testing.T) {
 		return
 	}
 
-	if len(emittertest.TestCases)+1 > caseNumber {
+	if len(emittertest.TestCasesV1)+1 > caseNumber {
 		testName := fmt.Sprintf("Case:%d", caseNumber)
 		t.Run(testName, func(t *testing.T) {
 			emitterTestTemplateV1(t, caseNumber, verbose)
@@ -84,7 +84,7 @@ func TestEmitterByCase(t *testing.T) {
 // emitterTestTemplateV1 is designed to test emitter's full `Loop` with ReorgSimV1 mocked chain.
 // This means that the test chain will only have 1 reorg event.
 func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
-	tc := emittertest.TestCases[caseNumber-1]
+	tc := emittertest.TestCasesV1[caseNumber-1]
 	b, _ := json.Marshal(tc)
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
 
