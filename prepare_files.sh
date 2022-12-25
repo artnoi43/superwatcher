@@ -13,5 +13,5 @@ for d in "${DB_PATHS[@]}"; do
 done;
 
 [ ! -f "./superwatcher-demo/config/config.yaml" ]\
- && "echo copying demo config file"\
+ && echo "copying superwatcher-demo config file"\
  && cp -v ./superwatcher-demo/config/config.yaml.example ./superwatcher-demo/config/config.yaml;
