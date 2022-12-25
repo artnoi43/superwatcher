@@ -55,11 +55,10 @@ func (p *poller) Poll(
 	lenLogs := len(eventLogs)
 	p.debugger.Debug(2, "got headers and logs", zap.Int("logs", lenLogs))
 
-	// Clear all tracker's blocks before fromBlock - filterRange
-	until := fromBlock - p.filterRange
-	p.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
-
 	if p.tracker != nil {
+		// Clear all tracker's blocks before fromBlock - filterRange
+		until := fromBlock - p.filterRange
+		p.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
 		p.tracker.clearUntil(until)
 	}
 
