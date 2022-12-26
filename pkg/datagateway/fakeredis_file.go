@@ -53,5 +53,5 @@ func (m *fakeRedisFile) Shutdown() error {
 func writeLastRecordedBlockToFile(filename string, lastRecordedBlock uint64) error {
 	s := fmt.Sprintf("%d", lastRecordedBlock)
 
-	return os.WriteFile(filename, []byte(s), os.ModePerm)
+	return errors.Wrap(os.WriteFile(filename, []byte(s), os.ModePerm), "failed to write fakeRedisFile db")
 }

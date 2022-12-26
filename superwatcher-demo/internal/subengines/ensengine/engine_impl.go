@@ -71,6 +71,8 @@ func (e *ensEngine) HandleGoodLog(
 				case eventNameRegistered:
 					handleFunc = e.handleNameRegisteredRegistrar
 					eventName = eventNameRegistered
+				default:
+					continue
 				}
 			}
 		}
@@ -86,6 +88,8 @@ func (e *ensEngine) HandleGoodLog(
 					if prevArtifact == nil {
 						panic("nil prevArtifact")
 					}
+				default:
+					continue
 				}
 			}
 		}
@@ -175,6 +179,9 @@ func (e *ensEngine) handleReorgedLog(
 					}
 					artifact = *reorgArtifact
 					return artifact, nil
+
+				default:
+					continue
 				}
 			}
 		}
@@ -191,6 +198,9 @@ func (e *ensEngine) handleReorgedLog(
 					}
 					artifact = *reorgArtifact
 					return artifact, nil
+
+				default:
+					continue
 				}
 			}
 		}
