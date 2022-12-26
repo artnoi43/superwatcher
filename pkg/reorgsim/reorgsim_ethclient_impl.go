@@ -26,7 +26,16 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 		to = from
 	}
 
-	r.forkChain(from, to)
+	r.triggerForkChain(from, to)
+
+	// See if there's unforked r.reorgedChains before forking
+	for _, chainForked := range r.forked {
+		if !chainForked {
+			if r.triggered[r.currentReorgEvent] {
+				r.forkChain(from, to)
+			}
+		}
+	}
 
 	var logs []types.Log
 	for number := from; number <= to; number++ {
@@ -67,7 +76,7 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	return currentBlock, nil
 }
 
-func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
+func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 	if len(r.events) == 0 {
 		return
 	}
@@ -77,10 +86,19 @@ func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
 	}
 
 	event := r.events[r.currentReorgEvent]
-	// If event.ReorgBlock is within range
+	// If event.ReorgBlock is within range, then mark as current event as triggered
+	if rangeStart <= event.ReorgTrigger && rangeEnd >= event.ReorgTrigger {
+		r.triggered[r.currentReorgEvent] = true
+	}
+}
+
+func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) { //nolint:unused
+	event := r.events[r.currentReorgEvent]
+
 	if fromBlock <= event.ReorgBlock && toBlock >= event.ReorgBlock {
-		r.seenReorgedBlock[event.ReorgBlock]++
-		if r.seenReorgedBlock[event.ReorgBlock] < 1 {
+		r.seen[event.ReorgBlock]++
+
+		if r.seen[event.ReorgBlock] < 1 {
 			return
 		}
 
@@ -88,16 +106,18 @@ func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
 			1, "REORG!",
 			zap.Int("eventIndex", r.currentReorgEvent),
 			zap.Uint64("currentBlock", r.currentBlock),
+			zap.Uint64("reorgTrigger", event.ReorgTrigger),
 			zap.Uint64("reorgBlock", event.ReorgBlock),
 		)
 
 		var currentChain blockChain
 		var lastReorg bool
+
 		if r.currentReorgEvent < len(r.events) {
 			currentChain = r.reorgedChains[r.currentReorgEvent]
 		} else {
-			currentChain = r.reorgedChains[len(r.reorgedChains)-1]
 			lastReorg = true
+			currentChain = r.reorgedChains[len(r.reorgedChains)-1]
 		}
 
 		if !lastReorg {
@@ -105,15 +125,18 @@ func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
 				r.chain = currentChain
 				r.forked[r.currentReorgEvent] = true
 				r.currentBlock = event.ReorgBlock
+				r.seen = make(map[uint64]int)
+
 				r.currentReorgEvent++
 			}
 		}
-	}
 
-	r.debugger.Debug(
-		1, "ForkChain",
-		zap.Uint64("reorgedBlock blockNumber", event.ReorgBlock),
-		zap.Int("currentReorgEvent", r.currentReorgEvent),
-		zap.Bools("forked", r.forked),
-	)
+		r.debugger.Debug(
+			1, "forkChain",
+			zap.Uint64("reorgTrigger blockNumber", event.ReorgTrigger),
+			zap.Uint64("reorgedBlock blockNumber", event.ReorgBlock),
+			zap.Int("currentReorgEvent", r.currentReorgEvent),
+			zap.Bools("forked", r.forked),
+		)
+	}
 }

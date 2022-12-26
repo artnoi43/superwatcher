@@ -16,20 +16,52 @@ type BaseParam struct {
 	Debug bool `json:"-"`
 }
 
-var DefaultParam = BaseParam{
-	BlockProgress: 20,
-	Debug:         true,
-}
-
 // ReorgEvent is parameters for chain reorg events.
 type ReorgEvent struct {
-	// TODO: add ReorgTrigger - the block which when seen, triggers a reorg from ReorgBlock
-	// ReorgTrigger uint64 `json:"reorgTrigger"`
-
+	// ReorgTrigger is the block which when seen, triggers a reorg from ReorgBlock
+	ReorgTrigger uint64 `json:"reorgTrigger"`
 	// ReorgBlock is the pivot block after which ReorgSim should use ReorgSim.reorgedChain.
 	ReorgBlock uint64 `json:"reorgBlock"`
-	// MovedLogs represents all of the moved logs after a chain reorg event. The map key is the source blockNumber.
+	// MovedLogs represents all of the moved logs after a chain reorg event.
+	// The map key is the source blockNumber.
 	MovedLogs map[uint64][]MoveLogs `json:"movedLogs"`
 }
 
-var errInvalidReorgEvents = errors.New("invalid reorg events")
+var (
+	errInvalidReorgEvents = errors.New("invalid reorg events")
+	DefaultParam          = BaseParam{
+		BlockProgress: 20,
+		Debug:         true,
+	}
+)
+
+// validateReorgEvent validates order of |events|,
+// and will use event.ReorgBlock as event.ReorgTrigger if the latter is 0,
+func validateReorgEvent(events []ReorgEvent) ([]ReorgEvent, error) {
+	for i, event := range events {
+		// Overwrites ReorgTrigger if is 0
+		// or invalidates if reorgBlock > reorgTrigger
+		switch {
+		case events[i].ReorgTrigger == 0:
+			events[i].ReorgTrigger = events[i].ReorgBlock
+
+		case events[i].ReorgBlock > events[i].ReorgTrigger:
+			return nil, errors.Wrapf(
+				errInvalidReorgEvents,
+				"reorgBlock %d is behind reorgTrigger %d",
+				event.ReorgBlock, event.ReorgTrigger,
+			)
+		}
+
+		for from := range event.MovedLogs {
+			if from < event.ReorgBlock {
+				return nil, errors.Wrapf(
+					errInvalidReorgEvents, "logs moved from %d, which is before reorgBlock %d",
+					from, event.ReorgBlock,
+				)
+			}
+		}
+	}
+
+	return events, nil
+}

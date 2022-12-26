@@ -3,7 +3,6 @@ package reorgsim
 import (
 	"sync"
 
-	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -24,10 +23,12 @@ type ReorgSim struct {
 	chain blockChain
 	// reorgedChains is the multiple reorged blockchains construct from `ReorgSim.chain` and `ReorgSim.param`
 	reorgedChains []blockChain
+	// triggered tracks whether a corresponding ReorgSim.reorgedChains was triggered
+	triggered []bool
 	// forked tracks whether reorgChains[i] was forked (used)
 	forked []bool
-	// seenReorgedBlock tracks ReorgEvent.ReorgBlock
-	seenReorgedBlock map[uint64]int
+	// seen tracks ReorgEvent.ReorgBlock
+	seen map[uint64]int
 	// currentBlock tracks the current block for the fake blockChain and is used for exclusively in BlockByNumber
 	currentBlock uint64
 
@@ -45,7 +46,8 @@ func newReorgSim(
 	*ReorgSim,
 	error,
 ) {
-	if err := validateReorgEvents(events); err != nil {
+	validatedEvents, err := validateReorgEvent(events)
+	if err != nil {
 		return nil, errors.Wrap(err, "invalid events")
 	}
 
@@ -58,12 +60,13 @@ func newReorgSim(
 
 	return &ReorgSim{
 		param:             param,
-		events:            events,
+		events:            validatedEvents,
 		chain:             chain,
 		reorgedChains:     reorgedChains,
 		currentReorgEvent: 0,
+		triggered:         make([]bool, len(events)),
 		forked:            make([]bool, len(events)),
-		seenReorgedBlock:  make(map[uint64]int),
+		seen:              make(map[uint64]int),
 		debugger:          debugger.NewDebugger(name, logLevel),
 	}, nil
 }
@@ -111,29 +114,4 @@ func (r *ReorgSim) ReorgedChains() []blockChain { //nolint:revive
 
 func (r *ReorgSim) ReorgedChain(i int) blockChain { //nolint:revive
 	return r.reorgedChains[i]
-}
-
-// Subsequent ReorgEvent.ReorgBlock should be larger than the previous ones
-func validateReorgEvents(events []ReorgEvent) error {
-	reorgBlocks := gslutils.Map(events, func(event ReorgEvent) (uint64, bool) {
-		return event.ReorgBlock, true
-	})
-
-	for i, reorgBlock := range reorgBlocks {
-		var prevReorgBlock uint64
-		if i == 0 {
-			continue
-		} else {
-			prevReorgBlock = reorgBlocks[i-1]
-		}
-
-		if prevReorgBlock > reorgBlock {
-			return errors.Wrapf(
-				errInvalidReorgEvents, "event at index %d has smaller value than index %d (%d > %d)",
-				i, i-1, reorgBlock, prevReorgBlock,
-			)
-		}
-	}
-
-	return nil
 }

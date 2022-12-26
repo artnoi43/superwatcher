@@ -41,7 +41,7 @@ while `BaseParam` controls `ReorgSim` behavior such as initial block number and 
 
 See code in tests to get a clearer picture of how this works.
 
-## Mocked blockchains in `reorgsim`
+## Mocked blockchains in package `reorgsim`
 
 The package defines blockchains (type [`blockChain`](./chain.go)) as a hash map of uint64 to
 a reference to custom type [`block`](./block.go).
@@ -64,6 +64,13 @@ Each event will map directly to a reorged chain.
 
 Each event must have a non-zero uint64 field `ReorgEvent.ReorgBlock`, which is a pivot point after which
 block hashes changes (i.e. reorged/forked).
+
+Another property for each event is `ReorgEvent.ReorgTrigger`, which is a trigger for forking blockchains.
+This means that after the `ReorgSim` have seen `ReorgTrigger` more than once, chain reorg is triggered,
+and all blocks after `ReorgBlock` will have different block hashes, and the current chain block drops to
+`ReorgBlock`.
+
+> If `ReorgEvent.ReorgTrigger` is 0, then `ReorgEvent.ReorgBlock` will be used as trigger.
 
 Each event may also optionally have `ReorgEvent.MovedLogs`, which is a map of a block number to `[]MoveLogs`.
 The key of map `ReorgEvent.MovedLogs` is the block number from which the logs are moved.
@@ -117,34 +124,44 @@ If the increment value is zero, the code panics.
 
 #### Method `ReorgSim.FilterLogs`
 
-This method returns logs from either of the chains, depending on the internal states and the filter query.
+This method returns logs from any one of the chains `r.chain` and `r.reorgedChain`,
+depending on the internal states and the filter query.
+
+> The logic for triggering a chain reorg with `ReorgEvent.ReorgTrigger` is in `ReorgSim.triggerForkChain(from, to)`.
+> The logic for forking chain is in `ReorgSim.forkChain(from, to)`.
 
 The main logic here is this - for all blocks before the event `ReorgEvent.ReorgedBlock`, use logs
 from the old chain. The logs _at or after `Param.ReorgedBlock`_ however, will be taken from
 BOTH the old and the reorged chain, depending on the internal states during each call.
 
-The logic for forking chain is in `ReorgSim.forkChain(from, to)`, and it goes like this:
+1. Every call to `FilterLogs(from, to)` will call `triggerForkChain(from, to)`.
 
-1. Every call to `FilterLogs(from, to)` will call `forkChain(from, to)`.
+2. `triggerForkChain` gets the current `ReorgEvent` via `ReorgSim.events[ReorgSim.currentReorgEvent]`.
+   It then checks if `ReorgEvent.ReorgTrigger` is within inclusive range `[from, to]`.
 
-2. `forkChain` gets the current `ReorgEvent` via `ReorgSim.events[ReorgSim.currentReorgEvent]`.
-   It then checks if `ReorgEvent.ReorgBlock` is within inclusive range `[from, to]`.
+3. If `ReorgEvent.ReorgTrigger` is within range `[from, to]`, then `triggerForkChain` writes
+   `ReorgSim.triggered[ReorgSim.currentReorgEvent]` as true, and `triggerForkChain` returns
+   to `FilterLogs`.
 
-3. If `ReorgEvent.ReorgBlock` is within range `[from, to]`, then the counter hash map
-   `ReorgSim.seenReorgedBlock` is incremented by 1.
+4. `FilterLogs` checks if all chains are forked, if not, it checks if the current event was triggered.
+   If triggered, it calls `forkChain(from, to)`
 
-4. If `ReorgEvent.seenReorgBlock[event.ReorgBlock]` is greater than 1, then `forkChain`
+5. `forkChain(from, to)` checks if the current event's `ReorgBlock` field is within inclusive range `[from, to]`,
+   if it is, then it increments the counter `ReorgSim.seen[ReorgEvent.ReorgBlock]` by 1.
+
+6. If `ReorgEvent.seen[event.ReorgBlock]` is greater than 1, then `forkChain`
    will _fork_ the current chain, by switching `ReorgSim.chain` to the next chain in
    `ReorgSim.reorgedChains`, incrementing the counter `currentReorgEvent` if it should be,
    and overwriting `ReorgSim.currentBlock` with the current event's `ReorgBlock`.
+   The counter `ReorgSim.seen` is also cleared after the fork.
 
-5. After `forkChain` returns, `ReorgSim.chain` should already be _forked_,
+7. After `forkChain` returns, `ReorgSim.chain` should already be _forked_,
    and `FilterLogs` can just access blocks from current chain with `ReorgSim.chain[blockNumber]`.
 
-6. The logs within range are appended together and returned.
+8. The logs within range are appended together and returned.
 
 > `ReorgSim` must be able to let poller/emitter see the original hash first
-> (i.e. when `ReorgSim.seenReorgBlock` for a block is still 0 or 1), otherwise we can test
+> (i.e. when `ReorgSim.seen` for a block is still 0 or 1), otherwise we can test
 > `poller.mapLogs`, as the function relies on old block hash saved in the tracker
 
 #### [Deprecated] Method `ReorgSim.HeaderByNumber`
