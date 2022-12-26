@@ -21,6 +21,14 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
+var (
+	flagCase           = flag.Int("case", -1, "Emitter test case")
+	verboseFlag        = flag.Bool("v", false, "Verbose emitter output")
+	testLogsPath       = "../../test_logs"
+	serviceConfigPath  = "../../examples/demoservice/config/config.yaml"
+	allCasesAlreadyRun = false
+)
+
 // TODO: verbose does not work
 func getFlagValues() (caseNumber int, verbose bool) {
 	caseNumber = 1 // default case 1
@@ -35,7 +43,6 @@ func getFlagValues() (caseNumber int, verbose bool) {
 }
 
 // allCasesAlreadyRun is used to skip TestEmitterByCase if TestEmitterAllCases were run.
-var allCasesAlreadyRun bool
 
 func TestEmitterAllCases(t *testing.T) {
 	allCasesAlreadyRun = true
@@ -53,11 +60,6 @@ func TestEmitterAllCases(t *testing.T) {
 // go test -v ./internal/emitter -run TestEmitterByCase -case 69
 // Go test binary already called `flag.Parse`, so we just simply
 // need to name our flag so that the flag package knows to parse it too.
-var (
-	flagCase    = flag.Int("case", -1, "Emitter test case")
-	verboseFlag = flag.Bool("v", false, "Verbose emitter output")
-)
-
 func TestEmitterByCase(t *testing.T) {
 	if allCasesAlreadyRun {
 		t.Skip("all cases were tested before -- skipping")
@@ -92,7 +94,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 		SuperWatcherConfig *config.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
 	}
 
-	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig]("../../superwatcher-demo/config/config.yaml")
+	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
 	if err != nil {
 		t.Fatal("bad config", err.Error())
 	}

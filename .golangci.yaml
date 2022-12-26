@@ -27,7 +27,7 @@ run:
     - "tmp"
     - "temp.*"
     - "scripts"
-    - "superwatcher-demo/lib/contracts/*"
+    - "examples/demoservice/lib/contracts/*"
 
 # See more: https://golangci-lint.run/usage/linters/
 linters:

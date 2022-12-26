@@ -18,6 +18,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
+var serviceConfigPath = "../../../examples/demoservice/config/config.yaml"
+
 // TestEmitterV2 uses TestCasesV2 to call emitterTestTemplateV2.
 // V2 means that there are > 1 ReorgEvent for the test case.
 func TestEmitterV2(t *testing.T) {
@@ -36,7 +38,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int, tc TestConfig) {
 		SuperWatcherConfig *config.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
 	}
 
-	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig]("../../../superwatcher-demo/config/config.yaml")
+	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
 	if err != nil {
 		t.Fatal("bad config", err.Error())
 	}

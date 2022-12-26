@@ -42,8 +42,12 @@ jobs:
       - name: Install dependencies
         run: go get ./...
 
+      - name: Init `gitignore`d test files
+        run: ./scripts/prepare_files.sh
+
       # Q: Why Reviewdog ?
-      # A: Because golangci-lint action has some issues, not working on self-hosted runners and can't report errors detail on review comments.
+      # A: Because golangci-lint action has some issues, not working on self-hosted runners,
+      # and it can't report errors detail on review comments.
       # See: https://github.com/reviewdog/reviewdog
       - name: Lint with Reviewdog
         uses: reviewdog/action-golangci-lint@v2
@@ -52,9 +56,6 @@ jobs:
           workdir: ./
           golangci_lint_flags: "--config=./.golangci.yaml --verbose --new-from-rev=${{ github.event.pull_request.base.sha }}" # show only issues from new commits
           fail_on_error: true
-
-      - name: Init test files
-        run: ./prepare_files.sh
 
       - name: Test
         run: go test ./...
