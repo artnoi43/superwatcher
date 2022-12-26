@@ -53,6 +53,9 @@ jobs:
           golangci_lint_flags: "--config=./.golangci.yaml --verbose --new-from-rev=${{ github.event.pull_request.base.sha }}" # show only issues from new commits
           fail_on_error: true
 
+      - name: Init test files
+        run: ./prepare_files.sh
+
       - name: Test
         run: go test ./...
 
