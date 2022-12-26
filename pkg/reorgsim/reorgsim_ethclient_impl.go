@@ -76,6 +76,8 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 	return currentBlock, nil
 }
 
+// triggerForkChain updates `r.triggered` to true
+// if the current ReorgEvent.ReorgTrigger is within range [from, to]
 func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 	if len(r.events) == 0 {
 		return
@@ -92,7 +94,10 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 	}
 }
 
-func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) { //nolint:unused
+// forkChain performs chain reorg logic if the current ReorgEvent.ReorgBlock is within range [from, to]
+// and if r.seen[ReorgEvent.ReorgBlock] is >= 1. The latter check allows for the poller/emitter to see
+// pre-fork block hash once, so that we can test the poller/emitter logic.
+func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
 	event := r.events[r.currentReorgEvent]
 
 	if fromBlock <= event.ReorgBlock && toBlock >= event.ReorgBlock {

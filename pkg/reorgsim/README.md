@@ -5,8 +5,22 @@
 Package `reorgsim` provides a very basic mocked [`superwatcher.EthClient`](../../ethclient.go),
 implemented by struct [`ReorgSim`](./reorgsim.go).
 
-> Note: this package will undergo a major refactor, after which `ReorgSim` will be able to
-> trigger chain reorg in backward direction.
+## Features
+
+The code in this package can simulate an Ethereum blockchain chain reorgs.
+
+It supports the following chain reorg characteristics:
+
+1. Changing block hashes after the reorg event (log's `TxHash` is unchanged, for easier application testing)
+
+2. Moving logs to new blocks after the reorg event
+
+3. Multiple reorg events
+
+4. Backward chain reorgs (i.e. the chain keeps going back to shorter block height)
+
+This should be sufficient for testing `superwatcher.Poller`, `superwatcher.Emitter`,
+and `superwatcher.Engine` implementations.
 
 ## Types
 
