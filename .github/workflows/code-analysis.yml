@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"] # "self-hosted", "macos-latest", "windows-latest"
-        go-version: ["1.18.x", ""] # empty string means use go-version-file(go.mod)
+        go-version: [""] # empty string means use go-version-file (go.mod)
     name: Lint, Test and Build (${{ matrix.go-version }} ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     env:
