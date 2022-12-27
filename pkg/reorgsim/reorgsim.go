@@ -17,16 +17,16 @@ type ReorgSim struct {
 	param BaseParam
 	// events represents the multiple events
 	events []ReorgEvent
+	// forked tracks whether reorgChains[i] was forked (used)
+	forked []bool
 	// currentReorgEvent is used to index events and reorgedChains
 	currentReorgEvent int
+	// triggered is the index of current triggered ReorgSim.reorgedChains
+	triggered int
 	// chain is the original blockChain
 	chain blockChain
 	// reorgedChains is the multiple reorged blockchains construct from `ReorgSim.chain` and `ReorgSim.param`
 	reorgedChains []blockChain
-	// triggered tracks whether a corresponding ReorgSim.reorgedChains was triggered
-	triggered []bool
-	// forked tracks whether reorgChains[i] was forked (used)
-	forked []bool
 	// seen tracks ReorgEvent.ReorgBlock
 	seen map[uint64]int
 	// currentBlock tracks the current block for the fake blockChain and is used for exclusively in BlockByNumber
@@ -64,7 +64,7 @@ func newReorgSim(
 		chain:             chain,
 		reorgedChains:     reorgedChains,
 		currentReorgEvent: 0,
-		triggered:         make([]bool, len(events)),
+		triggered:         0,
 		forked:            make([]bool, len(events)),
 		seen:              make(map[uint64]int),
 		debugger:          debugger.NewDebugger(name, logLevel),

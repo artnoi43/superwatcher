@@ -31,7 +31,7 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 	// See if there's unforked r.reorgedChains before forking
 	for _, chainForked := range r.forked {
 		if !chainForked {
-			if r.triggered[r.currentReorgEvent] {
+			if r.triggered == r.currentReorgEvent {
 				r.forkChain(from, to)
 			}
 		}
@@ -90,7 +90,7 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 	event := r.events[r.currentReorgEvent]
 	// If event.ReorgBlock is within range, then mark as current event as triggered
 	if rangeStart <= event.ReorgTrigger && rangeEnd >= event.ReorgTrigger {
-		r.triggered[r.currentReorgEvent] = true
+		r.triggered = r.currentReorgEvent
 	}
 }
 
