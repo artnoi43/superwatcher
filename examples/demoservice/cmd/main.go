@@ -82,7 +82,7 @@ func main() {
 
 	watcher := components.NewSuperWatcherDefault(
 		conf.SuperWatcherConfig,
-		ethClient,
+		superwatcher.WrapEthClient(ethClient),
 		stateDataGateway,
 		stateDataGateway,
 		demoEngine,

@@ -93,6 +93,14 @@ func (p *poller) Poll(
 					zap.String("trackerHash", reorgedBlock.String()),
 				)
 
+				header, err := p.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
+				if err != nil {
+					return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
+				}
+
+				forkedHash = header.Hash()
+				mapFreshHashes[blockNumber] = forkedHash
+
 				// TODO: Do something, don't continue, it's incorrect.
 				// continue
 			}

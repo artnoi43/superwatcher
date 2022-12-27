@@ -19,7 +19,7 @@ type block struct {
 	toBeForked  bool // toBeForked marks if this block will later be forked from the old chain according to ReorgEvent
 }
 
-// Implements superwatcher.EmitterBlockHeader
+// Implements superwatcher.BlockHeader
 // We'll use block in place of *types.Header,
 // because *types.Header is too packed to mock.
 func (b *block) Hash() common.Hash {
