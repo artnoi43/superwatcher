@@ -12,7 +12,7 @@ func NewPoller(
 	topics [][]common.Hash,
 	doReorg bool,
 	filterRange uint64,
-	filterFunc superwatcher.FilterFunc,
+	client superwatcher.EthClient,
 	logLevel uint8,
 ) superwatcher.EmitterPoller {
 	return poller.New(
@@ -20,7 +20,7 @@ func NewPoller(
 		topics,
 		doReorg,
 		filterRange,
-		filterFunc,
+		client,
 		logLevel,
 	)
 }

@@ -20,7 +20,7 @@ type poller struct {
 
 	lastRecordedBlock uint64 // For clearing tracker if SetDoReorg(false) is called
 	filterRange       uint64
-	filterFunc        superwatcher.FilterFunc
+	client            superwatcher.EthClient
 	doReorg           bool
 
 	tracker  *blockInfoTracker
@@ -32,7 +32,7 @@ func New(
 	topics [][]common.Hash,
 	doReorg bool,
 	filterRange uint64,
-	filterFunc superwatcher.FilterFunc,
+	client superwatcher.EthClient,
 	logLevel uint8,
 ) superwatcher.EmitterPoller {
 	var tracker *blockInfoTracker
@@ -44,7 +44,7 @@ func New(
 		addresses:   addresses,
 		topics:      topics,
 		filterRange: filterRange,
-		filterFunc:  filterFunc,
+		client:      client,
 		doReorg:     doReorg,
 		tracker:     tracker,
 		debugger:    debugger.NewDebugger("poller", logLevel),

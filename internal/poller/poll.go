@@ -34,7 +34,7 @@ func (p *poller) Poll(
 
 		func() ([]types.Log, error) {
 			// No error wrap because in retry mode
-			return p.filterFunc(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
+			return p.client.FilterLogs(ctx, ethereum.FilterQuery{ //nolint:wrapcheck
 				FromBlock: big.NewInt(int64(fromBlock)),
 				ToBlock:   big.NewInt(int64(toBlock)),
 				Addresses: p.addresses,

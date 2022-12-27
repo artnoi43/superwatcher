@@ -44,7 +44,7 @@ func NewEmitterWithPoller(
 		conf,
 		client,
 		stateDataGateway,
-		NewPoller(addresses, topics, conf.DoReorg, conf.FilterRange, client.FilterLogs, conf.LogLevel),
+		NewPoller(addresses, topics, conf.DoReorg, conf.FilterRange, client, conf.LogLevel),
 		syncChan,
 		filterResultChan,
 		errChan,
