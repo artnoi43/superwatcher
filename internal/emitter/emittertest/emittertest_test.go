@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -18,19 +20,68 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-var serviceConfigPath = "../../../examples/demoservice/config/config.yaml"
+var (
+	serviceConfigPath  = "../../../examples/demoservice/config/config.yaml"
+	allCasesAlreadyRun = false
+
+	flagCase    = flag.Int("case", -1, "Emitter test case")
+	verboseFlag = flag.Bool("v", false, "Verbose emitter output")
+)
+
+// TODO: verbose does not work
+func getFlagValues() (caseNumber int, verbose bool) {
+	caseNumber = 1 // default case 1
+	if flagCase != nil {
+		caseNumber = *flagCase
+	}
+	if verboseFlag != nil {
+		verbose = *verboseFlag
+	}
+
+	return caseNumber, verbose
+}
 
 // TestEmitterV2 uses TestCasesV2 to call emitterTestTemplateV2.
 // V2 means that there are > 1 ReorgEvent for the test case.
 func TestEmitterV2(t *testing.T) {
-	for i, tc := range TestCasesV2 {
+	for i := range TestCasesV2 {
 		t.Run("TestEmitterV2", func(t *testing.T) {
-			emitterTestTemplateV2(t, i+1, tc)
+			emitterTestTemplateV2(t, i+1)
 		})
 	}
+
+	allCasesAlreadyRun = true
 }
 
-func emitterTestTemplateV2(t *testing.T, caseNumber int, tc TestConfig) {
+// Run this from the root of the repo with:
+// go test -v ./internal/emitter -run TestEmitterByCase -case 69
+// Go test binary already called `flag.Parse`, so we just simply
+// need to name our flag so that the flag package knows to parse it too.
+func TestEmitterByCase(t *testing.T) {
+	if allCasesAlreadyRun {
+		t.Skip("all cases were tested before -- skipping")
+	}
+
+	caseNumber, _ := getFlagValues()
+	if caseNumber < 0 {
+		TestEmitterV2(t)
+		return
+	}
+
+	if len(TestCasesV2)+1 > caseNumber {
+		testName := fmt.Sprintf("Case:%d", caseNumber)
+		t.Run(testName, func(t *testing.T) {
+			emitterTestTemplateV2(t, caseNumber)
+		})
+
+		return
+	}
+
+	t.Skipf("no such test case: %d", caseNumber)
+}
+
+func emitterTestTemplateV2(t *testing.T, caseNumber int) {
+	tc := TestCasesV2[caseNumber-1]
 	b, _ := json.Marshal(tc)
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
 
@@ -49,7 +100,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int, tc TestConfig) {
 
 	param := reorgsim.BaseParam{
 		StartBlock:    tc.FromBlock,
-		ExitBlock:     tc.ToBlock + 100,
+		ExitBlock:     tc.ToBlock + 200,
 		BlockProgress: 10,
 		Debug:         true,
 	}

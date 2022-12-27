@@ -1,6 +1,8 @@
 package poller
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -63,6 +65,11 @@ func mapLogs(
 		trackerBlock, found := tracker.getTrackerBlockInfo(number)
 		if !found {
 			continue
+		}
+
+		empty := common.Hash{}
+		if trackerBlock.Hash == empty {
+			panic(fmt.Sprintf("kuy %d", empty))
 		}
 
 		// If we have same blockHash with same logs length,

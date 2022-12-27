@@ -112,7 +112,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	}
 	events := []reorgsim.ReorgEvent{tc.Events[0]}
 
-	sim, err := reorgsim.NewReorgSimFromLogsFiles(param, events, tc.LogsFiles, "EmitterTestV1", 2)
+	sim, err := reorgsim.NewReorgSimFromLogsFiles(param, events, tc.LogsFiles, "EmitterTestV1", 4)
 	if err != nil {
 		t.Fatal("error creating ReorgSim", err.Error())
 	}
@@ -138,6 +138,9 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	filterResultChan := make(chan *superwatcher.FilterResult)
 	testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, filterResultChan, errChan)
 
+	// Check if the emitter noticed a reorg
+	var reorgedOnce bool
+
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		testEmitter.Loop(ctx)
@@ -156,8 +159,15 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	latestGoodBlocks := make(map[uint64]*superwatcher.BlockInfo)
 	movedToCount := make(map[common.Hash]bool)
 
+	var prevResult *superwatcher.FilterResult
 	for {
 		result := <-filterResultChan
+
+		if prevResult != nil {
+			if result.LastGoodBlock <= prevResult.ToBlock {
+				reorgedOnce = true
+			}
+		}
 
 		if result == nil {
 			break
@@ -171,6 +181,8 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 		lastGoodBlock := result.LastGoodBlock
 
 		for i, block := range result.ReorgedBlocks {
+			reorgedOnce = true
+
 			blockNumber := block.Number
 
 			// Check LastGoodBlock
@@ -234,7 +246,15 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 		}
 
 		fakeRedis.SetLastRecordedBlock(ctx, result.LastGoodBlock)
+		prevResult = result
+
 		syncChan <- struct{}{}
+	}
+
+	if len(tc.Events) != 0 {
+		if !reorgedOnce {
+			t.Fatal("not reorgedOnce")
+		}
 	}
 
 	for _, txHash := range movedTxHashes {

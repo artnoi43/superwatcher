@@ -19,7 +19,8 @@ var TestCasesV2 = []TestConfig{
 		},
 		Events: []reorgsim.ReorgEvent{
 			{
-				ReorgBlock: 15944419,
+				ReorgTrigger: 15944430,
+				ReorgBlock:   15944419,
 				MovedLogs: map[uint64][]reorgsim.MoveLogs{
 					15944419: {
 						{

@@ -41,16 +41,8 @@ func validateReorgEvent(events []ReorgEvent) ([]ReorgEvent, error) {
 	for i, event := range events {
 		// Overwrites ReorgTrigger if is 0
 		// or invalidates if reorgBlock > reorgTrigger
-		switch {
-		case events[i].ReorgTrigger == 0:
+		if event.ReorgTrigger == 0 {
 			events[i].ReorgTrigger = events[i].ReorgBlock
-
-		case events[i].ReorgBlock > events[i].ReorgTrigger:
-			return nil, errors.Wrapf(
-				errInvalidReorgEvents,
-				"reorgBlock %d is behind reorgTrigger %d",
-				event.ReorgBlock, event.ReorgTrigger,
-			)
 		}
 
 		for from := range event.MovedLogs {

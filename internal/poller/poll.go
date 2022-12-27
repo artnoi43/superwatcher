@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
 // Poll filters Ethereum event logs from fromBlock to toBlock,
@@ -85,10 +84,23 @@ func (p *poller) Poll(
 				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "reorgedBlock %d not found in tracker", blockNumber)
 			}
 
-			logger.Info(
-				"chain reorg detected",
+			// Logs may be moved from blockNumber, hence there's no value in map
+			forkedHash, ok := mapFreshHashes[blockNumber]
+			if !ok {
+				p.debugger.Debug(
+					1, "chain reorg detected - known logs was removed from this block",
+					zap.Uint64("blockNumber", blockNumber),
+					zap.String("trackerHash", reorgedBlock.String()),
+				)
+
+				// TODO: Do something, don't continue, it's incorrect.
+				// continue
+			}
+
+			p.debugger.Debug(
+				1, "chain reorg detected",
 				zap.Uint64("blockNumber", blockNumber),
-				zap.String("freshHash", mapFreshHashes[blockNumber].String()),
+				zap.String("freshHash", forkedHash.String()),
 				zap.String("trackerHash", reorgedBlock.String()),
 			)
 
