@@ -11,7 +11,7 @@ import (
 // Use this as ReorgEvent.ReorgBlock to disable chain reorg.
 const NoReorg uint64 = 0
 
-type BlockChain map[uint64]*block
+type BlockChain map[uint64]*Block
 
 // MoveLogs represent a move of logs to a new blockNumber
 type MoveLogs struct {
@@ -117,7 +117,7 @@ func newBlockChain(
 			toBeForked = blockNumber >= reorgedBlock
 		}
 
-		chain[blockNumber] = &block{
+		chain[blockNumber] = &Block{
 			blockNumber: blockNumber,
 			hash:        logs[0].BlockHash,
 			logs:        logs,
@@ -169,7 +169,7 @@ func NewBlockChain(
 			}
 
 			if b, ok := forkedChain[prevFrom]; !ok || b == nil {
-				fromBlock := &block{
+				fromBlock := &Block{
 					blockNumber: prevFrom,
 					reorgedHere: prevFrom == event.ReorgBlock,
 					toBeForked:  true,
@@ -190,7 +190,7 @@ func NewBlockChain(
 			}
 
 			if _, ok := prevChain[forkedTo]; !ok {
-				toBlock := &block{
+				toBlock := &Block{
 					blockNumber: forkedTo,
 					reorgedHere: forkedTo == event.ReorgBlock,
 					toBeForked:  true,
@@ -261,7 +261,7 @@ func NewBlockChainReorgMoveLogs(
 			// This created block will need to have non-deterministic blockHash via RandomHash()
 			// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
 			if _, ok := chain[moveToBlock]; !ok {
-				toBlock := &block{
+				toBlock := &Block{
 					blockNumber: moveToBlock,
 					reorgedHere: moveToBlock == event.ReorgBlock,
 					toBeForked:  true,

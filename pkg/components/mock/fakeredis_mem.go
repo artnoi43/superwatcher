@@ -1,10 +1,12 @@
-package datagateway
+package mock
 
 import (
 	"context"
 	"sync"
 
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
 
 type fakeRedisMem struct {
@@ -22,7 +24,7 @@ func (m *fakeRedisMem) GetLastRecordedBlock(ctx context.Context) (uint64, error)
 		return m.lastRecordedBlock, nil
 	}
 
-	return 0, errors.Wrap(ErrRecordNotFound, "key not found")
+	return 0, errors.Wrap(datagateway.ErrRecordNotFound, "key not found")
 }
 
 func (m *fakeRedisMem) SetLastRecordedBlock(ctx context.Context, v uint64) error {

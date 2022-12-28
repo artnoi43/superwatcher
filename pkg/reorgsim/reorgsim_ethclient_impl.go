@@ -83,7 +83,7 @@ func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwa
 	blockNumber := number.Uint64()
 	b, ok := r.chain[blockNumber]
 	if !ok {
-		return &block{
+		return &Block{
 			hash:        common.BigToHash(big.NewInt(int64(blockNumber))),
 			blockNumber: blockNumber,
 		}, nil

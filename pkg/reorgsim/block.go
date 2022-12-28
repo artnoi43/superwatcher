@@ -8,9 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// block represents the Ethereum block. It is also used
+// Block represents the Ethereum Block. It is also used
 // by reorgSim as superwatcher.EmitterBlockHeader.
-type block struct {
+type Block struct {
 	blockNumber uint64
 	hash        common.Hash
 	logs        []types.Log
@@ -22,11 +22,11 @@ type block struct {
 // Implements superwatcher.BlockHeader
 // We'll use block in place of *types.Header,
 // because *types.Header is too packed to mock.
-func (b *block) Hash() common.Hash {
+func (b *Block) Hash() common.Hash {
 	return b.hash
 }
 
-func (b *block) Logs() []types.Log {
+func (b *Block) Logs() []types.Log {
 	return b.logs
 }
 
@@ -34,7 +34,7 @@ func (b *block) Logs() []types.Log {
 // by changing the hash, and changing the logs' block hashes.
 // math.RandInt(seed) is mixed with b.blockNumber to produce different
 // block hash for the same block across different chains created by []ReorgEvent.
-func (b *block) reorg(reorgIndex int) *block {
+func (b *Block) reorg(reorgIndex int) *Block {
 	reorgedHash := ReorgHash(b.blockNumber, reorgIndex)
 
 	logs := make([]types.Log, len(b.logs))
@@ -45,7 +45,7 @@ func (b *block) reorg(reorgIndex int) *block {
 		logs[i].BlockHash = reorgedHash
 	}
 
-	return &block{
+	return &Block{
 		blockNumber: b.blockNumber,
 		hash:        reorgedHash,
 		logs:        logs,
@@ -54,7 +54,7 @@ func (b *block) reorg(reorgIndex int) *block {
 	}
 }
 
-func (b *block) removeLogs(txHashes []common.Hash) {
+func (b *Block) removeLogs(txHashes []common.Hash) {
 	if len(b.logs) == 0 {
 		panic(fmt.Sprintf("block %d has no logs", b.blockNumber))
 	}

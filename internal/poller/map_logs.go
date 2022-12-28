@@ -22,6 +22,8 @@ import (
 // In case the known logs were removed from a particular block, then we won't have the fresh hash for that block.
 // In that case, we'll use |getHeaderFunc| to get the header for that particular block.
 func mapLogs(
+	// For calling |getHeaderFunc|
+	ctx context.Context,
 	// fromBlock from poller.Poll
 	fromBlock uint64,
 	// toBlock from poller.Poll
@@ -95,7 +97,7 @@ func mapLogs(
 				zap.String("trackerHash", trackerBlock.String()),
 			)
 
-			freshHeader, err := getHeaderFunc(context.Background(), big.NewInt(int64(number)))
+			freshHeader, err := getHeaderFunc(ctx, big.NewInt(int64(number)))
 			if err != nil {
 				return nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
 			}

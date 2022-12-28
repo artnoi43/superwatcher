@@ -70,7 +70,7 @@ func TestLastGoodBlock(t *testing.T) {
 	}
 
 	for filterResult, expected := range tests {
-		actual := lastGoodBlock(filterResult)
+		actual := superwatcher.LastGoodBlock(filterResult)
 		if actual != expected {
 			t.Errorf("expecting lastGoodBlock %d, got %d", expected, actual)
 		}

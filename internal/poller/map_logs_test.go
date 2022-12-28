@@ -79,6 +79,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 
 	// Call mapFreshLogs with reorgedLogs
 	wasReorged, _, _, err := mapLogs(
+		nil,
 		tc.FromBlock,
 		tc.ToBlock,
 		gslutils.CollectPointers(reorgedLogs),

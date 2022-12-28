@@ -8,7 +8,7 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/components"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
+	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
@@ -57,7 +57,7 @@ func InitTestComponents(
 		panic("failed to create ReorgSim")
 	}
 
-	fakeRedis := datagateway.NewMock(conf.StartBlock, !firstRun)
+	fakeRedis := mock.NewDataGatewayMem(conf.StartBlock, !firstRun)
 
 	return &TestComponents{
 		conf:           conf,

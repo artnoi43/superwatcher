@@ -62,6 +62,7 @@ func (p *poller) Poll(
 	}
 
 	removedBlocks, mapFreshHashes, mapFreshLogs, err := mapLogs(
+		ctx,
 		fromBlock,
 		toBlock,
 		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
@@ -148,35 +149,9 @@ func (p *poller) Poll(
 	// Publish filterResult via e.filterResultChan
 	result.FromBlock = fromBlock
 	result.ToBlock = toBlock
-	result.LastGoodBlock = lastGoodBlock(result)
+	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
 
 	p.lastRecordedBlock = result.LastGoodBlock
 
 	return result, nil
-}
-
-// lastGoodBlock computes `superwatcher.FilterResult.lastGoodBlock` based on |result|.
-// TODO: Finalize or just remove FilterResult.LastGoodBlock altogether.
-func lastGoodBlock(
-	result *superwatcher.FilterResult,
-) uint64 {
-	if len(result.ReorgedBlocks) != 0 {
-		// If there's also goodBlocks during reorg
-		if l := len(result.GoodBlocks); l != 0 {
-			// Use last good block's number as LastGoodBlock
-			lastGood := result.GoodBlocks[l-1].Number
-			firstReorg := result.ReorgedBlocks[0].Number
-
-			if lastGood > firstReorg {
-				lastGood = firstReorg - 1
-			}
-
-			return lastGood
-		}
-
-		// If there's no goodBlocks, then we should re-filter the whole range
-		return result.FromBlock - 1
-	}
-
-	return result.ToBlock
 }

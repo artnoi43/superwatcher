@@ -16,7 +16,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter"
 	"github.com/artnoi43/superwatcher/internal/poller"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
+	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
@@ -119,7 +119,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 	syncChan := make(chan struct{})
 	filterResultChan := make(chan *superwatcher.FilterResult)
 
-	fakeRedis := datagateway.NewMock(tc.FromBlock-1, true)
+	fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 	testPoller := poller.New(nil, nil, conf.DoReorg, conf.FilterRange, sim, conf.LogLevel)
 	testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, filterResultChan, errChan)
 

@@ -3,7 +3,12 @@
 # Execute this script to prepare superwatcher misc files,
 # including copying config example
 
-DB_PATHS=( "./tmp" "./pkg/tmp" "./pkg/reorgsim/tmp" "./pkg/datagateway/tmp" )
+DB_PATHS=( 
+    "./tmp"\
+    "./pkg/tmp"\
+    "./pkg/reorgsim/tmp"\
+    "./pkg/components/mock/tmp"\
+);
 
 for d in "${DB_PATHS[@]}"; do
     echo "preparing $d";

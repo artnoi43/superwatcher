@@ -17,7 +17,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/internal/poller"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
+	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
@@ -102,7 +102,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	conf := serviceConf.SuperWatcherConfig
 	conf.LoopInterval = 0
 
-	fakeRedis := datagateway.NewMock(tc.FromBlock-1, true)
+	fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 
 	param := reorgsim.BaseParam{
 		StartBlock:    tc.FromBlock,

@@ -1,4 +1,4 @@
-package datagateway
+package mock
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
 
 func TestFakeRedis(t *testing.T) {
@@ -22,7 +23,7 @@ func testFakeRedisMem(t *testing.T) {
 	x := uint64(69)
 	y := uint64(100)
 
-	f := NewMock(x, true)
+	f := NewDataGatewayMem(x, true)
 	lastRec, err := f.GetLastRecordedBlock(nil)
 	if err != nil {
 		t.Error("error in fakeRedis.GetLastRecordedBlock", err.Error())
@@ -34,10 +35,10 @@ func testFakeRedisMem(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	f = NewMock(x, false) // Never run before - Get before Set should fail
+	f = NewDataGatewayMem(x, false) // Never run before - Get before Set should fail
 	lastRec, err = f.GetLastRecordedBlock(nil)
 	if err != nil {
-		if !errors.Is(err, ErrRecordNotFound) {
+		if !errors.Is(err, datagateway.ErrRecordNotFound) {
 			t.Error("error in fakeRedis.GetLastRecordedBlock not ErrRecordNotFound", err.Error())
 		}
 	}
@@ -57,7 +58,7 @@ func testFakeRedisFile(t *testing.T) {
 	y := uint64(100)
 	filename := "tmp/fakeredis.db" // Will be ./tmp/fakeredis.db RELATIVE TO THIS TEST FILE
 
-	f := NewMockFile(filename, x, true)
+	f := NewDataGatewayFile(filename, x, true)
 	lastRec, err := f.GetLastRecordedBlock(nil)
 	if err != nil {
 		t.Error("error in fakeRedis.GetLastRecordedBlock", err.Error())
@@ -69,10 +70,10 @@ func testFakeRedisFile(t *testing.T) {
 		t.Error(err.Error())
 	}
 
-	f = NewMockFile(filename, x, false) // Never run before - Get before Set should fail
+	f = NewDataGatewayFile(filename, x, false) // Never run before - Get before Set should fail
 	lastRec, err = f.GetLastRecordedBlock(nil)
 	if err != nil {
-		if !errors.Is(err, ErrRecordNotFound) {
+		if !errors.Is(err, datagateway.ErrRecordNotFound) {
 			t.Error("error in fakeRedis.GetLastRecordedBlock not ErrRecordNotFound", err.Error())
 		}
 	}

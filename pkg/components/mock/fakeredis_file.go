@@ -1,4 +1,4 @@
-package datagateway
+package mock
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
 
 type fakeRedisFile struct {
@@ -22,7 +24,7 @@ func (m *fakeRedisFile) GetLastRecordedBlock(ctx context.Context) (uint64, error
 	defer m.Unlock()
 
 	if !m.ok {
-		return 0, errors.Wrap(ErrRecordNotFound, "key not found")
+		return 0, errors.Wrap(datagateway.ErrRecordNotFound, "key not found")
 	}
 
 	b, err := os.ReadFile(m.filename)
