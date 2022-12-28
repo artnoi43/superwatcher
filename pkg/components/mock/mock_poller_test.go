@@ -3,9 +3,9 @@ package mock
 import (
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 )
 
 // TODO: refactor
@@ -23,10 +23,12 @@ func TestMockPoller(t *testing.T) {
 
 	var fromBlockReorged bool
 	var fromBlock, toBlock uint64
-	for lastRec < endBlock {
+	for lastRec <= endBlock {
 
 		if fromBlockReorged {
-			fromBlock = fromBlock - filterRange
+			// TODO: don't break but figure out appropriate fromBlock, toBlock
+			break
+
 		} else {
 			fromBlock = lastRec + 1 - filterRange
 			toBlock = lastRec + filterRange
@@ -51,21 +53,28 @@ func TestMockPoller(t *testing.T) {
 		if result != nil {
 			fromBlockReorged = false
 
-			t.Log("from", fromBlock, "to", toBlock, "currentReorg", currentReorgBlock, "lastGood", result.LastGoodBlock, "goodBlocks", len(result.GoodBlocks), "reorgedBlocks", len(result.ReorgedBlocks))
+			t.Log(
+				"from", fromBlock, "to", toBlock, "currentReorg", currentReorgBlock,
+				"lastGood", result.LastGoodBlock,
+				"goodBlocks", len(result.GoodBlocks), "reorgedBlocks", len(result.ReorgedBlocks),
+			)
+
 			lastRec = result.LastGoodBlock
 			continue
 		}
 
-		if err != nil {
-			t.Log(err.Error())
-
-			if gslutils.Contains(reorgBlocks, fromBlock) && seen[currentReorgBlock] > 1 {
+		if currentReorgBlock == fromBlock {
+			if err != nil {
+				t.Log("error from Poll", err.Error())
 				if !errors.Is(err, superwatcher.ErrFromBlockReorged) {
 					t.Error("expecting errFromBlockReorged, got", err.Error())
 				}
 
+				lastRec = fromBlock - 1
 				fromBlockReorged = true
 			}
+
+			lastRec = result.LastGoodBlock
 		}
 	}
 }

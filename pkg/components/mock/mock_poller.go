@@ -4,7 +4,6 @@ package mock
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
 	"github.com/artnoi43/superwatcher"
@@ -13,7 +12,6 @@ import (
 
 type mockPoller struct {
 	currentIndex  int
-	lastGood      uint64
 	reorgedBlocks []uint64
 	seen          map[uint64]int
 }
@@ -34,6 +32,8 @@ func (p *mockPoller) Poll(
 	*superwatcher.FilterResult,
 	error,
 ) {
+	result := &superwatcher.FilterResult{FromBlock: fromBlock, ToBlock: toBlock}
+
 	reorgedBlock := p.reorgedBlocks[p.currentIndex]
 	noMoreReorg := len(p.reorgedBlocks) == p.currentIndex+1
 
@@ -41,51 +41,44 @@ func (p *mockPoller) Poll(
 		p.seen[number]++
 	}
 
-	result := &superwatcher.FilterResult{FromBlock: fromBlock, ToBlock: toBlock}
-
-	if p.seen[reorgedBlock] < 1 || noMoreReorg {
-		result.LastGoodBlock = toBlock
-		p.lastGood = toBlock
-		for number := fromBlock; number <= toBlock; number++ {
+	if p.seen[reorgedBlock] <= 1 || p.seen[reorgedBlock] > 3 {
+		for n := fromBlock; n <= toBlock; n++ {
 			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
-				Number: number,
-				Hash:   common.BigToHash(big.NewInt(int64(number))),
+				Number: n,
+				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})
 		}
+
+		result.LastGoodBlock = toBlock
+
 		return result, nil
 	}
 
-	p.currentIndex++
-
-	if reorgedBlock == fromBlock {
-		return nil, superwatcher.ErrFromBlockReorged
+	if !noMoreReorg {
+		p.currentIndex++
+		p.seen = make(map[uint64]int)
 	}
 
-	for number := fromBlock; number < reorgedBlock; number++ {
-		result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
-			Number: number,
-			Hash:   common.BigToHash(big.NewInt(int64(number))),
-		})
-	}
-	for number := p.lastGood + 1; number <= toBlock; number++ {
-		result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
-			Number: number,
-			Hash:   common.BigToHash(big.NewInt(int64(number))),
-		})
-	}
+	// reorgBlock is somewhere between fromBlock -> toBlock
+	if fromBlock != reorgedBlock {
+		for n := fromBlock; n < reorgedBlock; n++ {
+			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
+				Number: n,
+				Hash:   common.BigToHash(big.NewInt(int64(n))),
+			})
+		}
+		for n := reorgedBlock; n <= toBlock; n++ {
+			result.ReorgedBlocks = append(result.ReorgedBlocks, &superwatcher.BlockInfo{
+				Number: n,
+				Hash:   common.BigToHash(big.NewInt(int64(n))),
+			})
+		}
 
-	for number := reorgedBlock; number <= p.lastGood; number++ {
-		fmt.Println("ello", number)
-		result.ReorgedBlocks = append(result.ReorgedBlocks, &superwatcher.BlockInfo{
-			Number: number,
-			Hash:   common.BigToHash(big.NewInt(int64(number))),
-		})
+		result.LastGoodBlock = superwatcher.LastGoodBlock(result)
+		return result, nil
 	}
 
-	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
-	p.lastGood = result.LastGoodBlock
-
-	return result, nil
+	return nil, superwatcher.ErrFromBlockReorged
 }
 
 func (p *mockPoller) SetDoReorg(bool)                {}
