@@ -41,7 +41,7 @@ func (e *emitter) loopEmit(
 	for {
 		// Don't sleep or log status on first loop
 		if !status.GoBackFirstStart {
-			e.debugger.Debug(1, "new loopEmit loop")
+			e.debugger.Debug(1, "new loopEmit loop", zap.Any("current status", status))
 			e.sleep()
 		}
 

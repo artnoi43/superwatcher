@@ -70,7 +70,7 @@ func (p *poller) Poll(
 		p.client.HeaderByNumber,
 	)
 	if err != nil {
-		return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
+		return nil, errors.Wrap(err, "error in mapLogs")
 	}
 
 	// Fills |result| and saves current data back to tracker first.
@@ -78,12 +78,12 @@ func (p *poller) Poll(
 	for blockNumber := fromBlock; blockNumber <= toBlock; blockNumber++ {
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
 		if removedBlocks[blockNumber] && p.doReorg {
-			reorgedBlock, foundInTracker := p.tracker.getTrackerBlockInfo(blockNumber)
+			trackerBlock, foundInTracker := p.tracker.getTrackerBlockInfo(blockNumber)
 			if !foundInTracker {
-				p.debugger.Warn(
+				p.debugger.Debug(
 					1, "blockInfo marked as reorged but was not found in tracker",
 					zap.Uint64("blockNumber", blockNumber),
-					zap.String("freshHash", reorgedBlock.String()),
+					zap.String("freshHash", trackerBlock.String()),
 				)
 
 				return nil, errors.Wrapf(
@@ -92,25 +92,36 @@ func (p *poller) Poll(
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
-			forkedHash, ok := mapFreshHashes[blockNumber]
+			freshHash, ok := mapFreshHashes[blockNumber]
 			if !ok {
-				return nil, errors.Wrapf(
-					superwatcher.ErrProcessReorg, "missing hash for a reorgedBlock %d", blockNumber,
-				)
+				return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
 			}
 
 			p.debugger.Debug(
 				1, "chain reorg detected",
 				zap.Uint64("blockNumber", blockNumber),
-				zap.String("freshHash", forkedHash.String()),
-				zap.String("trackerHash", reorgedBlock.String()),
+				zap.String("freshHash", freshHash.String()),
+				zap.String("trackerHash", trackerBlock.String()),
 			)
 
-			// ReorgedBlocks field contains the seen, removed blocks from tracker.
-			// The new reroged blocks were added to |result| as new `result.GoodBlocks`.
-			// This means that the engine should process ReorgedBlocks first to revert the TXs,
-			// before processing the new, reorged logs.
-			result.ReorgedBlocks = append(result.ReorgedBlocks, reorgedBlock)
+			// Copy to allow us to update blocks with LogsMigrated inside the tracker
+			// without mutating values in |result.ReorgedBlocks|
+			copiedFromTracker := *trackerBlock
+			result.ReorgedBlocks = append(result.ReorgedBlocks, &copiedFromTracker)
+
+			// Save updated recent block info back to tracker (there won't be this block in mapFreshLogs below)
+			if trackerBlock.LogsMigrated {
+				p.debugger.Debug(
+					1, "logs missing from block, updating trackerBlock with nil logs and freshHash",
+					zap.Uint64("blockNumber", blockNumber),
+					zap.String("freshHash", freshHash.String()),
+					zap.String("trackerHash", trackerBlock.String()),
+				)
+
+				// Update values in tracker
+				trackerBlock.Hash = freshHash
+				trackerBlock.Logs = nil
+			}
 		}
 
 		// New blocks will use fresh information. This includes new block after a reorg.

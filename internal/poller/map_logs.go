@@ -91,12 +91,6 @@ func mapLogs(
 		freshHash, ok := mapFreshHashes[number]
 		// Logs may be moved from blockNumber, hence there's no value in mapFreshHashes
 		if !ok {
-			tracker.debugger.Debug(
-				1, "logs missing from block",
-				zap.Uint64("blockNumber", number),
-				zap.String("trackerHash", trackerBlock.String()),
-			)
-
 			freshHeader, err := getHeaderFunc(ctx, big.NewInt(int64(number)))
 			if err != nil {
 				return nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
@@ -106,33 +100,18 @@ func mapLogs(
 			mapFreshHashes[number] = freshHash
 			mapFreshLogs[number] = nil
 			trackerBlock.LogsMigrated = true
-
-			tracker.debugger.Debug(
-				1, "got block header for block with missing logs - saving back to tracker",
-				zap.Uint64("blockNumber", number),
-				zap.String("freshHash", freshHash.String()),
-				zap.String("trackerHash", trackerBlock.String()),
-			)
 		}
 
-		// If we have same blockHash with same logs length,
-		// we can assume that the block was not reorged.
-		if trackerBlock.Hash == freshHash {
-			if len(trackerBlock.Logs) == len(mapFreshLogs[number]) {
-				continue
-			}
+		// If we have same blockHash with same logs length we can assume that the block was not reorged.
+		if trackerBlock.Hash == freshHash && len(trackerBlock.Logs) == len(mapFreshLogs[number]) {
+			continue
 		}
 
-		mapRemovedBlocks[number] = true
 		for _, trackerLog := range trackerBlock.Logs {
 			trackerLog.Removed = true
 		}
 
-		// Update fresh info for block whose logs were moved away entirely
-		if trackerBlock.LogsMigrated {
-			trackerBlock.Hash = freshHash
-			trackerBlock.Logs = nil
-		}
+		mapRemovedBlocks[number] = true
 	}
 
 	return mapRemovedBlocks, mapFreshHashes, mapFreshLogs, nil
