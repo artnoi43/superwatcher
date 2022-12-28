@@ -14,9 +14,8 @@ import (
 	"github.com/artnoi43/superwatcher"
 )
 
-// Poll filters Ethereum event logs from fromBlock to toBlock,
-// and sends *types.Log and *superwatcher.BlockInfo through w.logChan and w.reorgChan respectively.
-// If an error is encountered, Poll returns with error. Poll should never be the one sending the error through w.errChan.
+// Poll filters Ethereum event logs from |fromBlock| to |toBlock|,
+// then gathers the result as `superwatcher.FilterResult`, and returns the result.
 func (p *poller) Poll(
 	ctx context.Context,
 	fromBlock uint64,
@@ -127,28 +126,30 @@ func (p *poller) Poll(
 		}
 
 		// New blocks will use fresh information. This includes new block after a reorg.
+		// Only block with logs will be appended to |result.GoodBlocks|.
 		logs, ok := mapFreshLogs[number]
 		if !ok || len(logs) == 0 {
 			continue
 		}
+
 		hash, ok := mapFreshHashes[number]
 		if !ok {
 			return nil, errors.Wrapf(errNoHash, "blockNumber %d", number)
 		}
 
-		// Only add fresh, canonical blockInfo with interesting logs
-		b := &superwatcher.BlockInfo{
+		goodBlock := superwatcher.BlockInfo{
 			Number: number,
 			Hash:   hash,
 			Logs:   logs,
 		}
 
 		if p.doReorg {
-			p.tracker.addTrackerBlockInfo(b)
+			p.tracker.addTrackerBlockInfo(&goodBlock)
 		}
 
-		// Publish only block with logs
-		result.GoodBlocks = append(result.GoodBlocks, b)
+		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.
+		resultBlock := goodBlock
+		result.GoodBlocks = append(result.GoodBlocks, &resultBlock)
 	}
 
 	// If fromBlock was reorged, then return to loopEmit.

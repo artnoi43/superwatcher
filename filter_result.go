@@ -4,9 +4,9 @@ package superwatcher
 type FilterResult struct {
 	FromBlock     uint64       // The emitter's `fromBlock`
 	ToBlock       uint64       // The emitter's `toBlock`
-	LastGoodBlock uint64       // This number should be used as LastRecordedBlock for the emitter
+	LastGoodBlock uint64       // This number should be saved to StateDataGateway with SetLastRecordedBlock for the emitter
 	GoodBlocks    []*BlockInfo // Can be either (1) fresh, new blocks, or (2) blocks whose hashes had not changed yet.
-	ReorgedBlocks []*BlockInfo // Blocks that emitter marked as removed. A service should undo/revert its actions done on the blocks.
+	ReorgedBlocks []*BlockInfo // Blocks that poller marked as removed. A service should undo/revert its actions done on the blocks.
 }
 
 // LastGoodBlock computes `FilterResult.LastGoodBlock` based on |result|.
