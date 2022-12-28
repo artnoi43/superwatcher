@@ -1,12 +1,16 @@
 package poller
 
 import (
+	"context"
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
@@ -19,10 +23,12 @@ func mapLogs(
 	toBlock uint64,
 	logs []*types.Log, // Use pointers to avoid expensive copy of []types.Log
 	tracker *blockInfoTracker,
+	client superwatcher.EthClient, // client is used to get block headers in edge cases (logs was moved)
 ) (
 	map[uint64]bool, // Maps blockNumber to reorged status
 	map[uint64]common.Hash, // Maps blockNumber to blockHash
 	map[uint64][]*types.Log, // Maps blockNumber to logs
+	error,
 ) {
 	// We can actually just return |mapRemovedBlocks|, but we will have to iterate the logs anyway,
 	// so we collect the data into maps here to save costs later.
@@ -56,7 +62,7 @@ func mapLogs(
 
 	// i.e. poller.DoReorg == false
 	if tracker == nil {
-		return mapRemovedBlocks, mapFreshHashes, mapFreshLogs
+		return mapRemovedBlocks, mapFreshHashes, mapFreshLogs, nil
 	}
 
 	// Compare all known (tracker) block hashes to new ones
@@ -72,9 +78,25 @@ func mapLogs(
 			panic(fmt.Sprintf("kuy %d", empty))
 		}
 
+		freshHash, ok := mapFreshHashes[number]
+		// Logs may be moved from blockNumber, hence there's no value in mapFreshHashes
+		if !ok {
+			if client != nil {
+				freshHeader, err := client.HeaderByNumber(context.Background(), big.NewInt(int64(number)))
+				if err != nil {
+					return nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
+				}
+
+				freshHash = freshHeader.Hash()
+				mapFreshHashes[number] = freshHash
+				trackerBlock.Hash = freshHash
+				trackerBlock.Logs = []*types.Log{}
+			}
+		}
+
 		// If we have same blockHash with same logs length,
 		// we can assume that the block was not reorged.
-		if trackerBlock.Hash == mapFreshHashes[number] {
+		if trackerBlock.Hash == freshHash {
 			if len(trackerBlock.Logs) == len(mapFreshLogs[number]) {
 				continue
 			}
@@ -86,5 +108,5 @@ func mapLogs(
 		}
 	}
 
-	return mapRemovedBlocks, mapFreshHashes, mapFreshLogs
+	return mapRemovedBlocks, mapFreshHashes, mapFreshLogs, nil
 }

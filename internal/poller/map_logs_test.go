@@ -7,6 +7,7 @@ import (
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
@@ -74,12 +75,17 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	// Call mapFreshLogs with reorgedLogs
-	wasReorged, _, _ := mapLogs(
+	wasReorged, _, _, err := mapLogs(
 		tc.FromBlock,
 		tc.ToBlock,
 		gslutils.CollectPointers(reorgedLogs),
 		tracker,
+		nil,
 	)
+
+	if err != nil {
+		return errors.Wrap(err, "error in mapLogs")
+	}
 
 	for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
 		// Skip blocks without logs

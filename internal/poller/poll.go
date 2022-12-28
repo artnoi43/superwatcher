@@ -61,12 +61,16 @@ func (p *poller) Poll(
 		p.tracker.clearUntil(until)
 	}
 
-	removedBlocks, mapFreshHashes, mapFreshLogs := mapLogs(
+	removedBlocks, mapFreshHashes, mapFreshLogs, err := mapLogs(
 		fromBlock,
 		toBlock,
 		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
 		p.tracker,
+		p.client,
 	)
+	if err != nil {
+		return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
+	}
 
 	// Fills |result| and saves current data back to tracker first.
 	result := new(superwatcher.FilterResult)
@@ -101,8 +105,9 @@ func (p *poller) Poll(
 				forkedHash = header.Hash()
 				mapFreshHashes[blockNumber] = forkedHash
 
-				// TODO: Do something, don't continue, it's incorrect.
-				// continue
+				// Save current info
+				reorgedBlock.Hash = forkedHash
+				reorgedBlock.Logs = []*types.Log{}
 			}
 
 			p.debugger.Debug(

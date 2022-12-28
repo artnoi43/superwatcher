@@ -53,7 +53,8 @@ var TestCasesV2 = []TestConfig{
 		},
 		Events: []reorgsim.ReorgEvent{
 			{
-				ReorgBlock: 15966512, // 0xf3a130
+				ReorgTrigger: 15966515,
+				ReorgBlock:   15966512, // 0xf3a130
 				// Move logs of 1 txHash to new block
 				MovedLogs: map[uint64][]reorgsim.MoveLogs{
 					15966522: { // 0xf3a13a
@@ -67,7 +68,8 @@ var TestCasesV2 = []TestConfig{
 				},
 			},
 			{
-				ReorgBlock: 15966524,
+				ReorgTrigger: 15966525,
+				ReorgBlock:   15966524,
 				MovedLogs: map[uint64][]reorgsim.MoveLogs{
 					15966525: { // 0xf3a13d
 						{
@@ -92,7 +94,8 @@ var TestCasesV2 = []TestConfig{
 		},
 		Events: []reorgsim.ReorgEvent{
 			{
-				ReorgBlock: 15966464,
+				ReorgTrigger: 15966466,
+				ReorgBlock:   15966464,
 				MovedLogs: map[uint64][]reorgsim.MoveLogs{
 					15966464: {
 						{
