@@ -1,8 +1,10 @@
 package poller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -38,6 +40,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	oldChain, reorgedChain := reorgsim.NewBlockChainReorgMoveLogs(logs, *reorgEvent)
+	mockClient := mockGetHeader{chain: reorgedChain}
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
 	var concatLogs = make(map[uint64][]*types.Log)
@@ -80,7 +83,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 		tc.ToBlock,
 		gslutils.CollectPointers(reorgedLogs),
 		tracker,
-		nil,
+		mockClient.HeaderByNumber,
 	)
 
 	if err != nil {
@@ -132,4 +135,12 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	return nil
+}
+
+type mockGetHeader struct {
+	chain reorgsim.BlockChain
+}
+
+func (h *mockGetHeader) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
+	return h.chain[number.Uint64()], nil
 }

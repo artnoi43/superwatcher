@@ -23,7 +23,7 @@ func mapLogs(
 	toBlock uint64,
 	logs []*types.Log, // Use pointers to avoid expensive copy of []types.Log
 	tracker *blockInfoTracker,
-	client superwatcher.EthClient, // client is used to get block headers in edge cases (logs was moved)
+	getHeaderFunc func(context.Context, *big.Int) (superwatcher.BlockHeader, error),
 ) (
 	map[uint64]bool, // Maps blockNumber to reorged status
 	map[uint64]common.Hash, // Maps blockNumber to blockHash
@@ -81,17 +81,28 @@ func mapLogs(
 		freshHash, ok := mapFreshHashes[number]
 		// Logs may be moved from blockNumber, hence there's no value in mapFreshHashes
 		if !ok {
-			if client != nil {
-				freshHeader, err := client.HeaderByNumber(context.Background(), big.NewInt(int64(number)))
-				if err != nil {
-					return nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
-				}
+			tracker.debugger.Debug(
+				1, "logs missing from block",
+				zap.Uint64("blockNumber", number),
+				zap.String("trackerHash", trackerBlock.String()),
+			)
 
-				freshHash = freshHeader.Hash()
-				mapFreshHashes[number] = freshHash
-				trackerBlock.Hash = freshHash
-				trackerBlock.Logs = []*types.Log{}
+			freshHeader, err := getHeaderFunc(context.Background(), big.NewInt(int64(number)))
+			if err != nil {
+				return nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
 			}
+
+			freshHash = freshHeader.Hash()
+			mapFreshHashes[number] = freshHash
+			mapFreshLogs[number] = nil
+			trackerBlock.LogsMigrated = true
+
+			tracker.debugger.Debug(
+				1, "got block header for block with missing logs - saving back to tracker",
+				zap.Uint64("blockNumber", number),
+				zap.String("freshHash", freshHash.String()),
+				zap.String("trackerHash", trackerBlock.String()),
+			)
 		}
 
 		// If we have same blockHash with same logs length,
@@ -105,6 +116,12 @@ func mapLogs(
 		mapRemovedBlocks[number] = true
 		for _, trackerLog := range trackerBlock.Logs {
 			trackerLog.Removed = true
+		}
+
+		// Update fresh info for block whose logs were moved away entirely
+		if trackerBlock.LogsMigrated {
+			trackerBlock.Hash = freshHash
+			trackerBlock.Logs = nil
 		}
 	}
 

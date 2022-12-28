@@ -11,7 +11,7 @@ import (
 // Use this as ReorgEvent.ReorgBlock to disable chain reorg.
 const NoReorg uint64 = 0
 
-type blockChain map[uint64]*block
+type BlockChain map[uint64]*block
 
 // MoveLogs represent a move of logs to a new blockNumber
 type MoveLogs struct {
@@ -22,7 +22,7 @@ type MoveLogs struct {
 // reorg calls `*block.reorg` on every block whose blockNumber is greater than |reorgedBlock|.
 // |reorgIndex| is used to generate different hash for the same block in different ReorgEvent.
 // Unlike `*block.reorg`, which returns a `*block`, `c.reorg` modifies c in-place.
-func (chain blockChain) reorg(reorgedBlock uint64, reorgIndex int) {
+func (chain BlockChain) reorg(reorgedBlock uint64, reorgIndex int) {
 	for number, block := range chain {
 		if number >= reorgedBlock {
 			chain[number] = block.reorg(reorgIndex)
@@ -38,7 +38,7 @@ func (chain blockChain) reorg(reorgedBlock uint64, reorgIndex int) {
 // the 2nd of which is a slice of blocks to which logs are moved.
 // NOTE: Do not use this function directly, since it only moves logs to new blocks and does not reorg blocks.
 // It is meant to be used inside NewBlockChainReorgMoveLogs, and NewBlockChain
-func (chain blockChain) moveLogs(
+func (chain BlockChain) moveLogs(
 	movedLogs map[uint64][]MoveLogs,
 ) (
 	[]uint64, // Blocks from which logs are moved from
@@ -101,8 +101,8 @@ func (chain blockChain) moveLogs(
 func newBlockChain(
 	mappedLogs map[uint64][]types.Log,
 	reorgedBlock uint64,
-) blockChain {
-	chain := make(blockChain)
+) BlockChain {
+	chain := make(BlockChain)
 
 	var noReorg bool
 	if reorgedBlock == NoReorg {
@@ -136,18 +136,18 @@ func NewBlockChain(
 	logs map[uint64][]types.Log,
 	events []ReorgEvent,
 ) (
-	blockChain, //nolint:revive
-	[]blockChain, //nolint:revive
+	BlockChain, //nolint:revive
+	[]BlockChain, //nolint:revive
 ) {
 	if len(events) == 0 {
 		return newBlockChain(logs, NoReorg), nil
 	}
 
 	chain := newBlockChain(logs, events[0].ReorgBlock)
-	reorgedChains := make([]blockChain, len(events))
+	reorgedChains := make([]BlockChain, len(events))
 
 	for i, event := range events {
-		var prevChain blockChain
+		var prevChain BlockChain
 		if i == 0 {
 			prevChain = chain
 		} else {
@@ -216,8 +216,8 @@ func newBlockChainReorgSimple(
 	mappedLogs map[uint64][]types.Log,
 	reorgedBlock uint64,
 ) (
-	blockChain,
-	blockChain,
+	BlockChain,
+	BlockChain,
 ) {
 	// The "good old chain"
 	chain := newBlockChain(mappedLogs, reorgedBlock)
@@ -241,8 +241,8 @@ func NewBlockChainReorgMoveLogs(
 	mappedLogs map[uint64][]types.Log,
 	event ReorgEvent,
 ) (
-	blockChain, //nolint:revive
-	blockChain, //nolint:revive
+	BlockChain, //nolint:revive
+	BlockChain, //nolint:revive
 ) {
 	for blockNumber := range event.MovedLogs {
 		if blockNumber < event.ReorgBlock {

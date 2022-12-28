@@ -98,7 +98,7 @@ func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 	return nil
 }
 
-func initDefaultChains(reorgedAt uint64) (blockChain, blockChain) {
+func initDefaultChains(reorgedAt uint64) (BlockChain, BlockChain) {
 	return newBlockChainReorgSimple(InitMappedLogsFromFiles(defaultLogsFiles...), reorgedAt)
 }
 
@@ -117,7 +117,7 @@ func TestNewBlockChain(t *testing.T) {
 	}
 }
 
-func testBlockChain(t *testing.T, oldChain, reorgedChain blockChain) error {
+func testBlockChain(t *testing.T, oldChain, reorgedChain BlockChain) error {
 	for blockNumber, reorgedBlock := range reorgedChain {
 		oldBlock := oldChain[blockNumber]
 
@@ -172,7 +172,7 @@ func prontLogs(logs []types.Log) {
 	}
 }
 
-func prontBlockChain(chain blockChain) {
+func prontBlockChain(chain BlockChain) {
 	for _, b := range chain {
 		fmt.Println(
 			"blockNumber", b.blockNumber,

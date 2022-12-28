@@ -137,8 +137,8 @@ func appendFilterLogs(src, dst *[]types.Log, addresses []common.Address, topics 
 	}
 }
 
-func copyBlockChain(chain blockChain) blockChain {
-	copied := make(blockChain)
+func copyBlockChain(chain BlockChain) BlockChain {
+	copied := make(BlockChain)
 	for k, v := range chain {
 		copied[k] = v
 	}

@@ -138,7 +138,7 @@ func (r *ReorgSim) forkChain(fromBlock, toBlock uint64) {
 			zap.Uint64("reorgBlock", event.ReorgBlock),
 		)
 
-		var currentChain blockChain
+		var currentChain BlockChain
 		var lastReorg bool
 
 		if r.currentReorgEvent < len(r.events) {

@@ -140,7 +140,7 @@ func testReorgSimMultiReorg(testConf multiReorgConfig) error {
 	}
 
 	for i, event := range testConf.Events {
-		var prevChain blockChain
+		var prevChain BlockChain
 
 		if i == 0 {
 			prevChain = rSim.chain

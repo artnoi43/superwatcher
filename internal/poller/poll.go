@@ -66,7 +66,7 @@ func (p *poller) Poll(
 		toBlock,
 		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
 		p.tracker,
-		p.client,
+		p.client.HeaderByNumber,
 	)
 	if err != nil {
 		return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
@@ -85,29 +85,17 @@ func (p *poller) Poll(
 					zap.String("freshHash", reorgedBlock.String()),
 				)
 
-				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "reorgedBlock %d not found in tracker", blockNumber)
+				return nil, errors.Wrapf(
+					superwatcher.ErrProcessReorg, "reorgedBlock %d not found in tracker", blockNumber,
+				)
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
 			forkedHash, ok := mapFreshHashes[blockNumber]
 			if !ok {
-				p.debugger.Debug(
-					1, "chain reorg detected - known logs was removed from this block",
-					zap.Uint64("blockNumber", blockNumber),
-					zap.String("trackerHash", reorgedBlock.String()),
+				return nil, errors.Wrapf(
+					superwatcher.ErrProcessReorg, "missing hash for a reorgedBlock %d", blockNumber,
 				)
-
-				header, err := p.client.HeaderByNumber(ctx, big.NewInt(int64(blockNumber)))
-				if err != nil {
-					return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
-				}
-
-				forkedHash = header.Hash()
-				mapFreshHashes[blockNumber] = forkedHash
-
-				// Save current info
-				reorgedBlock.Hash = forkedHash
-				reorgedBlock.Logs = []*types.Log{}
 			}
 
 			p.debugger.Debug(
