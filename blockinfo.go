@@ -11,10 +11,10 @@ import (
 
 // BlockInfo represents the minimum block info needed for superwatcher.
 type BlockInfo struct {
+	LogsMigrated bool // true means that after chain reorg, interesting logs were entirely moved from this block
 	Number       uint64
 	Hash         common.Hash
 	Logs         []*types.Log
-	LogsMigrated bool // true means that after chain reorg, interesting logs were entirely moved from this block
 }
 
 // String returns the block hash with 0x prepended in all lowercase string.
