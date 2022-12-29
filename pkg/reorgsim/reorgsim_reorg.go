@@ -16,10 +16,9 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 
 	event := r.events[r.currentReorgEvent]
 
-	// If event.ReorgBlock is within range, then trigger
-	if rangeStart <= event.ReorgTrigger && rangeEnd >= event.ReorgTrigger {
+	debug := func(s string) {
 		r.debugger.Debug(
-			1, "triggering event",
+			1, s,
 			zap.Uint64("rangeStart", rangeStart),
 			zap.Uint64("rangeEnd", rangeEnd),
 			zap.Uint64("triggerBlock", event.ReorgTrigger),
@@ -29,40 +28,23 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 			zap.Int("triggered", r.triggered),
 			zap.Int("forked", r.forked),
 		)
+	}
+
+	// If event.ReorgBlock is within range, then trigger
+	if rangeStart <= event.ReorgTrigger && rangeEnd >= event.ReorgTrigger {
+		debug("triggering event")
 
 		// First trigger on ReorgTrigger will not call forkChain
 		if r.triggered < r.currentReorgEvent {
 			r.triggered = r.currentReorgEvent
 
-			r.debugger.Debug(
-				1, "triggered, will NOT call forkChain now",
-				zap.Uint64("rangeStart", rangeStart),
-				zap.Uint64("rangeEnd", rangeEnd),
-				zap.Uint64("triggerBlock", event.ReorgTrigger),
-				zap.Uint64("reorgBlock", event.ReorgBlock),
-				zap.Uint64("currentBlock", r.currentBlock),
-				zap.Int("currentReorgEvent", r.currentReorgEvent),
-				zap.Int("triggered", r.triggered),
-				zap.Int("forked", r.forked),
-			)
-
+			debug("triggered, will NOT call forkChain now")
 			return
 		}
 
 		// See if there's unforked r.reorgedChains before forking
 		if r.triggered > r.forked {
-			r.debugger.Debug(
-				1, "triggered, will call forkChain now",
-				zap.Uint64("rangeStart", rangeStart),
-				zap.Uint64("rangeEnd", rangeEnd),
-				zap.Uint64("triggerBlock", event.ReorgTrigger),
-				zap.Uint64("reorgBlock", event.ReorgBlock),
-				zap.Uint64("currentBlock", r.currentBlock),
-				zap.Int("currentReorgEvent", r.currentReorgEvent),
-				zap.Int("triggered", r.triggered),
-				zap.Int("forked", r.forked),
-			)
-
+			debug("triggered, will call forkChain now")
 			r.forkChain()
 		}
 	}
@@ -86,33 +68,24 @@ func (r *ReorgSim) forkChain() {
 
 	event := r.events[r.currentReorgEvent]
 
-	var currentChain BlockChain
-	var lastReorg bool
-
-	if l := len(r.events); r.currentReorgEvent < l {
-		currentChain = r.reorgedChains[r.currentReorgEvent]
-	} else {
-		lastReorg = true
-		currentChain = r.reorgedChains[l-1]
-	}
-
-	if !lastReorg {
+	// If we still has chain to fork
+	if r.currentReorgEvent < len(r.events) {
 		if r.forked < r.currentReorgEvent {
-			r.chain = currentChain
+			r.chain = r.reorgedChains[r.currentReorgEvent]
 			r.currentBlock = event.ReorgBlock
 			r.forked = r.triggered
 
 			r.currentReorgEvent++
+
+			r.debugger.Debug(
+				1, "REORGED! fork done",
+				zap.Uint64("currentBlock", r.currentBlock),
+				zap.Uint64("reorgTrigger", event.ReorgTrigger),
+				zap.Uint64("reorgBlock", event.ReorgBlock),
+				zap.Int("currentReorgEvent", r.currentReorgEvent),
+				zap.Int("triggered", r.triggered),
+				zap.Int("forked", r.forked),
+			)
 		}
 	}
-
-	r.debugger.Debug(
-		1, "REORGED! fork done",
-		zap.Uint64("currentBlock", r.currentBlock),
-		zap.Uint64("reorgTrigger", event.ReorgTrigger),
-		zap.Uint64("reorgBlock", event.ReorgBlock),
-		zap.Int("currentReorgEvent", r.currentReorgEvent),
-		zap.Int("triggered", r.triggered),
-		zap.Int("forked", r.forked),
-	)
 }
