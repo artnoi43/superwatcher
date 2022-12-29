@@ -5,7 +5,7 @@ import (
 )
 
 type TestConfig struct {
-	Param     reorgsim.BaseParam    `json:"baseParam"`
+	Param     reorgsim.Param        `json:"param"`
 	Events    []reorgsim.ReorgEvent `json:"reorgEvents"`
 	FromBlock uint64                `json:"fromBlock"`
 	ToBlock   uint64                `json:"toBlock"`

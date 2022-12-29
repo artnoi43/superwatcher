@@ -12,9 +12,9 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-// TestCase will be converted into config.Config and reorgsim.BaseParam to create TestComponents
+// TestCase will be converted into config.Config and reorgsim.Param to create TestComponents
 type TestCase struct {
-	Param  reorgsim.BaseParam    `json:"baseParam"`
+	Param  reorgsim.Param        `json:"param"`
 	Events []reorgsim.ReorgEvent `json:"reorgEvents"`
 	// JSON logs files for initializing reorgSim
 	LogsFiles []string `json:"logFiles"`
@@ -47,7 +47,7 @@ func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *config.Config 
 func InitTestComponents(
 	conf *config.Config,
 	serviceEngine superwatcher.ServiceEngine,
-	param reorgsim.BaseParam,
+	param reorgsim.Param,
 	events []reorgsim.ReorgEvent,
 	logsFullPaths []string,
 	firstRun bool, // If true, then the mock datagateway will return `ErrRecordNotFound` until `SetLastRecordedBlock`` is called

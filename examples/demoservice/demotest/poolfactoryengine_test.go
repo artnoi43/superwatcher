@@ -19,7 +19,7 @@ func TestServiceEnginePoolFactoryV1(t *testing.T) {
 				logsPath + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false,
-			Param: reorgsim.BaseParam{
+			Param: reorgsim.Param{
 				StartBlock:    16054000,
 				ExitBlock:     16054200,
 				BlockProgress: 20,

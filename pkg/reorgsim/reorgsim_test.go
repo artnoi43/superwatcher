@@ -11,7 +11,7 @@ import (
 
 type multiReorgConfig struct {
 	Name      string       `json:"name"`
-	Param     BaseParam    `json:"baseParam"`
+	Param     Param        `json:"param"`
 	Events    []ReorgEvent `json:"events"`
 	LogsFiles []string     `json:"logsFiles"`
 }
@@ -23,7 +23,7 @@ var (
 				logsPath + "/logs_lp.json",
 				logsPath + "/logs_poolfactory.json",
 			},
-			Param: BaseParam{
+			Param: Param{
 				StartBlock:    15944410,
 				ExitBlock:     15944530,
 				BlockProgress: DefaultParam.BlockProgress,
@@ -41,7 +41,7 @@ var (
 				logsPath + "/logs_lp.json",
 				logsPath + "/logs_poolfactory.json",
 			},
-			Param: BaseParam{
+			Param: Param{
 				StartBlock:    15944400,
 				ExitBlock:     15944500,
 				BlockProgress: DefaultParam.BlockProgress,
@@ -80,7 +80,7 @@ var (
 			LogsFiles: []string{
 				logsPath + "/logs_lp_5.json",
 			},
-			Param: BaseParam{
+			Param: Param{
 				StartBlock:    15966490,
 				ExitBlock:     15966540,
 				BlockProgress: DefaultParam.BlockProgress,

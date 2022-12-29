@@ -98,7 +98,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 	conf.LoopInterval = 0
 	conf.FilterRange = 10
 
-	param := reorgsim.BaseParam{
+	param := reorgsim.Param{
 		StartBlock:    tc.FromBlock,
 		ExitBlock:     tc.ToBlock + 200,
 		BlockProgress: 10,

@@ -19,7 +19,7 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			LogsFiles: []string{
 				logsPath + "/logs_servicetest_16054000_16054100.json",
 			},
-			Param: reorgsim.BaseParam{
+			Param: reorgsim.Param{
 				StartBlock:    16054000,
 				BlockProgress: 20,
 				ExitBlock:     16054100,

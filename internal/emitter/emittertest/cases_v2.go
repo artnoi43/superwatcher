@@ -14,7 +14,7 @@ var TestCasesV2 = []TestConfig{
 			logsPath + "/logs_poolfactory.json",
 			logsPath + "/logs_lp.json",
 		},
-		Param: reorgsim.BaseParam{
+		Param: reorgsim.Param{
 			StartBlock: 15944390,
 		},
 		Events: []reorgsim.ReorgEvent{
@@ -48,7 +48,7 @@ var TestCasesV2 = []TestConfig{
 		LogsFiles: []string{
 			logsPath + "/logs_lp_5.json",
 		},
-		Param: reorgsim.BaseParam{
+		Param: reorgsim.Param{
 			StartBlock: 15966490,
 		},
 		Events: []reorgsim.ReorgEvent{
@@ -89,7 +89,7 @@ var TestCasesV2 = []TestConfig{
 		LogsFiles: []string{
 			logsPath + "/logs_lp_4.json",
 		},
-		Param: reorgsim.BaseParam{
+		Param: reorgsim.Param{
 			StartBlock: 15966465,
 		},
 		Events: []reorgsim.ReorgEvent{

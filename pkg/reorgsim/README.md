@@ -26,11 +26,11 @@ and `superwatcher.Engine` implementations.
 
 - [`ReorgSim`](./reorgsim.go) - mocks `superwatcher.Client`
 
-- [`block`](./block.go) - mocks Ethereum block with main focus on event logs and nothing else
+- [`Block`](./block.go) - mocks Ethereum block with main focus on event logs and nothing else
 
-- [`chain`](./chain.go) - represents Ethereum blockchain by mapping a `block` to a block number
+- [`BlockChain`](./chain.go) - represents Ethereum blockchain by mapping a `Block` to a block number
 
-- [`BaseParam`](./reorgsim.go) - parameters for `ReorgSim`
+- [`Param`](./reorgsim.go) - parameters for `ReorgSim`
 
 - [`ReorgEvent`](./reorgsim.go) - parameters for constructing reorged `chain`s
 
@@ -45,10 +45,10 @@ Struct `ReorgSim` can handle multiple `ReorgEvent`s, and is the default simulati
 by other packages, even though most external test cases still have 1 `ReorgEvent` for now.
 
 To use code in `reorgsim`, users will need to prepare logs `[]types.Log` (or `map[uint64][]types.Log`, where the key
-is the log's block number) and parameters `BaseParam`, as well as reorg parameters in `[]ReorgEvent`.
+is the log's block number) and parameters `Param`, as well as reorg parameters in `[]ReorgEvent`.
 
 The logs and `[]ReorgEvent` are used to construct mocked blockchains,
-while `BaseParam` controls `ReorgSim` behavior such as initial block number and block progress.
+while `Param` controls `ReorgSim` behavior such as initial block number and block progress.
 
 > To help with development experience, the package provides convenient functions to read the mocked logs from JSON files.
 > Users can use [`ethlogfilter`](https://github.com/artnoi43/ethlogfilter) to get desired logs in JSON formats.
@@ -57,16 +57,16 @@ See code in tests to get a clearer picture of how this works.
 
 ## Mocked blockchains in package `reorgsim`
 
-The package defines blockchains (type [`blockChain`](./chain.go)) as a hash map of uint64 to
-a reference to custom type [`block`](./block.go).
+The package defines blockchains (type [`BlockChain`](./chain.go)) as a hash map of uint64 to
+a reference to custom type [`Block`](./block.go).
 
-`block` is a small struct containing only the bare minimum Ethereum block information
+`Block` is a small struct containing only the bare minimum Ethereum block information
 needed by function [poller.mapLogs](../../internal/poller/map_logs.go), so it only needs to have Ethereum logs and the block hashes.
 
 Ethereum transactions and transaction hashes are not considered in `reorgsim` code,
 as it is not currently used by the emitter.
 
-To simulate a reorged (forked) blockchain, `ReorgSim` internally stores multiple `blockChain`s in `reorgSim.reorgedChains`.
+To simulate a reorged (forked) blockchain, `ReorgSim` internally stores multiple `BlockChain`s in `reorgSim.reorgedChains`.
 This means that there must be a mechanism for `ReorgSim` to determine which chain to use for a particular function call.
 
 ## Deep dive
@@ -92,11 +92,11 @@ The key of map `ReorgEvent.MovedLogs` is the block number from which the logs ar
 We specify which logs are moved to which block with `[]MoveLogs`. For each `MoveLogs`, `MoveLogs.TxHashes`
 represent the transaction hashes of the logs we want to move to `MoveLogs.NewBlock`.
 
-### Constructing `blockChain` and chain reorg mechanisms
+### Constructing `BlockChain` and chain reorg mechanisms
 
 Blockchains can be constructed using `NewBlockChain`.
 
-The function returns 2 variables, an original chain `blockChain`, and reorged chains `[]blockChain`.
+The function returns 2 variables, an original chain `BlockChain`, and reorged chains `[]BlockChain`.
 The length of reorged chains is identical to the length of `[]ReorgEvent` passed to the constructor(s).
 
 The _old_ chain blocks created with the information in the logs, such as block hashes and transaction hashes.
@@ -118,72 +118,81 @@ by calling `PRandomHash` and compare the values, as seen in some tests here.
 
 ### [Implementing `superwatcher.EthClient`](./reorgsim_ethclient_impl.go)
 
-There are currently 2 methods for `superwatcher.EthClient`, so these 2 methods are where the `ReorgSim`
-logic is.
+`ReorgSim` has 3 public methods for implementing `superwatcher.EthClient`.
 
-First is `ReorgSim.BlockNumber`, which is responsible for incrementing and returning
-the chain internal state `ReorgSim.currentBlock`.
+1. `ReorgSim.BlockNumber` returns the current internal state `ReorgSim.currentBlock`
+   In addition to returning `currentBlock` value, it also increments `ReorgSim.currentBlock`
+   by `Param.BlockProgress` in every call. Once `currentBlock` reaches `Param.ExitBlock`,
+   it returns `ErrExitBlockReached`.
 
-Second is `ReorgSim.FilterLogs`, responsible for determining which of the many chains should be used
-for a particular call.
+2. `ReorgSim.FilterLogs` returns event logs from the current chain.
+   In addition to returning event logs, it is the one who triggers chain reorgs by calling
+   `ReorgSim.triggerForkChain`.
 
-#### Method `ReorgSim.BlockNumber`
+3. `ReorgSim.HeaderByNumber` returns the block hash from the current chain.
 
-`Param.StartBlock` determines the initial current block number for the mocked chains -
-this means that right after instantiation, the first `ReorgSim.BlockNumber` method call will return
-`Param.StartBlock`, and this is the first block number the emitter sees.
+### How `ReorgSim` triggers chain reorg sequence and forks chains
 
-The current block increments by `Param.BlockProgress` every each call to method `ReorgSim.BlockNumber`.
-If the increment value is zero, the code panics.
-
-#### Method `ReorgSim.FilterLogs`
-
-This method returns logs from any one of the chains `r.chain` and `r.reorgedChain`,
-depending on the internal states and the filter query.
-
-> The logic for triggering a chain reorg with `ReorgEvent.ReorgTrigger` is in `ReorgSim.triggerForkChain(from, to)`.
-> The logic for forking chain is in `ReorgSim.forkChain(from, to)`.
+> The logic for triggering a chain reorg with `ReorgEvent.ReorgTrigger`
+> is in `ReorgSim.triggerForkChain(from, to)`, while he logic for forking chains
+> is in `ReorgSim.forkChain()`.
 
 The main logic here is this - for all blocks before the event `ReorgEvent.ReorgedBlock`, use logs
 from the old chain. The logs _at or after `Param.ReorgedBlock`_ however, will be taken from
 BOTH the old and the reorged chain, depending on the internal states during each call.
 
-1. Every call to `FilterLogs(from, to)` will call `triggerForkChain(from, to)`.
+1. Every call to `r.FilterLogs(from, to)` will call `r.triggerForkChain(from, to)`.
 
-2. `triggerForkChain` gets the current `ReorgEvent` via `ReorgSim.events[ReorgSim.currentReorgEvent]`.
+2. `triggerForkChain(from, to)` gets the current `ReorgEvent` via `r.events[r.currentReorgEvent]`.
    It then checks if `ReorgEvent.ReorgTrigger` is within inclusive range `[from, to]`.
 
-3. If `ReorgEvent.ReorgTrigger` is within range `[from, to]`, then `triggerForkChain` writes
-   `ReorgSim.triggered[ReorgSim.currentReorgEvent]` as true, and `triggerForkChain` returns
-   to `FilterLogs`.
+3. If `ReorgEvent.ReorgTrigger` is within range `[from, to]`, then `triggerForkChain` will see if
+   this current event has been triggered. If not triggered (`r.currentReorgEvent > r.triggered`),
+   then `triggerForkChain` updates `r.triggered` to `r.currentReorgEvent` and returns.
+   If it's called again, and it sees that the current event has been triggered
+   (`r.currentReorgEvent == r.triggered`), then it calls `forkChain`
 
-4. `FilterLogs` checks if all chains are forked, if not, it checks if the current event was triggered.
-   If triggered, it calls `forkChain(from, to)`
+4. `forkChain()` checks if the trigger has been forked with `r.forked == r.triggered`, and if
+   it's already forked, `forkChain` returns, doing nothing.
+   If the trigger has not been forked, `forkChain` _forks_ the chain by assigning `r.chain` to
+   `r.reorgedChain[r.currentReorgEvent]`, and updating all the counters used by `ReorgSim`.
 
-5. `forkChain(from, to)` checks if the current event's `ReorgBlock` field is within inclusive range `[from, to]`,
-   if it is, then it increments the counter `ReorgSim.seen[ReorgEvent.ReorgBlock]` by 1.
+5. After `forkChain` returns, `r.chain` should already be _forked_,
+   and `FilterLogs` can just access blocks from current chain with `r.chain[blockNumber]`.
 
-6. If `ReorgEvent.seen[event.ReorgBlock]` is greater than 1, then `forkChain`
-   will _fork_ the current chain, by switching `ReorgSim.chain` to the next chain in
-   `ReorgSim.reorgedChains`, incrementing the counter `currentReorgEvent` if it should be,
-   and overwriting `ReorgSim.currentBlock` with the current event's `ReorgBlock`.
-   The counter `ReorgSim.seen` is also cleared after the fork.
+6. The logs within range are appended together and returned.
 
-7. After `forkChain` returns, `ReorgSim.chain` should already be _forked_,
-   and `FilterLogs` can just access blocks from current chain with `ReorgSim.chain[blockNumber]`.
+```text
 
-8. The logs within range are appended together and returned.
+    ReorgSim.FilterLogs(ctx, query)
+                     │
+                     │
+                     ▼
+    ReorgSim.triggerForkChain(query.from, query.to)
+                     │
+                     │
+        if event.ReorgTrigger is in range
+                     │
+                     │
+                     │
+          ┌──────────┴────────────────────┐
+          │                               │
+if already triggered                if not triggered
+          │                               │
+          │                               │
+          ▼                               ▼
+    ReorgSim.forkChain           returns to FilterLogs
+          │
+          ├──────────────────┐
+          │                  │
+if already forked      if not forked
+          │                  │
+          │                  │
+          ▼                  ▼
+       returns         forks and returns
+
+```
 
 > `ReorgSim` must be able to let poller/emitter see the original hash first
 > (i.e. when `ReorgSim.seen` for a block is still 0 or 1), otherwise we can test
 > `poller.mapLogs`, as the function relies on old block hash saved in the tracker
-
-#### [Deprecated] Method `ReorgSim.HeaderByNumber`
-
-> This method is used by the emitter to get block header, to get the block hash out of the header.
-> Since we only need the hash from the header by calling `Hash()` method on the header,
-> we just need to implement `block.Hash()` and use that type in place of the normal header.
-
-The method is called after `ReorgSim.FilterLogs` in [`emitter.poller.Poll`](../../internal/emitter/poller.go),
-so this method must NOT returns reorged blocks unless `ReorgSim.FilterLogs` had already returned
-such reorged blocks.

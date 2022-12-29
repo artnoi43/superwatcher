@@ -104,7 +104,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 
 	fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 
-	param := reorgsim.BaseParam{
+	param := reorgsim.Param{
 		StartBlock:    tc.FromBlock,
 		BlockProgress: 20,
 		Debug:         true,

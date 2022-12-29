@@ -14,7 +14,7 @@ import (
 )
 
 func TestFilterLogs(t *testing.T) {
-	param := BaseParam{
+	param := Param{
 		StartBlock:    defaultStartBlock,
 		BlockProgress: 20,
 	}

@@ -22,7 +22,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 				logsPath + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false, // Normal run
-			Param: reorgsim.BaseParam{
+			Param: reorgsim.Param{
 				StartBlock:    15984000,
 				BlockProgress: 20,
 				ExitBlock:     15984200,
@@ -38,7 +38,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 				logsPath + "/logs_servicetest_16054000_16054100.json",
 			},
 			DataGatewayFirstRun: false,
-			Param: reorgsim.BaseParam{
+			Param: reorgsim.Param{
 				StartBlock:    16054000,
 				BlockProgress: 20,
 				ExitBlock:     16054200,
