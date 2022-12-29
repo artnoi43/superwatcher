@@ -1,0 +1,13 @@
+# This config will get THE LAST 2 LOGS from this TX https://etherscan.io/tx/0x07fff3cd11172e3878900dd22e8e905674651aa5f91f04ff35926150d2db9671
+
+node_url: "http://localhost:8545"
+from_block: 15847894
+to_block: 15847894
+topics:
+  - "0xb3d987963d01b2f68493b4bdb130988f157ea43070d4ad840fee0466ed9370d9"
+  - "0xca6abbe9d7f11422cb6ca7629fbf6fe9efb1c621f71ce8f02b9f2a230097404f"
+addresses:
+  - "0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85"
+  - "0x283af0b28c62c092c9727f1ee09c02ca627eb7f5"
+tx_hashes:
+  - "0x07fff3cd11172e3878900dd22e8e905674651aa5f91f04ff35926150d2db9671"
