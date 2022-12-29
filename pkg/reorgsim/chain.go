@@ -117,6 +117,18 @@ func newBlockChain(
 			toBeForked = blockNumber >= reorgedBlock
 		}
 
+		if l := len(logs); l > 1 {
+			h0 := logs[0].BlockHash
+			for i := 1; i < l; i++ {
+				if h := logs[i].BlockHash; h != h0 {
+					panic(fmt.Sprintf(
+						"logs blockHashes on block %d don't match: %s vs %s",
+						blockNumber, h0.String(), h.String()),
+					)
+				}
+			}
+		}
+
 		chain[blockNumber] = &Block{
 			blockNumber: blockNumber,
 			hash:        logs[0].BlockHash,

@@ -43,49 +43,32 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 		}
 
 		// See if there's unforked r.reorgedChains before forking
-		if r.triggered > r.forked {
+		if r.triggered > r.forked && r.currentReorgEvent > r.forked {
 			debug("triggered, will call forkChain now")
 			r.forkChain()
 		}
 	}
 }
 
-// forkChain performs chain reorg logic if the current ReorgEvent.ReorgBlock is within range [from, to]
-// and if r.seen[ReorgEvent.ReorgBlock] is >= 1. The latter check allows for the poller/emitter to see
-// pre-fork block hash once, so that we can test the poller/emitter logic.
+// forkChain performs chain reorg logic after triggerForkChain validates all conditions
 func (r *ReorgSim) forkChain() {
-	if r.triggered == r.forked {
-		r.debugger.Debug(
-			1, "trigger already forked, returning without forking",
-			zap.Uint64("currentBlock", r.currentBlock),
-			zap.Int("currentReorgEvent", r.currentReorgEvent),
-			zap.Int("triggered", r.triggered),
-			zap.Int("forked", r.forked),
-		)
-
-		return
-	}
 
 	event := r.events[r.currentReorgEvent]
 
 	// If we still has chain to fork
-	if r.currentReorgEvent < len(r.events) {
-		if r.forked < r.currentReorgEvent {
-			r.chain = r.reorgedChains[r.currentReorgEvent]
-			r.currentBlock = event.ReorgBlock
-			r.forked = r.triggered
+	r.chain = r.reorgedChains[r.currentReorgEvent]
+	r.currentBlock = event.ReorgBlock
+	r.forked = r.triggered
 
-			r.currentReorgEvent++
+	r.currentReorgEvent++
 
-			r.debugger.Debug(
-				1, "REORGED! fork done",
-				zap.Uint64("currentBlock", r.currentBlock),
-				zap.Uint64("reorgTrigger", event.ReorgTrigger),
-				zap.Uint64("reorgBlock", event.ReorgBlock),
-				zap.Int("currentReorgEvent", r.currentReorgEvent),
-				zap.Int("triggered", r.triggered),
-				zap.Int("forked", r.forked),
-			)
-		}
-	}
+	r.debugger.Debug(
+		1, "REORGED! fork done",
+		zap.Uint64("currentBlock", r.currentBlock),
+		zap.Uint64("reorgTrigger", event.ReorgTrigger),
+		zap.Uint64("reorgBlock", event.ReorgBlock),
+		zap.Int("currentReorgEvent", r.currentReorgEvent),
+		zap.Int("triggered", r.triggered),
+		zap.Int("forked", r.forked),
+	)
 }
