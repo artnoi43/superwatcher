@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
@@ -22,11 +23,22 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			Param: reorgsim.Param{
 				StartBlock:    16054000,
 				BlockProgress: 20,
-				ExitBlock:     16054100,
+				ExitBlock:     16054200,
 			},
 			Events: []reorgsim.ReorgEvent{
 				{
 					ReorgBlock: 16054078,
+					MovedLogs: map[uint64][]reorgsim.MoveLogs{
+						16054078: {
+							{
+								NewBlock: 16054093,
+								TxHashes: []common.Hash{
+									common.HexToHash("0xed2520a4168f1d26a8c5a0081403711415087218555cfc61fc0192432912ff1c"),
+									common.HexToHash("0xa77589c6e436e85a99dbccd1cddaf13766148c740a5c0972260a4e90a742c6d5"),
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -67,7 +79,11 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			t.Fatalf("0 results from dgwPoolFactory")
 		}
 
+		movedHashes, logsDst := reorgsim.LogsFinalDst(testCase.Events)
+
+		var someENS bool
 		for _, result := range resultsENS {
+			someENS = true
 			if result.DomainString() == "" {
 				t.Errorf("emptyDomain name for resultENS id: %s", result.ID)
 			}
@@ -85,9 +101,21 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			if result.BlockHash != expectedReorgedHash {
 				t.Errorf("reorged block %d resultENS has unexpected blockHash: %s", result.BlockNumber, result.BlockHash)
 			}
+
+			if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+				if expected := logsDst[h]; result.BlockNumber != expected {
+					t.Fatalf("expecting moved blockNumber %d, got %d", expected, result.BlockNumber)
+				}
+			}
 		}
 
+		if !someENS {
+			t.Error("got no ENS result")
+		}
+
+		var somePoolFactory bool
 		for _, result := range resultsPoolFactory {
+			somePoolFactory = true
 			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
 			resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
 
@@ -102,6 +130,10 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			if resultBlockHash != expectedReorgedHash {
 				t.Errorf("resultPoolFactory from reorged block %d has unexpected blockHash: %s", result.BlockCreated, resultBlockHash)
 			}
+		}
+
+		if !somePoolFactory {
+			t.Error("got no poolFactory result")
 		}
 	}
 }

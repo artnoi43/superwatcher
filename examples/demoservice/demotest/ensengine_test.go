@@ -5,6 +5,7 @@ import (
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
@@ -29,7 +30,17 @@ func TestServiceEngineENSV1(t *testing.T) {
 			},
 			Events: []reorgsim.ReorgEvent{
 				{
-					ReorgBlock: 15984033,
+					ReorgBlock: 15984040,
+					MovedLogs: map[uint64][]reorgsim.MoveLogs{
+						15984040: {
+							{
+								NewBlock: 15984043,
+								TxHashes: []common.Hash{
+									common.HexToHash("0xd5d1beffbfe5fbf4d8dee6284d291a0a11260085c9fc6074e56ca4ed44491263"),
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -67,8 +78,11 @@ func TestServiceEngineENSV1(t *testing.T) {
 			t.Error("error from ensStore (ens):", err.Error())
 		}
 
+		movedHashes, logsDst := reorgsim.LogsFinalDst(testCase.Events)
+
 		for _, result := range results {
 			if result.BlockNumber >= testCase.Events[0].ReorgBlock {
+
 				t.Log("checking block", result.BlockNumber)
 
 				expectedHash := gslutils.StringerToLowerString(
@@ -84,6 +98,13 @@ func TestServiceEngineENSV1(t *testing.T) {
 				}
 				if result.Name == "" {
 					t.Fatal("empty ENS Name -- should not happen")
+				}
+
+				if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+					expectedFinalBlock := logsDst[h]
+					if expectedFinalBlock != result.BlockNumber {
+						t.Fatalf("expecting moved blockNumber %d, got %d", expectedFinalBlock, result.BlockNumber)
+					}
 				}
 			}
 		}
