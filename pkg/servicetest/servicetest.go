@@ -18,7 +18,7 @@ type TestCase struct {
 	Events []reorgsim.ReorgEvent `json:"reorgEvents"`
 	// JSON logs files for initializing reorgSim
 	LogsFiles []string `json:"logFiles"`
-	// If set to true, the emitter will go back due to datagateway.ErrRecordNotFound
+	// If set to true, the emitter will go back due to superwatcher.ErrRecordNotFound
 	DataGatewayFirstRun bool `json:"dataGatewayFirstRun"`
 }
 

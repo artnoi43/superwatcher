@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
-
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
 
 type RedisClient interface {
@@ -16,14 +15,14 @@ type RedisClient interface {
 	Close() error
 }
 
-// wraps it with datagateway.ErrRecordNotFound.
+// wraps it with superwather.ErrRecordNotFound.
 func HandleRedisErr(err error, action, key string) error {
 	if err == nil {
 		return nil
 	}
 
 	if errors.Is(err, redis.Nil) {
-		err = datagateway.WrapErrRecordNotFound(err, key)
+		err = superwatcher.WrapErrRecordNotFound(err, key)
 	}
 
 	return errors.Wrapf(err, "action: %s", action)

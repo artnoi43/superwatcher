@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
 
 func TestFakeRedis(t *testing.T) {
@@ -38,7 +37,7 @@ func testFakeRedisMem(t *testing.T) {
 	f = NewDataGatewayMem(x, false) // Never run before - Get before Set should fail
 	lastRec, err = f.GetLastRecordedBlock(nil)
 	if err != nil {
-		if !errors.Is(err, datagateway.ErrRecordNotFound) {
+		if !errors.Is(err, superwatcher.ErrRecordNotFound) {
 			t.Error("error in fakeRedis.GetLastRecordedBlock not ErrRecordNotFound", err.Error())
 		}
 	}
@@ -73,7 +72,7 @@ func testFakeRedisFile(t *testing.T) {
 	f = NewDataGatewayFile(filename, x, false) // Never run before - Get before Set should fail
 	lastRec, err = f.GetLastRecordedBlock(nil)
 	if err != nil {
-		if !errors.Is(err, datagateway.ErrRecordNotFound) {
+		if !errors.Is(err, superwatcher.ErrRecordNotFound) {
 			t.Error("error in fakeRedis.GetLastRecordedBlock not ErrRecordNotFound", err.Error())
 		}
 	}

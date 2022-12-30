@@ -6,8 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
-
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
 )
 
@@ -31,7 +30,7 @@ func (s *mockDataGatewayENS) SetENS(ctx context.Context, ens *entity.ENS) error 
 func (s *mockDataGatewayENS) GetENS(ctx context.Context, ensID string) (*entity.ENS, error) {
 	saved, ok := s.m[ensID]
 	if !ok || saved == nil {
-		return nil, errors.Wrapf(datagateway.ErrRecordNotFound, "ens not found for key %s", ensID)
+		return nil, errors.Wrapf(superwatcher.ErrRecordNotFound, "ens not found for key %s", ensID)
 	}
 
 	return saved, nil
@@ -49,7 +48,7 @@ func (s *mockDataGatewayENS) GetENSes(context.Context) ([]*entity.ENS, error) {
 func (s *mockDataGatewayENS) DelENS(ctx context.Context, ens *entity.ENS) error {
 	_, ok := s.m[ens.ID]
 	if !ok {
-		return errors.Wrapf(datagateway.ErrRecordNotFound, "ens not found for key %s", ens.Name)
+		return errors.Wrapf(superwatcher.ErrRecordNotFound, "ens not found for key %s", ens.Name)
 	}
 
 	fmt.Println("# DEL ENS", ens.Name, ens.ID)

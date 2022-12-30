@@ -1,4 +1,4 @@
-package datagateway
+package superwatcher
 
 import (
 	"testing"

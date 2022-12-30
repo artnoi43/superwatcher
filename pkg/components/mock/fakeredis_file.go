@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
+	"github.com/artnoi43/superwatcher"
 )
 
 type fakeRedisFile struct {
@@ -24,7 +24,7 @@ func (m *fakeRedisFile) GetLastRecordedBlock(ctx context.Context) (uint64, error
 	defer m.Unlock()
 
 	if !m.ok {
-		return 0, errors.Wrap(datagateway.ErrRecordNotFound, "key not found")
+		return 0, errors.Wrap(superwatcher.ErrRecordNotFound, "key not found")
 	}
 
 	b, err := os.ReadFile(m.filename)

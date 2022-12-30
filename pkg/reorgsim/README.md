@@ -149,13 +149,12 @@ BOTH the old and the reorged chain, depending on the internal states during each
 3. If `ReorgEvent.ReorgTrigger` is within range `[from, to]`, then `triggerForkChain` will see if
    this current event has been triggered. If not triggered (`r.currentReorgEvent > r.triggered`),
    then `triggerForkChain` updates `r.triggered` to `r.currentReorgEvent` and returns.
-   If it's called again, and it sees that the current event has been triggered
-   (`r.currentReorgEvent == r.triggered`), then it calls `forkChain`
 
-4. `forkChain()` checks if the trigger has been forked with `r.forked == r.triggered`, and if
-   it's already forked, `forkChain` returns, doing nothing.
-   If the trigger has not been forked, `forkChain` _forks_ the chain by assigning `r.chain` to
-   `r.reorgedChain[r.currentReorgEvent]`, and updating all the counters used by `ReorgSim`.
+   If it's called again, and it sees that the current event has been triggered
+   (`r.currentReorgEvent == r.triggered`), then it checks if forked, and if not, calls `forkChain`
+
+4. `forkChain` _forks_ the current chain by overwriting `r.chain` to `r.reorgedChains[r.currentReorgEvent]`,
+   and incrementing the counters.
 
 5. After `forkChain` returns, `r.chain` should already be _forked_,
    and `FilterLogs` can just access blocks from current chain with `r.chain[blockNumber]`.
@@ -163,33 +162,33 @@ BOTH the old and the reorged chain, depending on the internal states during each
 6. The logs within range are appended together and returned.
 
 ```text
+(Arrow heads are function calls)
 
-    ReorgSim.FilterLogs(ctx, query)
+
+
+ReorgSim.FilterLogs(ctx, query)
                      │
                      │
                      ▼
-    ReorgSim.triggerForkChain(query.from, query.to)
+ReorgSim.triggerForkChain(query.from, query.to)
                      │
                      │
-        if event.ReorgTrigger is in range
+                     │
+if current event.ReorgTrigger is in range [query.from, query.to]
                      │
                      │
                      │
           ┌──────────┴────────────────────┐
           │                               │
-if already triggered                if not triggered
+if not triggered             if already triggered and unforked
           │                               │
           │                               │
-          ▼                               ▼
-    ReorgSim.forkChain           returns to FilterLogs
-          │
-          ├──────────────────┐
-          │                  │
-if already forked      if not forked
-          │                  │
-          │                  │
-          ▼                  ▼
-       returns         forks and returns
+          │                               ▼
+triggers and returns              ReorgSim.forkChain()
+                                          │
+                                          │
+                                          │
+                                   forks and returns
 
 ```
 

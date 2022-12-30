@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
 )
 
 type mockDataGatewayPoolFactory struct {
@@ -43,7 +43,7 @@ func (s *mockDataGatewayPoolFactory) GetPool(
 	fmt.Println("SET", addr)
 	pool, ok := s.m[addr]
 	if !ok {
-		return nil, errors.Wrapf(datagateway.ErrRecordNotFound, "lp %s not found", addr)
+		return nil, errors.Wrapf(superwatcher.ErrRecordNotFound, "lp %s not found", addr)
 	}
 
 	return pool, nil
@@ -66,7 +66,7 @@ func (s *mockDataGatewayPoolFactory) DelPool(
 	fmt.Println("DEL", addr)
 	pool, ok := s.m[addr] //nolint:staticcheck
 	if !ok {
-		return errors.Wrapf(datagateway.ErrRecordNotFound, "lp %s not found", addr)
+		return errors.Wrapf(superwatcher.ErrRecordNotFound, "lp %s not found", addr)
 	}
 
 	s.m[addr] = nil

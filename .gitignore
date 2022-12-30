@@ -1,4 +1,3 @@
-*/config/*.yaml
-scripts/*/*.yaml
+**/config/config.yaml
 
 tmp

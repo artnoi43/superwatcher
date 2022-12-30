@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/datagateway"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -158,8 +157,8 @@ func (e *emitter) computeFromBlockToBlock(
 	// The value to be saved should be superwatcher.FilterResult.LastGoodBlock
 	lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 	if err != nil {
-		// Return error if not datagateway.ErrRecordNotFound
-		if !errors.Is(err, datagateway.ErrRecordNotFound) {
+		// Return error if not superwatcher.ErrRecordNotFound
+		if !errors.Is(err, superwatcher.ErrRecordNotFound) {
 			return prevStatus, errors.Wrap(err, "failed to get last recorded block from Redis")
 		}
 

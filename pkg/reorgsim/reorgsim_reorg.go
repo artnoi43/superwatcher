@@ -1,8 +1,6 @@
 package reorgsim
 
-import (
-	"go.uber.org/zap"
-)
+import "go.uber.org/zap"
 
 // triggerForkChain needs 2 calls with event.ReorgTrigger within range.
 // The 1st call updates `r.triggered` to r.currentReorgEvent
@@ -52,13 +50,11 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 
 // forkChain performs chain reorg logic after triggerForkChain validates all conditions
 func (r *ReorgSim) forkChain() {
-
 	event := r.events[r.currentReorgEvent]
 
-	// If we still has chain to fork
-	r.chain = r.reorgedChains[r.currentReorgEvent]
 	r.currentBlock = event.ReorgBlock
 	r.forked = r.triggered
+	r.chain = r.reorgedChains[r.currentReorgEvent]
 
 	r.currentReorgEvent++
 

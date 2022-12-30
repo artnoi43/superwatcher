@@ -30,7 +30,7 @@ The 3 main possible emitter states as seen in `*emitter.loopEmit` are:
    a certain number of blocks to detect chain reorgs.
    This can further be divided into 2 possibilities:
 
-   1.1 First run on the host (got `datagateway.ErrRecordNotFound` when attempting `GetLastRecordedBlock`)
+   1.1 First run on the host (got `superwatcher.ErrRecordNotFound` when attempting `GetLastRecordedBlock`)
 
    If the emitter has never been run on the host, then the emitter will _NOT_ go back.
    The config's `StartBlock` field will instead be used as the base for `fromBlock`, and `toBlock`

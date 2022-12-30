@@ -83,8 +83,10 @@ func main() {
 	watcher := components.NewSuperWatcherDefault(
 		conf.SuperWatcherConfig,
 		superwatcher.WrapEthClient(ethClient),
-		stateDataGateway,
-		stateDataGateway,
+		// We wrap |stateDataGateway| to demo how to separate the 2 methods
+		// for a superwatcher.StateDataGateway for single responsibility.
+		superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock),
+		superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock),
 		demoEngine,
 		emitterAddresses,
 		[][]common.Hash{emitterTopics},
