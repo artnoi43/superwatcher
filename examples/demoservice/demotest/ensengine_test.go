@@ -67,7 +67,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 		// We'll later use |ensStore| to check for saved results
 		ensStore := datagateway.NewMockDataGatewayENS()
 
-		fakeRedis, err := testServiceEngineENSV1(testCase, ensStore)
+		fakeRedis, err := runTestServiceEngineENS(testCase, ensStore)
 		if err != nil {
 			lastRecordedBlock, _ := fakeRedis.GetLastRecordedBlock(nil)
 			t.Errorf("lastRecordedBlock %d - error in full servicetest (ens): %s", lastRecordedBlock, err.Error())
@@ -80,13 +80,13 @@ func TestServiceEngineENSV1(t *testing.T) {
 
 		// Test if moved logs were properly removed
 		movedHashes, logsPark, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
-		ensMockDB := ensStore.(*datagateway.MockDataGatewayENS)
+		debugDB := ensStore.(datagateway.DebugDataGateway)
 		for _, txHash := range movedHashes {
 			parks := logsPark[txHash]
 
 			for _, park := range parks {
 				var foundDel bool
-				for _, writeLog := range ensMockDB.WriteLogs {
+				for _, writeLog := range debugDB.WriteLogs() {
 					method, _, blockNumber, _, err := writeLog.Unmarshal()
 					if err != nil {
 						t.Fatal("bad writeLog", err.Error())
@@ -103,7 +103,6 @@ func TestServiceEngineENSV1(t *testing.T) {
 
 				if !foundDel {
 					t.Errorf("moved log did not produce writeLog DEL for txHash %s", txHash.String())
-					t.Log(ensMockDB.WriteLogs)
 				}
 			}
 		}
@@ -139,7 +138,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 	}
 }
 
-func testServiceEngineENSV1(
+func runTestServiceEngineENS(
 	testCase servicetest.TestCase,
 	ensStore datagateway.RepositoryENS,
 ) (

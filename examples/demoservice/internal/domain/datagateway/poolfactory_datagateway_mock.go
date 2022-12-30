@@ -19,9 +19,9 @@ type MockDataGatewayPoolFactory struct {
 	// m maps pool address to service entity pool
 	m map[string]*entity.Uniswapv3PoolCreated
 
-	// WriteLogs is used to record all write operations done on mockDataGatewayENS.
+	// writeLogs is used to record all write operations done on mockDataGatewayENS.
 	// It is useful in demotest.
-	WriteLogs []WriteLog
+	writeLogs []WriteLog
 }
 
 func NewMockDataGatewayPoolFactory() RepositoryPoolFactory {
@@ -41,8 +41,8 @@ func (s *MockDataGatewayPoolFactory) SetPool(
 	hash := gslutils.StringerToLowerString(pool.BlockHash)
 
 	s.m[addr] = pool
-	s.WriteLogs = append(
-		s.WriteLogs,
+	s.writeLogs = append(
+		s.writeLogs,
 		WriteLog(
 			fmt.Sprintf("SET POOL %s BLOCK %d HASH %s", addr, pool.BlockCreated, hash),
 		),
@@ -97,12 +97,16 @@ func (s *MockDataGatewayPoolFactory) DelPool(
 	}
 
 	s.m[addr] = nil
-	s.WriteLogs = append(
-		s.WriteLogs,
+	s.writeLogs = append(
+		s.writeLogs,
 		WriteLog(
 			fmt.Sprintf("DEL POOL %s BLOCK %d HASH %s", addr, pool.BlockCreated, hash),
 		),
 	)
 
 	return nil
+}
+
+func (s *MockDataGatewayPoolFactory) WriteLogs() []WriteLog {
+	return s.writeLogs
 }

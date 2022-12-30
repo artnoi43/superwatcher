@@ -8,6 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+type DebugDataGateway interface {
+	WriteLogs() []WriteLog
+}
+
 type WriteLog string
 
 // For demotest code

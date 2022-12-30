@@ -14,11 +14,11 @@ import (
 )
 
 // Multiple event logs from ENS have owner or new owner internal/address in log.Data, not in topics.
-func extractOwnerAddressFromUnpacked(unpacked map[string]interface{}) (common.Address, error) {
+func extractOwnerAddressFromUnpacked(unpacked map[string]interface{}) (common.Address, error) { //nolint:unused
 	return logutils.ExtractFieldFromUnpacked[common.Address](unpacked, "owner")
 }
 
-func extractTTLFromUnpacked(unpacked map[string]interface{}) (uint64, error) {
+func extractTTLFromUnpacked(unpacked map[string]interface{}) (uint64, error) { //nolint:unused
 	return logutils.ExtractFieldFromUnpacked[uint64](unpacked, "ttl")
 }
 
@@ -30,7 +30,7 @@ func (e *ensEngine) unmarshalLogToENS(
 ) error {
 	switch log.Address {
 	case e.ensRegistrar.Address:
-		switch logEvent {
+		switch logEvent { //nolint:gocritic
 		case eventNameRegistered:
 			if len(log.Topics) < 3 {
 				return errors.Wrap(ErrLogLen, "log topics len < 3")
@@ -51,7 +51,7 @@ func (e *ensEngine) unmarshalLogToENS(
 		}
 
 	case e.ensController.Address:
-		switch logEvent {
+		switch logEvent { //nolint:gocritic
 		case eventNameRegistered:
 			// Extract data from Controller contract log yopics and data
 			var err error

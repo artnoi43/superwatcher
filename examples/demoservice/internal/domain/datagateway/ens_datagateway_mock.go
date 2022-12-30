@@ -19,7 +19,7 @@ type MockDataGatewayENS struct {
 
 	// WriteLogs is used to record all write operations done on mockDataGatewayENS.
 	// It is useful in demotest.
-	WriteLogs []WriteLog
+	writeLogs []WriteLog
 }
 
 func NewMockDataGatewayENS() RepositoryENS {
@@ -36,7 +36,7 @@ func (s *MockDataGatewayENS) SetENS(ctx context.Context, ens *entity.ENS) error 
 	log.Println(writeLog)
 
 	s.m[ens.ID] = ens
-	s.WriteLogs = append(s.WriteLogs, writeLog)
+	s.writeLogs = append(s.writeLogs, writeLog)
 
 	return nil
 }
@@ -78,7 +78,11 @@ func (s *MockDataGatewayENS) DelENS(ctx context.Context, ens *entity.ENS) error 
 	log.Println(writeLog)
 
 	s.m[ens.ID] = nil
-	s.WriteLogs = append(s.WriteLogs, writeLog)
+	s.writeLogs = append(s.writeLogs, writeLog)
 
 	return nil
+}
+
+func (s *MockDataGatewayENS) WriteLogs() []WriteLog {
+	return s.writeLogs
 }
