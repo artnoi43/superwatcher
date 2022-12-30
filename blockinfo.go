@@ -11,10 +11,15 @@ import (
 
 // BlockInfo represents the minimum block info needed for superwatcher.
 type BlockInfo struct {
-	LogsMigrated bool // true means that after chain reorg, interesting logs were entirely moved from this block
-	Number       uint64
-	Hash         common.Hash
-	Logs         []*types.Log
+	// LogsMigrated indicates whether all interesting logs were moved/migrated
+	// _from_ this block after a chain reorg or not. The field is primarily used
+	// by EmitterPoller to trigger the poller to get new, fresh block Hash for a block.
+	// The field should always be false if the BlockInfo is in FilterResult.GoodBlocks.
+	LogsMigrated bool
+
+	Number uint64
+	Hash   common.Hash
+	Logs   []*types.Log
 }
 
 // String returns the block hash with 0x prepended in all lowercase string.

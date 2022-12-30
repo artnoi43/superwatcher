@@ -11,11 +11,6 @@ import (
 // has never run on this host (hence no data in the database), and will not attempt to go back.
 var ErrRecordNotFound = errors.New("record not found")
 
-func WrapErrRecordNotFound(err error, keyNotFound string) error {
-	err = errors.Wrap(ErrRecordNotFound, err.Error())
-	return errors.Wrapf(err, "key %s not found", keyNotFound)
-}
-
 type (
 	// GetStateDataGateway is used by the emitter to get last recorded block.
 	GetStateDataGateway interface {
@@ -61,6 +56,11 @@ type (
 		setFunc FuncSetLastRecordedBlock
 	}
 )
+
+func WrapErrRecordNotFound(err error, keyNotFound string) error {
+	err = errors.Wrap(ErrRecordNotFound, err.Error())
+	return errors.Wrapf(err, "key %s not found", keyNotFound)
+}
 
 func GetStateDataGatewayFunc(f FuncGetLastRecordedBlock) GetStateDataGateway {
 	return &dataGatewayWrapper{getFunc: f}

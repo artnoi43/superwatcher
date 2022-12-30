@@ -1,6 +1,6 @@
 package superwatcher
 
-// FilterResult is published by emitter
+// FilterResult is emitted by Emitter to Engine.
 type FilterResult struct {
 	FromBlock     uint64       // The emitter's `fromBlock`
 	ToBlock       uint64       // The emitter's `toBlock`

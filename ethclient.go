@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+// BlockHeader is implemented by `*types.Header` and `*reorgsim.Block`.
 type BlockHeader interface {
 	Hash() common.Hash
 }

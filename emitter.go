@@ -9,12 +9,15 @@ import (
 // and uses that information to determine fromBlock and toBlock for Poller.Poll.
 type Emitter interface {
 	// Loop is the entry point for Emitter.
-	// Call it in a different loop than Engine.Loop to make both run concurrently.
+	// Users will call Loop in a different loop than Engine.Loop
+	// to make both components run concurrently.
 	Loop(context.Context) error
-
-	SyncsWithEngine() // Waits until engine is done processing the last batch
-	Shutdown()        // Shutdown and closing Go channels
-
-	Poller() EmitterPoller   // Poller returns the current Poller in use by Emitter
-	SetPoller(EmitterPoller) // Change emitter's Poller to new one
+	// Waits until engine is done processing the last batch
+	SyncsWithEngine()
+	// Shutdown and closing Go channels
+	Shutdown()
+	// Poller returns the current Poller in use by Emitter
+	Poller() EmitterPoller
+	// Change emitter's Poller to new one
+	SetPoller(EmitterPoller)
 }
