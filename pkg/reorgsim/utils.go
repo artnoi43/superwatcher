@@ -32,10 +32,10 @@ func InitMappedLogsFromFiles(filenames ...string) map[uint64][]types.Log {
 	return mappedLogs
 }
 
-// LogsFinalDst iterates through |events| to see which blockNumber is the final destination for a log.
+// LogsReorgPaths iterates through |events| to see which blockNumber is the final destination for a log.
 // The return value is a map of log's TX hash to its destination block number, that is, the most
 // current ReorgEvent.
-func LogsFinalDst(events []ReorgEvent) ([]common.Hash, map[common.Hash]uint64) {
+func LogsReorgPaths(events []ReorgEvent) ([]common.Hash, map[common.Hash][]uint64, map[common.Hash]uint64) {
 	// Collect MovedLogs info
 	type trackMove struct {
 		from uint64
@@ -62,12 +62,16 @@ func LogsFinalDst(events []ReorgEvent) ([]common.Hash, map[common.Hash]uint64) {
 	}
 
 	lenEvents := len(events)
+	// Some blocks the logs appear in before it reached logsDest
+	logsPark := make(map[common.Hash][]uint64)
+	// Final destination block for a log
 	logsDest := make(map[common.Hash]uint64)
 	var logsHashes []common.Hash
 	for i := 0; i < lenEvents; i++ {
 		moved := trackLogs[i]
 
 		for txHash, move := range moved {
+			logsPark[txHash] = append(logsPark[txHash], move.from)
 			logsDest[txHash] = move.to
 
 			if gslutils.Contains(logsHashes, txHash) {
@@ -78,7 +82,7 @@ func LogsFinalDst(events []ReorgEvent) ([]common.Hash, map[common.Hash]uint64) {
 		}
 	}
 
-	return logsHashes, logsDest
+	return logsHashes, logsPark, logsDest
 }
 
 func mapLogsToNumber(logs []types.Log) map[uint64][]types.Log {

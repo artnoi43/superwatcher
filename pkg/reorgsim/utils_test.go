@@ -2,9 +2,10 @@ package reorgsim
 
 import "testing"
 
-func TestLogsFinalDst(t *testing.T) {
+func TestLogsReorgPath(t *testing.T) {
 	foo := testsReorgSim[2]
 
-	_, logsDest := LogsFinalDst(foo.Events)
+	_, logsPark, logsDest := LogsReorgPaths(foo.Events)
+	t.Log(logsPark)
 	t.Log(logsDest)
 }

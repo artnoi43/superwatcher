@@ -136,7 +136,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 		}
 	}()
 
-	movedHashes, logsDest := reorgsim.LogsFinalDst(tc.Events)
+	movedHashes, _, logsDest := reorgsim.LogsReorgPaths(tc.Events)
 
 	var reached = make(map[common.Hash]bool)
 	for {

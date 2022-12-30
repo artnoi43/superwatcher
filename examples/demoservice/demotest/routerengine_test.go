@@ -79,7 +79,7 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			t.Fatalf("0 results from dgwPoolFactory")
 		}
 
-		movedHashes, logsDst := reorgsim.LogsFinalDst(testCase.Events)
+		movedHashes, _, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
 
 		var someENS bool
 		for _, result := range resultsENS {

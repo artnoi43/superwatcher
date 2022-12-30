@@ -78,7 +78,35 @@ func TestServiceEngineENSV1(t *testing.T) {
 			t.Error("error from ensStore (ens):", err.Error())
 		}
 
-		movedHashes, logsDst := reorgsim.LogsFinalDst(testCase.Events)
+		// Test if moved logs were properly removed
+		movedHashes, logsPark, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
+		ensMockDB := ensStore.(*datagateway.MockDataGatewayENS)
+		for _, txHash := range movedHashes {
+			parks := logsPark[txHash]
+
+			for _, park := range parks {
+				var foundDel bool
+				for _, writeLog := range ensMockDB.WriteLogs {
+					method, _, blockNumber, _, err := writeLog.Unmarshal()
+					if err != nil {
+						t.Fatal("bad writeLog", err.Error())
+					}
+
+					if method != "DEL" {
+						continue
+					}
+
+					if blockNumber == park {
+						foundDel = true
+					}
+				}
+
+				if !foundDel {
+					t.Errorf("moved log did not produce writeLog DEL for txHash %s", txHash.String())
+					t.Log(ensMockDB.WriteLogs)
+				}
+			}
+		}
 
 		for _, result := range results {
 			if result.BlockNumber >= testCase.Events[0].ReorgBlock {
