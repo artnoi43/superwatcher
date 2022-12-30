@@ -37,7 +37,7 @@ type metadataTrackerImpl struct {
 	debugger  *debugger.Debugger
 }
 
-func NewTracker(debugLevel uint8) *metadataTrackerImpl {
+func newTracker(debugLevel uint8) *metadataTrackerImpl {
 	return &metadataTrackerImpl{
 		sortedSet: sortedset.New(),
 		debugger:  debugger.NewDebugger("metadataTracker", debugLevel),
@@ -94,14 +94,6 @@ func (t *metadataTrackerImpl) GetBlockMetadata(
 	node := t.sortedSet.GetByKey(blockHash)
 	// Avoid panicking when assert type on nil value
 	if node == nil {
-		if caller == callerReorgedLogs {
-			logger.Panic(
-				"nil metadata for reorged block",
-				zap.Uint64("blockNumber", blockNumber),
-				zap.String("blockHash", blockHash),
-			)
-		}
-
 		return &blockMetadata{
 			blockNumber: blockNumber,
 			blockHash:   blockHash,
