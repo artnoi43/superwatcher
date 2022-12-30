@@ -25,7 +25,7 @@ func assertState(t *testing.T, expected, actual blockState) {
 
 // TODO: Rewrite
 func TestMetadataTracker(t *testing.T) {
-	tracker := NewTracker(3)
+	tracker := newTracker(3)
 	trackerKey := callerMethod("testTracker")
 
 	// GetBlockMetadata should not return nil even if it's empty

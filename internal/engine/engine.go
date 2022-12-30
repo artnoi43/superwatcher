@@ -33,7 +33,7 @@ func New(
 		emitterClient:    client,
 		serviceEngine:    serviceEngine,
 		stateDataGateway: stateDataGateway,
-		metadataTracker:  NewTracker(logLevel),
+		metadataTracker:  newTracker(logLevel),
 		debugger:         debugger.NewDebugger("engine", logLevel),
 		debug:            debug,
 	}
