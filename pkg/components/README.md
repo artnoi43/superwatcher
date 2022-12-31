@@ -146,7 +146,7 @@ Below is a simple diagram that describes how these components work together.
 │                                          │    │                    │        │         └──── sync ─────┤     │      ┌────► HandleReorgedLogs  │
 │                                fromBlock │    │                    │        │                         │     │      │                         │
 │                                  toBlock │    │ FilterResult       │        ├─────────────────────────┼─────┤      │                         │
-│                                          │    │                    │        │                         │     │      ├────► HandleGoodLogs     │
+│                                          │    │                    │        │   superwatcher.Engine   │     │      ├────► HandleGoodLogs     │
 │                                          ▼    │                    │        │                         │     │      │                         │
 ├─────────────────────────────────────  superwatcher.Poller  ────────┤        │                         │     │      │                         │
 │                                        (*poller.poller)            │        │                         ▼     │      │                         │
