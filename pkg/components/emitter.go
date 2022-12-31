@@ -15,7 +15,7 @@ func NewEmitter(
 	stateDataGateway superwatcher.GetStateDataGateway,
 	poller superwatcher.EmitterPoller,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
-	filterResultChan chan<- *superwatcher.FilterResult,
+	pollResultChan chan<- *superwatcher.PollResult,
 	errChan chan<- error,
 ) superwatcher.Emitter {
 	return emitter.New(
@@ -24,13 +24,13 @@ func NewEmitter(
 		stateDataGateway,
 		poller,
 		syncChan,
-		filterResultChan,
+		pollResultChan,
 		errChan,
 	)
 }
 
-// NewWithPoller returns a new, default WatcherEmitter, with a default WatcherPoller.
-// It is the preferred way to init a WatcherEmitter if you have not implement WatcherPoller yet yourself.
+// NewWithPoller returns a new, default Emitter, with a default WatcherPoller.
+// It is the preferred way to init a Emitter if you have not implement WatcherPoller yet yourself.
 func NewEmitterWithPoller(
 	conf *config.Config,
 	client superwatcher.EthClient,
@@ -38,7 +38,7 @@ func NewEmitterWithPoller(
 	addresses []common.Address,
 	topics [][]common.Hash,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
-	filterResultChan chan<- *superwatcher.FilterResult,
+	pollResultChan chan<- *superwatcher.PollResult,
 	errChan chan<- error,
 ) superwatcher.Emitter {
 	return emitter.New(
@@ -47,7 +47,7 @@ func NewEmitterWithPoller(
 		stateDataGateway,
 		NewPoller(addresses, topics, conf.DoReorg, conf.FilterRange, client, conf.LogLevel),
 		syncChan,
-		filterResultChan,
+		pollResultChan,
 		errChan,
 	)
 }
@@ -73,7 +73,7 @@ func NewEmitterOptions(options ...Option) superwatcher.Emitter {
 		c.getStateDataGateway,
 		poller,
 		c.syncChan,
-		c.filterResultChan,
+		c.pollResultChan,
 		c.errChan,
 	)
 }

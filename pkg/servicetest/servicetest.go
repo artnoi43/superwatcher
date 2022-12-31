@@ -23,7 +23,7 @@ type TestCase struct {
 }
 
 // TestComponents is used by RunServiceTestComponents to instantiate
-// superwatcher.WatcherEmitter and superwatcher.WatcherEngine for RunService
+// superwatcher.Emitter and superwatcher.Engine for RunService
 type TestComponents struct {
 	conf           *config.Config
 	client         superwatcher.EthClient
@@ -69,7 +69,7 @@ func InitTestComponents(
 }
 
 // RunServiceTestComponents runs the entire service using |components| and |param|.
-// It does so by setting up superwatcher.WatcherEmitter and superwatcher.WatcherEngine
+// It does so by setting up superwatcher.Emitter and superwatcher.Engine
 // and pass these objects to RunService.
 // StateDataGateway is created within this function and will be returned to caller
 func RunServiceTestComponents(tc *TestComponents) (

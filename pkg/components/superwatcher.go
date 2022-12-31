@@ -41,14 +41,14 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 		conf.getStateDataGateway,
 		poller,
 		conf.syncChan,
-		conf.filterResultChan,
+		conf.pollResultChan,
 		conf.errChan,
 	)
 
 	emitterClient := NewEmitterClient(
 		conf.conf,
 		conf.syncChan,
-		conf.filterResultChan,
+		conf.pollResultChan,
 		conf.errChan,
 	)
 

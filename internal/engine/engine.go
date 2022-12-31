@@ -20,7 +20,7 @@ type engine struct {
 	debugger *debugger.Debugger
 }
 
-// newWatcherEngine returns default implementation of WatcherEngine
+// newWatcherEngine returns default implementation of Engine
 func New(
 	client superwatcher.EmitterClient,
 	serviceEngine superwatcher.ServiceEngine,

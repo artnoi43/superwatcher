@@ -12,23 +12,23 @@ import (
 // Note that each blockState corresponds the a block's hash (`see metadataTracker`).
 
 type (
-	blockState uint8 // blockState is used by WatcherEngine to determine if it should pass a block's logs to ServiceEngine.
-	blockEvent uint8 // blockEvent is used by WatcherEngine to mutate blockState according to the state machine.
+	blockState uint8 // blockState is used by Engine to determine if it should pass a block's logs to ServiceEngine.
+	blockEvent uint8 // blockEvent is used by Engine to mutate blockState according to the state machine.
 )
 
 // All states and events are defined in the same const block to avoid collision.
 const (
-	stateNull         blockState = iota // Block was never seen before by WatcherEngine (default blockState)
-	stateSeen                           // Block was seen by WatcherEngine
+	stateNull         blockState = iota // Block was never seen before by Engine (default blockState)
+	stateSeen                           // Block was seen by Engine
 	stateHandled                        // Block was processed by ServiceEngine
-	stateReorged                        // Block was present in a FilterResult.ReorgedBlocks
+	stateReorged                        // Block was present in a PollResult.ReorgedBlocks
 	stateHandledReorg                   // Block's reorg was handled by ServiceEngine
 	stateInvalid                        // Invalid blockState - program will panic
 
 	eventInvalid     blockEvent = iota // Invalid blockEvent - program will panic (default blockEvent)
-	eventSeeBlock                      // When WatcherEngine sees a block
+	eventSeeBlock                      // When Engine sees a block
 	eventHandle                        // When ServiceEngine has processed the block's logs
-	eventSeeReorg                      // When WatcherEngine sees the block in FilterResult.ReorgedBlocks
+	eventSeeReorg                      // When Engine sees the block in PollResult.ReorgedBlocks
 	eventHandleReorg                   // When ServiceEngine has handled the reorg event
 )
 
@@ -73,7 +73,7 @@ var watcherEngineStateMachine = map[stateEvent]blockState{
 
 func (state *blockState) Fire(event blockEvent) {
 	if !event.IsValid() {
-		panic(fmt.Sprintf("invalid WatcherEngine event: %d", event))
+		panic(fmt.Sprintf("invalid Engine event: %d", event))
 	}
 
 	this := stateEvent{state: *state, event: event}
@@ -103,7 +103,7 @@ func (state blockState) String() string {
 		return "INVALID_BLOCK_STATE"
 	}
 
-	panic(fmt.Sprintf("invalid WatcherEngine state: %d", state))
+	panic(fmt.Sprintf("invalid Engine state: %d", state))
 }
 
 func (state blockState) IsValid() bool {
@@ -119,7 +119,7 @@ func (state blockState) IsValid() bool {
 		return true
 	}
 
-	panic(fmt.Sprintf("invalid WatcherEngine state: %d", state))
+	panic(fmt.Sprintf("invalid Engine state: %d", state))
 }
 
 func (event blockEvent) String() string {
@@ -134,7 +134,7 @@ func (event blockEvent) String() string {
 		return "Handle Reorg"
 	}
 
-	panic(fmt.Sprintf("invalid WatcherEngine event: %d", event))
+	panic(fmt.Sprintf("invalid Engine event: %d", event))
 }
 
 func (event blockEvent) IsValid() bool {

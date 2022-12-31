@@ -27,15 +27,14 @@ them can be used interchangably, as there is no essential difference between any
 
    Examples include functions like the factories [`NewEmitter`](./emitter.go), [`NewPoller`](./poller.go),
    and other higher-level (wrapped) factories like [`NewDefault`](./default.go),
-   [`NewEmitterWithPoller`](./emitter.go),
-   [`NewEngineWithEmitterClient`](./engine.go) etc.
+   [`NewEmitterWithPoller`](./emitter.go), or [`NewEngineWithEmitterClient`](./engine.go).
 
    Because they have multiple types in the arguments, this can help prevent
    users from passing invalid/insufficient parameters.
 
    The test code use these types of functions.
 
-2. Variadic (spread) `Option` pattern
+2. Variadic (spread) [`Option`](./option.go) pattern
    This is a new way to init superwatcher components, for better DX. It is experimental.
 
    Examples from this package includes [`NewSuperWatcherOptions`](./superwatcher.go),
@@ -76,36 +75,53 @@ If you know what you are doing, then you can create each individual component ma
 Make sure to connect the all components together before you start calling `Loop`
 on both `Emitter` and `Engine`.
 
-### `NewSuperWatcherDefault` and `NewSuperWatcher`
+### [`NewSuperWatcherDefault` and `NewSuperWatcher`](./superwatcher.go)
 
 This package also defines type `superWatcher`, which implements `superwatcher.SuperWatcher`.
 This type encapsulates all other internal types' methods in `*superWatcher.Run` method,
 which starts `superwatcher.Emitter` and `superwatcher.Engine` concurrently.
 
-To use type `superWatcher`, call either `NewSuperWatcherDefault` or `NewSuperWatcher`.
+To use type `superWatcher`, call either [`NewSuperWatcherDefault` or `NewSuperWatcher`](./superwatcher.go).
 
 ## Initializing only parts of superwatcher
 
 ### The 4 components
 
-Although most users will most likely interact with just (1) `superwatcher.Emitter`
-and (2) `superwatcher.Engine`, these are not all of the components.
+In fact, there're 4 components of superwatcher working together if you create superwatcher
+components with `NewDefault`, although most users will most likely interact with
+just 2 components, `superwatcher.Emitter` and `superwatcher.Engine`, so let's
+call these 2 _preferred components_.
 
-In fact, there're 4 components of superwatcher working together if you create
-superwatcher components with `NewDefault`.
+The other components, namely, `superwatcher.EmitterPoller`
+and `superwatcher.EmitterEngine`, are usually left alone as they are embedded in
+`Emitter` and `Engine` respectively. Let's call these components _secondary components_.
 
-Here are the 4 types:
+If your code wants to take full advantage with superwatcher, then you're likely to
+create all 2 major components with secondary components embedded.
+
+But if you want to minimize your code base to superwatcher coupling, then you might
+want to only use a few types here and there.
+
+To know which types to use, let's first have a look at these 4 interface types
+and its implementations:
 
 <!-- markdownlint-capture -->
 <!-- markdownlint-disable MD013-->
 
-1. [`superwatcher.Emitter`](../../emitter.go) ([`emitter.emitter`](../../internal/emitter/emitter.go))
+1. [`superwatcher.EmitterPoller`](../../emitter_poller.go) ([`poller.poller`](../../internal/poller/poller.go), embedded in [`emitter.emitter`](../../internal/emitter/emitter.go))
+   The poller _polls_ event logs from blockchain in [`poller.go`(../internal/poller/poll.go)],
+   processing the block hashes to detect chain reorgs, and returns to caller.
 
-2. [`superwatcher.EmitterPoller`](../../emitter_poller.go) ([`poller.poller`](../../internal/poller/poller.go), embedded in [`emitter.emitter`](../../internal/emitter/emitter.go))
+2. [`superwatcher.Emitter`](../../emitter.go) ([`emitter.emitter`](../../internal/emitter/emitter.go))
+   The emitter emits result of `poller.Poll` to Go channels, and decides which block range the poller should poll.
 
 3. [`superwatcher.EmitterClient`](../../emitter_client.go) ([`emitterclient.emitterClient`](../../internal/emitterclient/client.go), embedded in [`engine.engine`](../../internal/engine/engine.go))
+   The emitter client receives result emitted from the emitter, and checks if the result was properly handled/sent,
+   and it syncs the emitter with engine running concurrently.
 
-4. [`superwatcher.Engine`](../../engine.go) ([`engine.engine`](../../internal/engine/engine.go))
+4. [`superwatcher.Engine`](../../engine.go) ([`engine.engine`](../../internal/engine/engine.go) and [`thinengine.thinEngine`](../../internal/thinengine/))
+   The engine consumes data from the emitter via the emitter client, and, depending on the concrete type,
+   may manage the result metadata for service code so that everything is handled correctly and efficiently.
 
 <!-- markdownlint-restore -->
 
@@ -113,14 +129,16 @@ As you can see, each has their own responsibility, and by separating emitter
 and poller, we can better test emitter-specific logic.
 
 Another benefit is that users can just use poller (which to me is the highlight
-for superwatcher) for their code if they are not into the other components.
+for superwatcher) for their code if they are not into the other components, or if
+embedding it into the emitter seems too complex for certain tasks.
 
 If you only need some code that would filter event logs and detect chain reorg
-for you, you can just initialize the poller, and call `poller.Poll` to get `FilterResult`.
+for you, you can just initialize the poller, and call `poller.Poll` to get `PollResult`.
 
-If you only want some code that would perform poller's tasks, but also manages
-and progresses `fromBlock` and `toBlock`, then you'd only need to initialize emitter
-(with the poller), and received the results manually with channels.
+If you only want some code that would perform poller's tasks, but also have
+superwatcher manage and progresses `fromBlock` and `toBlock`, then you'd only need
+to initialize emitter (with the poller), and received the results manually with channels
+while ditching the engine altogether.
 
 And if you don't want to receive from channels manually, you can add
 `EmitterClient` to the equation.
@@ -128,6 +146,9 @@ And if you don't want to receive from channels manually, you can add
 And finally, if you only want to write code that would process logs, but you
 don't want to write any other code, then you can create full, superwatcher
 with all 4 components, but with `EmitterPoller` and `EmitterClient` hidden.
+
+The modularity should make superwatcher useful for small or large, simple or
+complex programs.
 
 Below is a simple diagram that describes how these components work together.
 
@@ -141,11 +162,11 @@ Below is a simple diagram that describes how these components work together.
                                Emitter                                        │                               │                                │
 ┌────────────────────────────────────────────────────────────────────┐        │         ┌──── error ──────────┼───────────► HandleEmitterError │
 │                                      superwatcher.Emitter          │        │         │                     │                                │
-│                                       (*emitter.emitter) ──────────┼────────┼─────────┼──── FilterResult    │                                │
+│                                       (*emitter.emitter) ──────────┼────────┼─────────┼──── PollResult    │                                │
 │                                          │    ▲                    │        │         │               │     │                                │
 │                                          │    │                    │        │         └──── sync ─────┤     │      ┌────► HandleReorgedLogs  │
 │                                fromBlock │    │                    │        │                         │     │      │                         │
-│                                  toBlock │    │ FilterResult       │        ├─────────────────────────┼─────┤      │                         │
+│                                  toBlock │    │ PollResult       │        ├─────────────────────────┼─────┤      │                         │
 │                                          │    │                    │        │   superwatcher.Engine   │     │      ├────► HandleGoodLogs     │
 │                                          ▼    │                    │        │                         │     │      │                         │
 ├─────────────────────────────────────  superwatcher.Poller  ────────┤        │                         │     │      │                         │

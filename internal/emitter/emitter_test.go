@@ -135,8 +135,8 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 	errChan := make(chan error, 5)
 	syncChan := make(chan struct{})
-	filterResultChan := make(chan *superwatcher.FilterResult)
-	testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, filterResultChan, errChan)
+	pollResultChan := make(chan *superwatcher.PollResult)
+	testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
 	// Check if the emitter noticed a reorg
 	var reorgedOnce bool
@@ -159,9 +159,9 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	latestGoodBlocks := make(map[uint64]*superwatcher.BlockInfo)
 	movedToCount := make(map[common.Hash]bool)
 
-	var prevResult *superwatcher.FilterResult
+	var prevResult *superwatcher.PollResult
 	for {
-		result := <-filterResultChan
+		result := <-pollResultChan
 
 		if prevResult != nil {
 			if result.LastGoodBlock <= prevResult.ToBlock {

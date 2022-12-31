@@ -2,7 +2,7 @@
 
 # State transition in managed engine
 
-The `superwatcher.WatcherEngine` implementation in this package is a managed engine,
+The `superwatcher.Engine` implementation in this package is a managed engine,
 that is, it selects which block's logs to pass to `superwatcher.ServiceEngine`.
 
 It does this because the **[emitter](../emitter/) does send duplicate blocks in the published result**.
@@ -14,9 +14,9 @@ it will re-filter the later blocks in its current range, to detect chain reorg.
 Normal, non-reorged blocks will only be processed (sent to ServiceEngine)
 if and only if the state is `stateSeen`
 
-For example, let's consider an example life cycle of a block within WatcherEngine.
+For example, let's consider an example life cycle of a block within Engine.
 Due to the overlapping filter range of the emitter, the same block will reappear
-again in `WatcherEngine.handleResults`.
+again in `Engine.handleResults`.
 
 In this example, the same block reappears 3 times, with eventSeeBlock being fired
 every time the block appears.

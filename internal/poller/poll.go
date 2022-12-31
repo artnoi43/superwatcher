@@ -15,13 +15,13 @@ import (
 )
 
 // Poll filters Ethereum event logs from |fromBlock| to |toBlock|,
-// then gathers the result as `superwatcher.FilterResult`, and returns the result.
+// then gathers the result as `superwatcher.PollResult`, and returns the result.
 func (p *poller) Poll(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
 ) (
-	*superwatcher.FilterResult,
+	*superwatcher.PollResult,
 	error,
 ) {
 	p.Lock()
@@ -73,7 +73,7 @@ func (p *poller) Poll(
 	}
 
 	// Fills |result| and saves current data back to tracker first.
-	result := new(superwatcher.FilterResult)
+	result := new(superwatcher.PollResult)
 	for number := fromBlock; number <= toBlock; number++ {
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
 		if removedBlocks[number] && p.doReorg {

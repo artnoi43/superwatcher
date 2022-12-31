@@ -17,7 +17,7 @@ import (
 // mapLogs compare |logs| and their blockHashes to known blockHashes in |tracker.
 // If a block has different tracker blockHash, the blockNumber will be marked true in |mapRemovedBlocks|.
 // The emitter can then use the information in |mapRemovedBlocks| to get the removed `superwatcher.BlockInfo`
-// and publish the removed BlockInfo in the `superwatcher.FilterResult.ReorgedBlocks`.
+// and publish the removed BlockInfo in the `superwatcher.PollResult.ReorgedBlocks`.
 // We avoid getting block headers for all the range fromBlock-toBlock, so we use block hashes from the logs.
 // In case the known logs were removed from a particular block, then we won't have the fresh hash for that block.
 // In that case, we'll use |getHeaderFunc| to get the header for that particular block.

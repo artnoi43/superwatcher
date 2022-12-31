@@ -10,13 +10,13 @@ import (
 func NewEmitterClient(
 	conf *config.Config,
 	syncChan chan<- struct{},
-	filterResultChan <-chan *superwatcher.FilterResult,
+	pollResultChan <-chan *superwatcher.PollResult,
 	errChan <-chan error,
 ) superwatcher.EmitterClient {
 	return emitterclient.New(
 		conf,
 		syncChan,
-		filterResultChan,
+		pollResultChan,
 		errChan,
 		conf.LogLevel,
 	)
@@ -31,7 +31,7 @@ func NewEmitterClientOptions(options ...Option) superwatcher.EmitterClient {
 	return emitterclient.New(
 		c.conf,
 		c.syncChan,
-		c.filterResultChan,
+		c.pollResultChan,
 		c.errChan,
 		gslutils.Max(c.logLevel, c.conf.LogLevel),
 	)

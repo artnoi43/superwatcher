@@ -11,7 +11,7 @@ Most of the name definitions are public, so users can have to items defined here
 such as struct `DebugEngine` and function `RunService`.
 
 The most basic way to use servicetest is to call `RunService`
-with a `superwatcher.WatcherEmitter` and `superwatcher.WatcherEngine`,
+with a `superwatcher.Emitter` and `superwatcher.Engine`,
 although it's better to use `TestCase` for multiple test cases.
 
 Users should rely on this package in addition to their own unit tests,

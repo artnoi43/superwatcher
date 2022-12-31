@@ -13,7 +13,7 @@ type config struct {
 	client              superwatcher.EthClient
 	getStateDataGateway superwatcher.GetStateDataGateway
 	syncChan            chan<- struct{}
-	filterResultChan    <-chan *superwatcher.FilterResult
+	pollResultChan      <-chan *superwatcher.PollResult
 	errChan             <-chan error
 	logLevel            uint8
 }
@@ -44,9 +44,9 @@ func WithSyncChan(syncChan chan<- struct{}) Option {
 	}
 }
 
-func WithFilterResultChan(resultChan <-chan *superwatcher.FilterResult) Option {
+func WithFilterResultChan(resultChan <-chan *superwatcher.PollResult) Option {
 	return func(c *config) {
-		c.filterResultChan = resultChan
+		c.pollResultChan = resultChan
 	}
 }
 
@@ -71,7 +71,7 @@ func New(options ...Option) superwatcher.EmitterClient {
 	return emitterclient.New(
 		c.conf,
 		c.syncChan,
-		c.filterResultChan,
+		c.pollResultChan,
 		c.errChan,
 		gslutils.Max(c.logLevel, c.conf.LogLevel),
 	)

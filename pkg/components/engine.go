@@ -28,14 +28,14 @@ func NewEngineWithEmitterClient(
 	serviceEngine superwatcher.ServiceEngine,
 	stateDataGateway superwatcher.SetStateDataGateway,
 	syncChan chan<- struct{},
-	filterResultChan <-chan *superwatcher.FilterResult,
+	pollResultChan <-chan *superwatcher.PollResult,
 	errChan <-chan error,
 ) superwatcher.Engine {
 	// TODO: Do we still need EmitterClient?
 	emitterClient := NewEmitterClient(
 		conf,
 		syncChan,
-		filterResultChan,
+		pollResultChan,
 		errChan,
 	)
 
@@ -56,7 +56,7 @@ func NewEngineOptions(options ...Option) superwatcher.Engine {
 	emitterClient := NewEmitterClient(
 		c.conf,
 		c.syncChan,
-		c.filterResultChan,
+		c.pollResultChan,
 		c.errChan,
 	)
 

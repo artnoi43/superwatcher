@@ -1,5 +1,6 @@
 package config
 
+// Config is superwatcher-wide configuration
 type Config struct {
 	// External dependencies
 	NodeURL string `mapstructure:"node_url" yaml:"node_url" json:"nodeURL"`
@@ -10,7 +11,7 @@ type Config struct {
 	// FilterRange is the forward range (number of new blocks) each call to emitter.poller.poll will perform
 	FilterRange uint64 `mapstructure:"filter_range" yaml:"filter_range" json:"filterRange"`
 
-	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for superwatcher.FilterResult
+	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for superwatcher.PollResult
 	DoReorg bool `mapstructure:"do_reorg" yaml:"do_reorg" json:"doReorg"`
 
 	// MaxGoBackRetries is the maximum number of blocks the emitter will go back for. Once this is reached,

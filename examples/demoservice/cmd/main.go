@@ -81,7 +81,7 @@ func main() {
 	)
 
 	syncChan := make(chan struct{})
-	filterResultChan := make(chan *superwatcher.FilterResult)
+	pollResultChan := make(chan *superwatcher.PollResult)
 	errChan := make(chan error)
 
 	// There are many ways to init superwatcher components. See package pkg/components
@@ -92,7 +92,7 @@ func main() {
 		components.WithSetStateDataGateway(stateDataGateway),
 		components.WithServiceEngine(demoEngine),
 		components.WithSyncChan(syncChan),
-		components.WithFilterResultChan(filterResultChan),
+		components.WithFilterResultChan(pollResultChan),
 		components.WithErrChan(errChan),
 		components.WithAddresses(emitterAddresses...),
 		components.WithTopics(emitterTopics),

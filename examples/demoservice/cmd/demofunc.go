@@ -44,7 +44,7 @@ func newSuperwatcherAdvanced( //nolint:unused
 	serviceEngine superwatcher.ServiceEngine,
 ) (superwatcher.Emitter, superwatcher.Engine) {
 	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.FilterResult)
+	resultChan := make(chan *superwatcher.PollResult)
 	errChan := make(chan error)
 
 	emitter := components.NewEmitter(conf, ethClient, stateDataGateway, nil, syncChan, resultChan, errChan)
@@ -78,7 +78,7 @@ func newSuperwacherSoyV1( //nolint:unused
 	)
 
 	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.FilterResult)
+	resultChan := make(chan *superwatcher.PollResult)
 	errChan := make(chan error)
 
 	emitter := emitter.New(
@@ -110,7 +110,7 @@ func newSuperWatcherSoyV2( // nolint:unused
 	serviceEngine superwatcher.ServiceEngine,
 ) superwatcher.SuperWatcher {
 	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.FilterResult)
+	resultChan := make(chan *superwatcher.PollResult)
 	errChan := make(chan error)
 
 	return components.NewSuperWatcherOptions(

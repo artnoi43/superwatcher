@@ -29,10 +29,10 @@ func (p *mockPoller) Poll(
 	ctx context.Context,
 	fromBlock, toBlock uint64,
 ) (
-	*superwatcher.FilterResult,
+	*superwatcher.PollResult,
 	error,
 ) {
-	result := &superwatcher.FilterResult{FromBlock: fromBlock, ToBlock: toBlock}
+	result := &superwatcher.PollResult{FromBlock: fromBlock, ToBlock: toBlock}
 
 	reorgedBlock := p.reorgedBlocks[p.currentIndex]
 	noMoreReorg := len(p.reorgedBlocks) == p.currentIndex+1

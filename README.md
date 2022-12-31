@@ -1,7 +1,4 @@
-<!-- markdownlint-configure-file {
-    "line_length": { "code_blocks": false, "line_length": 100 },
-    "code": { "style": "consistent" }
-} -->
+<!-- markdownlint-configure-file {"line_length":{"code_blocks":false,"line_length":100},"code": {"style":"consistent"}} -->
 
 # superwatcher
 
@@ -51,26 +48,30 @@ There are 3 main superwatcher components - (1) the emitter, (2) the emitter clie
 and (3) the engine. The flowchart below illustrates how the 3 components work together.
 
 ```text
-                        Blockchain
+                  EthClient (blockchain)
+                            │
                             │
                             │  logs []types.Log
                             │  blockHashes []common.Hash
                             │
-                            ▼
-                      WatcherEmitter
                             │
-                            │  FilterResult {
+                            ▼
+                      Emitter+Poller
+                            │
+                            │
+                            │  PollResult {
                             │     GoodBlocks
                             │     ReorgedBlocks
                             │  }
                             │
+                            │
                             │  error
                             ▼
+                          Engine
 ┌─────────────────────────────────────────────────────────────┐
 │                      EmitterClient                          │
 │                           │                                 │
 │                           ▼                                 │
-│                      WatcherEngine                          │
 │       ┌───────────────────┼─────────────────────┐           │
 │       ▼                   ▼                     ▼           │
 │  HandleGoogLogs    HandleReorgedLogs    HandleEmitterError  │
@@ -78,40 +79,49 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
 └─────────────────────────────────────────────────────────────┘
 ```
 
-1. [`WatcherEmitter`](./internal/emitter/)
+1. [`EmitterPoller`](./internal/poller/)
+
+   The poller polls event logs from blockchain, and compares a log's block hash with
+   the one it once saw. If the hash of this poll differs from the the previous poll,
+   it assumes that the block's log has been reorged. The result of this polling is
+   `PollResult`.
+
+2. [`Emitter`](./internal/emitter/)
 
    The emitter uses an infinite loop to filter a overlapping range of blocks.
    It filters the logs using addresses and log topics, and because the block range
-   overlaps with previous loop, it can check whether the _seen_ (filtered) logs was
-   reorged by comparing the block hashes across each loop.
+   overlaps with previous loop, it helps gaurantee that the poller is always
+   seeing all blocks more than once.
 
-   Then it collects everything into `FilterResult` and emits the result for this loop.
+   After the poller returns, the emitter checks the result and error, emits the result
+   to its consumes. It then waits (blocks) for a signal from its consumer.
    If no signal is received, the emitter blocks forever (for now).
 
-2. [`EmiiterClient`](./internal/emitterclient/)
+3. [`EmiiterClient`](./internal/emitterclient/)
 
-   The emitter client is embedded into `WatcherEngine`. The emitter client linearly receives `FilterResult`
-   from emitter, and then returning it to `WatcherEngine`. It also syncs with the emittter.
+   The emitter client is embedded into `Engine`. The emitter client linearly receives `PollResult`
+   from emitter, and then returning it to `Engine`. It also syncs with the emittter.
    If it fails to sync, the emitter will not proceed to the next loop.
 
-3. [`WatcherEngine`](./internal/engine/)
-   The engine receives `FilterResult` from the emitter client, and passes the result to appropriate
+4. [`Engine`](./internal/engine/)
+   The engine receives `PollResult` from the emitter client, and passes the result to appropriate
    methods of `ServiceEngine`. It calls `ServiceEngine.HandleReorgedLogs` first, before `ServiceEngine.HandleGoodLogs`,
    so that the service can undo or fix any actions it had performed on the now bad logs before
    it processes the new, reorged logs.
 
-   In addition to passing data around, it also keeps track of the log processing state to
-   avoid double processing of the same data.
+   After the result is processed, it writes some metadata, with `SetStateDataGateway`, and
+   use the emitter client to signal the emitter to start a new loop In addition to passing data around,
+   the engine also keeps track of the log processing state to avoid double processing of the same data.
 
-4. [`ServiceEngine` (example)](./examples/demoservice/internal/subengines/uniswapv3factoryengine/)
+5. [`ServiceEngine` (example)](./examples/demoservice/internal/subengines/uniswapv3factoryengine/)
 
-   The service engine is embedded into `WatcherEngine`, and it is what user injects into `WatcherEngine`.
+   The service engine is embedded into `Engine`, and it is what user injects into `Engine`.
    Because it is an interface, you can treat it like HTTP handlers - you can have a _router_
    service engine that routes logs to other _service sub-engines_, who also implement `ServiceEngine`.
 
 > From the chart, it may seem `EmitterClient` is somewhat extra bloat, but
 > it's better (to me) to abstract the emitter data retrieval away from the engine.
-> Having `EmitterClient` also makes testing `WatcherEmitter` easier, as we use the `EmitterClient`
+> Having `EmitterClient` also makes testing `Emitter` easier, as we use the `EmitterClient`
 > interface to test emitter's results.
 
 ## Single emitter and engine, but with multiple service engines
@@ -130,8 +140,8 @@ An example of multiple `ServiceEngine`s would be something like this:
                                     │   (ServiceEngine)  │
                                     │                    └───►LiquidityPoolEngine
                                     │                         (ServiceEngine)
-WatcherEngine ───► Service router ──┼──►CurveV2Engine
-                   (ServiceEngine)  │   (ServiceEngine)
+Engine ───► Service router ────►CurveV2Engine
+           (ServiceEngine)    (ServiceEngine)
                                     │
                                     │
                                     └──►ENSEngine
@@ -147,16 +157,16 @@ engine implementation injected).
 
 After you have successfully init both components, start both _concurrently_ with `Loop`.
 
-## Understanding [`FilterResult`](./filter_result.go)
+## Understanding [`PollResult`](./poll_result.go)
 
-The data structure emitted by the emitter is `FilterResult`, which represents the result
+The data structure emitted by the emitter is `PollResult`, which represents the result
 of each `emitter.FilterLogs` call. The important structure fields are:
 
-`FilterResult.GoodBlocks` is any new blocks filtered. Duplicate good blocks will reappear
+`PollResult.GoodBlocks` is any new blocks filtered. Duplicate good blocks will reappear
 if they are still in range, but the engine should be able to skip all such duplicate blocks,
 and thus the `ServiceEngine` code only sees new, good blocks it never saw.
 
-`FilterResult.ReorgedBlocks` is any `GoodBlocks` from previous loops that the emitter saw with
+`PollResult.ReorgedBlocks` is any `GoodBlocks` from previous loops that the emitter saw with
 different block hashes. This means that any `ReorgedBlocks` was once a `GoodBlocks`.
 `ServiceEngine` is expected to revert or fix any actions performed when the removed blocks were still
 considered canonical.
@@ -179,22 +189,22 @@ Now let's say the emitter filters with a range of 2 blocks, with no look back bl
 the engine will see the results as the following:
 
 ```text
-Loop 0 FilterResult: {GoodBlocks: [{10:0x10},{11:0x11}], ReorgedBlocks:[]}
+Loop 0 PollResult: {GoodBlocks: [{10:0x10},{11:0x11}], ReorgedBlocks:[]}
 
 
                              a GoodBlock reappears
-                                        ▼
-Loop 1 FilterResult: {GoodBlocks: [{11:0x11},{12:0x12}], ReorgedBlocks:[]}
+                                      ▼
+Loop 1 PollResult: {GoodBlocks: [{11:0x11},{12:0x12}], ReorgedBlocks:[]}
 
 
                                    we have not seen 13:0x13     was once a GoodBlock
                                                 ▼                          ▼
-Loop 2 FilterResult: {GoodBlocks: [12:0x1212},13:0x1313], ReorgedBlocks:[12:0x12]}
+Loop 2 PollResult: {GoodBlocks: [12:0x1212},13:0x1313], ReorgedBlocks:[12:0x12]}
 
 
                             a GoodBlock reappears
-                                        ▼
-Loop 3 FilterResult: {GoodBlocks: [{13:0x1313},{14:0x14}], ReorgedBlocks:[]}
+                                      ▼
+Loop 3 PollResult: {GoodBlocks: [{13:0x1313},{14:0x14}], ReorgedBlocks:[]}
 ```
 
 You can see that the once good `12:0x12` comes back in ReorgedBlocks even after its hash changed

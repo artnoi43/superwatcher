@@ -131,7 +131,7 @@ func (e *emitter) loopEmit(
 			)
 
 			e.emitFilterResult(result)
-			e.SyncsWithEngine()
+			e.SyncsEngine()
 			updateStatus(false)
 
 			e.debugger.Debug(
@@ -154,7 +154,7 @@ func (e *emitter) computeFromBlockToBlock(
 	error,
 ) {
 	// lastRecordedBlock was saved externally by engine.
-	// The value to be saved should be superwatcher.FilterResult.LastGoodBlock
+	// The value to be saved should be superwatcher.PollResult.LastGoodBlock
 	lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 	if err != nil {
 		// Return error if not superwatcher.ErrRecordNotFound

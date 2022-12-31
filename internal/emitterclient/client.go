@@ -9,10 +9,10 @@ import (
 // emitterClient is the actual implementation of EmitterClient.
 // It uses channels to communicate with emitter.
 type emitterClient struct {
-	emitterConfig    *config.Config
-	emitterSyncChan  chan<- struct{}
-	filterResultChan <-chan *superwatcher.FilterResult
-	errChan          <-chan error
+	emitterConfig   *config.Config
+	emitterSyncChan chan<- struct{}
+	pollResultChan  <-chan *superwatcher.PollResult
+	errChan         <-chan error
 
 	debugger *debugger.Debugger
 }
@@ -20,16 +20,16 @@ type emitterClient struct {
 func New(
 	emitterConfig *config.Config,
 	emitterSyncChan chan<- struct{},
-	filterResultChan <-chan *superwatcher.FilterResult,
+	pollResultChan <-chan *superwatcher.PollResult,
 	errChan <-chan error,
 	logLevel uint8,
 ) superwatcher.EmitterClient {
 	return &emitterClient{
-		emitterConfig:    emitterConfig,
-		filterResultChan: filterResultChan,
-		emitterSyncChan:  emitterSyncChan,
-		errChan:          errChan,
-		debugger:         debugger.NewDebugger("emitter-client", logLevel),
+		emitterConfig:   emitterConfig,
+		pollResultChan:  pollResultChan,
+		emitterSyncChan: emitterSyncChan,
+		errChan:         errChan,
+		debugger:        debugger.NewDebugger("emitter-client", logLevel),
 	}
 }
 
@@ -44,8 +44,7 @@ func (c *emitterClient) Shutdown() {
 	}
 }
 
-// WatcherNextFilterLogs sends a low-cost signal to emitter to progress to the next loop
-func (c *emitterClient) WatcherEmitterSync() {
+func (c *emitterClient) SyncsEmitter() {
 	c.emitterSyncChan <- struct{}{}
 }
 
@@ -53,13 +52,13 @@ func (c *emitterClient) WatcherConfig() *config.Config {
 	return c.emitterConfig
 }
 
-func (c *emitterClient) WatcherResult() *superwatcher.FilterResult {
-	result, ok := <-c.filterResultChan
+func (c *emitterClient) WatcherResult() *superwatcher.PollResult {
+	result, ok := <-c.pollResultChan
 	if ok {
 		return result
 	}
 
-	c.debugger.Debug(2, "filterReorgChan was closed")
+	c.debugger.Debug(2, "pollResultChan was closed")
 	return nil
 }
 

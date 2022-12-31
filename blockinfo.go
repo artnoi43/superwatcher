@@ -14,7 +14,7 @@ type BlockInfo struct {
 	// LogsMigrated indicates whether all interesting logs were moved/migrated
 	// _from_ this block after a chain reorg or not. The field is primarily used
 	// by EmitterPoller to trigger the poller to get new, fresh block Hash for a block.
-	// The field should always be false if the BlockInfo is in FilterResult.GoodBlocks.
+	// The field should always be false if the BlockInfo is in PollResult.GoodBlocks.
 	LogsMigrated bool
 
 	Number uint64

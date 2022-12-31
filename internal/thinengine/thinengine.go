@@ -9,8 +9,8 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// thinEngine is a thin implementation of superwatcher.WatcherEngine.
-// It does not manage states for the service, and all handling of FilterResult is
+// thinEngine is a thin implementation of superwatcher.Engine.
+// It does not manage states for the service, and all handling of PollResult is
 // managed directly by serviceEngine.
 type thinEngine struct { //nolint:unused
 	emitterClient    superwatcher.EmitterClient

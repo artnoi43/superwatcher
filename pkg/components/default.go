@@ -7,7 +7,7 @@ import (
 	"github.com/artnoi43/superwatcher/config"
 )
 
-// NewDefault returns default implementations of WatcherEmitter and WatcherEngine.
+// NewDefault returns default implementations of Emitter and Engine.
 // The EmitterClient is initialized and embedded to the returned engine within this function.
 // This is the preferred way for initializing superwatcher components. If you don't need to
 // interact with these components, you can use `NewSuperWatcherDefault` instead.
@@ -24,7 +24,7 @@ func NewDefault(
 	superwatcher.Engine,
 ) {
 	syncChan := make(chan struct{})
-	filterResultChan := make(chan *superwatcher.FilterResult)
+	pollResultChan := make(chan *superwatcher.PollResult)
 	errChan := make(chan error)
 
 	watcherEmitter := NewEmitterWithPoller(
@@ -34,7 +34,7 @@ func NewDefault(
 		addresses,
 		topics,
 		syncChan,
-		filterResultChan,
+		pollResultChan,
 		errChan,
 	)
 
@@ -43,7 +43,7 @@ func NewDefault(
 		serviceEngine,
 		setStateDataGateway,
 		syncChan,
-		filterResultChan,
+		pollResultChan,
 		errChan,
 	)
 

@@ -105,7 +105,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 		Debug:         true,
 	}
 
-	var logsFiles = make([]string, len(tc.LogsFiles))
+	logsFiles := make([]string, len(tc.LogsFiles))
 	for i, logsFile := range tc.LogsFiles {
 		logsFiles[i] = "../" + logsFile
 	}
@@ -117,11 +117,11 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 
 	errChan := make(chan error, 5)
 	syncChan := make(chan struct{})
-	filterResultChan := make(chan *superwatcher.FilterResult)
+	pollResultChan := make(chan *superwatcher.PollResult)
 
 	fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 	testPoller := poller.New(nil, nil, conf.DoReorg, conf.FilterRange, sim, conf.LogLevel)
-	testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, filterResultChan, errChan)
+	testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -138,9 +138,9 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 
 	movedHashes, _, logsDest := reorgsim.LogsReorgPaths(tc.Events)
 
-	var reached = make(map[common.Hash]bool)
+	reached := make(map[common.Hash]bool)
 	for {
-		result := <-filterResultChan
+		result := <-pollResultChan
 		if result == nil {
 			break
 		}

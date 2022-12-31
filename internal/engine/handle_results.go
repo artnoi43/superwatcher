@@ -12,7 +12,7 @@ import (
 )
 
 // engineBlocks are used to aggregate multiple blocks' information
-// from superwatcher.FilterResult to pass to ServiceEngine methods.
+// from superwatcher.PollResult to pass to ServiceEngine methods.
 type engineBlocks struct {
 	logs []*types.Log
 
@@ -164,6 +164,6 @@ func (e *engine) handleResults(ctx context.Context) error {
 			return errors.Wrapf(err, "failed to save lastRecordedBlock %d", lastRecordedBlock)
 		}
 
-		e.emitterClient.WatcherEmitterSync()
+		e.emitterClient.SyncsEmitter()
 	}
 }

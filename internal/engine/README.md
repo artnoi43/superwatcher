@@ -2,13 +2,13 @@
 
 # Package `engine`
 
-This package defines the superwatcher engine (core engine), a component implementing `superwatcher.WatcherEngine`
+This package defines the superwatcher engine (core engine), a component implementing `superwatcher.Engine`
 that processes logs filtered by the emitter. It is designed to help service code interface with the emitter
 in a managed fashion.
 
 The engine wraps [`superwatcher.ServiceEngine`](../../service_engine.go) and passes the logs to service code.
 
-> The other, dumber and faster `WatcherEngine` implementation is the [`thinEngine`](../thinengine/)
+> The other, dumber and faster `Engine` implementation is the [`thinEngine`](../thinengine/)
 
 ## Interactions with `superwatcher.ServiceEngine`
 
@@ -65,7 +65,7 @@ in different services -- which is great for building a bot - a reusable engine, 
                                         │   (ServiceEngine)  │
                                         │                    └───►LiquidityPoolEngine
                                         │                         (ServiceEngine)
-    WatcherEngine ───► Service router ──┼──►CurveV2Engine
+    Engine ───► Service router ──┼──►CurveV2Engine
                        (ServiceEngine)  │   (ServiceEngine)
                                         │
                                         │

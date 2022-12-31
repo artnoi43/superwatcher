@@ -22,7 +22,7 @@ type initConfig struct {
 	filterRange         uint64
 	logLevel            uint8 // redundant in conf, but users may want to set this separately
 	syncChan            chan struct{}
-	filterResultChan    chan *superwatcher.FilterResult
+	pollResultChan      chan *superwatcher.PollResult
 	errChan             chan error
 	getStateDataGateway superwatcher.GetStateDataGateway
 	setStateDataGateway superwatcher.SetStateDataGateway
@@ -48,9 +48,9 @@ func WithSyncChan(syncChan chan struct{}) Option {
 	}
 }
 
-func WithFilterResultChan(resultChan chan *superwatcher.FilterResult) Option {
+func WithFilterResultChan(resultChan chan *superwatcher.PollResult) Option {
 	return func(c *initConfig) {
-		c.filterResultChan = resultChan
+		c.pollResultChan = resultChan
 	}
 }
 

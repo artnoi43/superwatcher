@@ -7,10 +7,10 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
+func (e *emitter) emitFilterResult(result *superwatcher.PollResult) {
 	if result != nil {
 		// Only log if there's some logs
-		nilChan := e.filterResultChan == nil
+		nilChan := e.pollResultChan == nil
 		if len(result.GoodBlocks)+len(result.ReorgedBlocks) != 0 {
 			// Use `if e.debug` to avoid expensive appends if emitter is not in debug mode
 			if e.debug {
@@ -34,13 +34,13 @@ func (e *emitter) emitFilterResult(result *superwatcher.FilterResult) {
 		}
 
 		if !nilChan {
-			e.filterResultChan <- result
+			e.pollResultChan <- result
 		}
 
 		return
 	}
 
-	logger.Panic("nil filterResult got sent to emitFilterREsult")
+	logger.Panic("nil PollResult got sent to emitFilterREsult")
 }
 
 func (e *emitter) emitError(err error) {
