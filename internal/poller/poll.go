@@ -152,18 +152,14 @@ func (p *poller) Poll(
 		result.GoodBlocks = append(result.GoodBlocks, &resultBlock)
 	}
 
-	// If fromBlock was reorged, then return to loopEmit.
-	// Results will not be published, so the engine will never know that fromBlock is reorging.
-	// **The reorged blocks different hashes have also been saved to tracker,
-	// so if they come back in the next loop, with the same hash here, they'll be marked as non-reorg blocks**.
-	// Publish filterResult via e.filterResultChan
 	result.FromBlock = fromBlock
 	result.ToBlock = toBlock
 	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
 
 	p.lastRecordedBlock = result.LastGoodBlock
 
-	// If fromBlock reorged, return the result but with non-nil error
+	// If fromBlock reorged, return the result but with non-nil error.
+	// This way, the result still gets emitted, leaving no unseen BlockInfo for the managed engine.
 	if removedBlocks[fromBlock] && p.doReorg {
 		return result, errors.Wrapf(
 			superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
