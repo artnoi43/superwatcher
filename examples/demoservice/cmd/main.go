@@ -80,6 +80,10 @@ func main() {
 		conf.SuperWatcherConfig.LogLevel,
 	)
 
+	syncChan := make(chan struct{})
+	filterResultChan := make(chan *superwatcher.FilterResult)
+	errChan := make(chan error)
+
 	// There are many ways to init superwatcher components. See package pkg/components
 	watcher := components.NewSuperWatcherOptions(
 		components.WithConfig(conf.SuperWatcherConfig),
@@ -87,6 +91,9 @@ func main() {
 		components.WithGetStateDataGateway(stateDataGateway),
 		components.WithSetStateDataGateway(stateDataGateway),
 		components.WithServiceEngine(demoEngine),
+		components.WithSyncChan(syncChan),
+		components.WithFilterResultChan(filterResultChan),
+		components.WithErrChan(errChan),
 		components.WithAddresses(emitterAddresses...),
 		components.WithTopics(emitterTopics),
 	)

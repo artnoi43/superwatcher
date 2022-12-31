@@ -11,9 +11,11 @@ more stable package for creating new instances of the core components.
 
 There are currently 2-3 styles for creating new superwatcher components with the
 reason being no one uses it yet, and that leave us with too little feedback as to
-which style we should officially adapt. We also experiment with _meta_ packages
-like [`poller`](../../poller/), [`emitter`](../../emitter/),
-[`emitterclient`](../../emitterclient/) [`engine`](../../engine/),
+which style we should officially adapt.
+
+We also experiment with _meta_ packages like [`poller`](../../poller/), [`emitter`](../../emitter/),
+[`emitterclient`](../../emitterclient/) [`engine`](../../engine/).
+[See demo code here](../../examples/demoservice/cmd/demofunc.go) for different usage.
 
 So this is why we have so many functions for creating new components, and most of
 them can be used interchangably, as there is no essential difference between any.
