@@ -72,22 +72,22 @@ func InitTestComponents(
 // It does so by setting up superwatcher.WatcherEmitter and superwatcher.WatcherEngine
 // and pass these objects to RunService.
 // StateDataGateway is created within this function and will be returned to caller
-func RunServiceTestComponents(testComponents *TestComponents) (
+func RunServiceTestComponents(tc *TestComponents) (
 	superwatcher.GetStateDataGateway, // Return this out so test code can read from dataGateway
 	error,
 ) {
-	// Use nil addresses and topics
 	emitter, engine := components.NewDefault(
-		testComponents.conf,
-		testComponents.client,
-		testComponents.dataGatewayGet,
-		testComponents.dataGatewaySet,
-		testComponents.serviceEngine,
+		tc.conf,
+		tc.client,
+		tc.dataGatewayGet,
+		tc.dataGatewaySet,
+		tc.serviceEngine,
+		// Use nil addresses and topics
 		nil,
 		nil,
 	)
 
-	return testComponents.dataGatewayGet, RunService(emitter, engine)
+	return tc.dataGatewayGet, RunService(emitter, engine)
 }
 
 // RunService executes the most basic emitter and engine logic, and returns an error from these components.

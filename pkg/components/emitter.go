@@ -1,6 +1,7 @@
 package components
 
 import (
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
@@ -48,5 +49,31 @@ func NewEmitterWithPoller(
 		syncChan,
 		filterResultChan,
 		errChan,
+	)
+}
+
+func NewEmitterOptions(options ...Option) superwatcher.Emitter {
+	var c initConfig
+	for _, opt := range options {
+		opt(&c)
+	}
+
+	poller := NewPoller(
+		c.addresses,
+		c.topics,
+		c.doReorg,
+		c.filterRange,
+		c.ethClient,
+		gslutils.Max(c.logLevel, c.conf.LogLevel),
+	)
+
+	return emitter.New(
+		c.conf,
+		c.ethClient,
+		c.getStateDataGateway,
+		poller,
+		c.syncChan,
+		c.filterResultChan,
+		c.errChan,
 	)
 }

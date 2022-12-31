@@ -1,11 +1,8 @@
 package components
 
 import (
-	"context"
-	"sync"
-
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/config"
@@ -19,6 +16,50 @@ type superWatcher struct {
 	emitter  superwatcher.Emitter
 	engine   superwatcher.Engine
 	debugger *debugger.Debugger
+}
+
+func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
+	var conf initConfig
+	for _, opt := range options {
+		opt(&conf)
+	}
+
+	logLevel := gslutils.Max(conf.logLevel, conf.conf.LogLevel)
+
+	poller := NewPoller(
+		conf.addresses,
+		conf.topics,
+		conf.conf.DoReorg || conf.doReorg,
+		conf.filterRange,
+		conf.ethClient,
+		logLevel,
+	)
+
+	emitter := NewEmitter(
+		conf.conf,
+		conf.ethClient,
+		conf.getStateDataGateway,
+		poller,
+		conf.syncChan,
+		conf.filterResultChan,
+		conf.errChan,
+	)
+
+	emitterClient := NewEmitterClient(
+		conf.conf,
+		conf.syncChan,
+		conf.filterResultChan,
+		conf.errChan,
+	)
+
+	engine := NewEngine(
+		emitterClient,
+		conf.serviceEngine,
+		conf.setStateDataGateway,
+		logLevel,
+	)
+
+	return NewSuperWatcher(emitter, engine, logLevel)
 }
 
 func NewSuperWatcherDefault(
@@ -53,67 +94,4 @@ func NewSuperWatcher(
 		engine:   engine,
 		debugger: debugger.NewDebugger("SuperWatcher", logLevel),
 	}
-}
-
-func (spw *superWatcher) Run(
-	ctx context.Context,
-	cancel context.CancelFunc,
-) error {
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		if err := spw.emitter.Loop(ctx); err != nil {
-			cancel()
-			return
-		}
-	}()
-
-	return errors.Wrap(spw.engine.Loop(ctx), "engine.Loop exited")
-}
-
-func (spw *superWatcher) Emitter() superwatcher.Emitter {
-	return spw.emitter
-}
-
-func (spw *superWatcher) Engine() superwatcher.Engine {
-	return spw.engine
-}
-
-func (spw *superWatcher) Shutdown() {
-	spw.emitter.Shutdown()
-}
-
-func (spw *superWatcher) SetDoReorg(doReorg bool) {
-	spw.emitter.Poller().SetDoReorg(doReorg)
-}
-
-func (spw *superWatcher) DoReorg() bool {
-	return spw.emitter.Poller().DoReorg()
-}
-
-func (spw *superWatcher) Addresses() []common.Address {
-	return spw.emitter.Poller().Addresses()
-}
-
-func (spw *superWatcher) Topics() [][]common.Hash {
-	return spw.emitter.Poller().Topics()
-}
-
-func (spw *superWatcher) AddAddresses(addresses ...common.Address) {
-	spw.emitter.Poller().AddAddresses(addresses...)
-}
-
-func (spw *superWatcher) AddTopics(topics ...[]common.Hash) {
-	spw.emitter.Poller().AddTopics(topics...)
-}
-
-func (spw *superWatcher) SetAddresses(addresses []common.Address) {
-	spw.emitter.Poller().SetAddresses(addresses)
-}
-
-func (spw *superWatcher) SetTopics(topics [][]common.Hash) {
-	spw.emitter.Poller().SetTopics(topics)
 }

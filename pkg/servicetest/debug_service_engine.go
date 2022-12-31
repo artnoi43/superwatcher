@@ -110,7 +110,7 @@ func (e *DebugServiceEngine) HandleEmitterError(err error) error {
 	e.debugger.Debug(1, "got error", zap.Error(err))
 
 	if e.HandleFuncEmitterError != nil {
-		e.HandleFuncEmitterError(err)
+		err = e.HandleFuncEmitterError(err)
 	}
 
 	return err

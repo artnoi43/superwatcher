@@ -80,17 +80,29 @@ func main() {
 		conf.SuperWatcherConfig.LogLevel,
 	)
 
-	watcher := components.NewSuperWatcherDefault(
-		conf.SuperWatcherConfig,
-		superwatcher.WrapEthClient(ethClient),
-		// We wrap |stateDataGateway| to demo how to separate the 2 methods
-		// for a superwatcher.StateDataGateway for single responsibility.
-		superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock),
-		superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock),
-		demoEngine,
-		emitterAddresses,
-		[][]common.Hash{emitterTopics},
+	// There are many ways to init superwatcher components. See package pkg/components
+	watcher := components.NewSuperWatcherOptions(
+		components.WithConfig(conf.SuperWatcherConfig),
+		components.WithEthClient(superwatcher.WrapEthClient(ethClient)),
+		components.WithGetStateDataGateway(stateDataGateway),
+		components.WithSetStateDataGateway(stateDataGateway),
+		components.WithServiceEngine(demoEngine),
+		components.WithAddresses(emitterAddresses...),
+		components.WithTopics(emitterTopics),
 	)
+
+	// Or you can use a more direct approach without using options
+	// watcher := components.NewSuperWatcherDefault(
+	// 	conf.SuperWatcherConfig,
+	// 	superwatcher.WrapEthClient(ethClient),
+	// 	// We wrap |stateDataGateway| to demo how to separate the 2 methods
+	// 	// for a superwatcher.StateDataGateway for single responsibility.
+	// 	superwatcher.GetStateDataGatewayFunc(stateDataGateway.GetLastRecordedBlock),
+	// 	superwatcher.SetStateDataGatewayFunc(stateDataGateway.SetLastRecordedBlock),
+	// 	demoEngine,
+	// 	emitterAddresses,
+	// 	[][]common.Hash{emitterTopics},
+	// )
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
