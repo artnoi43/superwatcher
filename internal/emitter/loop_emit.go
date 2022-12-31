@@ -97,41 +97,41 @@ func (e *emitter) loopEmit(
 				zap.Any("current_status", newStatus),
 			)
 
-			filterResult, err := e.poller.Poll(
+			result, err := e.poller.Poll(
 				loopCtx,
 				newStatus.FromBlock,
 				newStatus.ToBlock,
 			)
 			if err != nil {
-				if errors.Is(err, superwatcher.ErrFromBlockReorged) {
-					// Continue to filter from fromBlock
-					updateStatus(true)
-
-					e.debugger.Warn(1, "fromBlock reorged", zap.Any("emitterStatus", newStatus))
-					continue
-				}
-
 				if errors.Is(err, superwatcher.ErrProcessReorg) {
 					e.debugger.Debug(
 						1, "got errProcessReorg - contact prem@cleverse.com for reporting this bug",
 						zap.Error(err),
 					)
 				}
+				// Do not return, we'd still emit this result if fromBlock reorged
+				if !errors.Is(err, superwatcher.ErrFromBlockReorged) {
+					return errors.Wrap(err, "unexpected poller error")
+				}
 
-				return errors.Wrap(err, "unexpected poller error")
+				// ErrFromBlockReorged will not cause loopEmit to return,
+				// and result would still be emitted
+				if e.poller.DoReorg() {
+					updateStatus(true)
+					e.debugger.Warn(1, "fromBlock reorged", zap.Any("emitterStatus", newStatus))
+				}
 			}
 
-			// End loop
+			// Good result/error - will now emit result
 			e.debugger.Debug(
-				1, "poller.poll returned successfully",
-				zap.Int("goodBlocks", len(filterResult.GoodBlocks)),
-				zap.Int("reorgedBlocks", len(filterResult.ReorgedBlocks)),
-				zap.Uint64("lastGoodBlock", filterResult.LastGoodBlock),
+				1, "poller.Poll returned successfully",
+				zap.Int("goodBlocks", len(result.GoodBlocks)),
+				zap.Int("reorgedBlocks", len(result.ReorgedBlocks)),
+				zap.Uint64("lastGoodBlock", result.LastGoodBlock),
 			)
 
-			e.emitFilterResult(filterResult)
+			e.emitFilterResult(result)
 			e.SyncsWithEngine()
-
 			updateStatus(false)
 
 			e.debugger.Debug(

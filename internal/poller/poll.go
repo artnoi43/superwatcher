@@ -156,16 +156,19 @@ func (p *poller) Poll(
 	// Results will not be published, so the engine will never know that fromBlock is reorging.
 	// **The reorged blocks different hashes have also been saved to tracker,
 	// so if they come back in the next loop, with the same hash here, they'll be marked as non-reorg blocks**.
-	if removedBlocks[fromBlock] && p.doReorg {
-		return nil, errors.Wrapf(superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock)
-	}
-
 	// Publish filterResult via e.filterResultChan
 	result.FromBlock = fromBlock
 	result.ToBlock = toBlock
 	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
 
 	p.lastRecordedBlock = result.LastGoodBlock
+
+	// If fromBlock reorged, return the result but with non-nil error
+	if removedBlocks[fromBlock] && p.doReorg {
+		return result, errors.Wrapf(
+			superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
+		)
+	}
 
 	return result, nil
 }

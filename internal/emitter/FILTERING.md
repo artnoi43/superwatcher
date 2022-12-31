@@ -43,7 +43,9 @@ The 3 main possible emitter states as seen in `*emitter.loopEmit` are:
 
 2. The whole recent range was reorged (previous `fromBlock` was reorged)
 
-   This can be detected by checking the error returned from `poller.Poll` against `superwatcher.ErrFromBlockReorged`.
+   This can be detected by checking the error returned from `poller.Poll` against known error
+   `superwatcher.ErrFromBlockReorged`. **The result would still be emitted if this happens**
+
    If this happens, it means that the chain is now reorging, so we need to _go back_ until all block
    are in range are canon again. If the chain is reorging for multiple loops, then we'll see that
    the `fromBlock` keeps going back, while `toBlock` stays the same.

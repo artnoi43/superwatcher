@@ -94,6 +94,16 @@ func (t *metadataTrackerImpl) GetBlockMetadata(
 	node := t.sortedSet.GetByKey(blockHash)
 	// Avoid panicking when assert type on nil value
 	if node == nil {
+		if caller == callerReorgedLogs {
+			t.debugger.Debug(
+				1, "nil metadata for reorged logs",
+				zap.Uint64("blockNumber", blockNumber),
+				zap.String("blockHash", blockHash),
+			)
+
+			panic(fmt.Sprintf("nil metadata for block %d blockHash %s", blockNumber, blockHash))
+		}
+
 		return &blockMetadata{
 			blockNumber: blockNumber,
 			blockHash:   blockHash,
