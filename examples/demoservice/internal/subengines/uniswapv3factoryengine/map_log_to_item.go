@@ -34,6 +34,7 @@ func mapLogToPoolCreated(
 	poolCreated.Fee = l.Topics[3].Big().Uint64()
 	poolCreated.BlockCreated = l.BlockNumber
 	poolCreated.BlockHash = l.BlockHash
+	poolCreated.TxHash = l.TxHash
 
 	return poolCreated, nil
 }

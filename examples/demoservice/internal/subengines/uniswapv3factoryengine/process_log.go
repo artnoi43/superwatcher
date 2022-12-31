@@ -41,7 +41,6 @@ func (e *uniswapv3PoolFactoryEngine) handleGoodLog(log *types.Log) (PoolFactoryA
 }
 
 func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts []superwatcher.Artifact) (PoolFactoryArtifact, error) {
-	var returnArtifacts []superwatcher.Artifact
 	logEventKey := log.Topics[0]
 
 	// Find poolFactory artifact here
@@ -66,6 +65,7 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 		}
 	}
 
+	var returnArtifact PoolFactoryArtifact
 	for _, event := range e.poolFactoryContract.ContractEvents {
 		// This engine is supposed to handle more than 1 event,
 		// but it's not yet finished now.
@@ -75,18 +75,16 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedLog(log *types.Log, artifacts 
 				return nil, errors.Wrap(err, "failed to map PoolCreated log to domain struct")
 			}
 
-			processArtifacts, err := e.handleReorgedPool(pool, poolArtifact)
+			returnArtifact, err = e.handleReorgedPool(pool, poolArtifact)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to handle reorged PoolCreated")
 			}
-
-			returnArtifacts = append(returnArtifacts, processArtifacts)
 		}
 
 		continue
 	}
 
-	return nil, nil
+	return returnArtifact, nil
 }
 
 // In uniswapv3poolfactory case, we only revert PoolCreated in the db.
@@ -100,7 +98,7 @@ func (e *uniswapv3PoolFactoryEngine) handleReorgedPool(
 ) {
 	poolState := poolArtifact[*pool]
 
-	switch poolState {
+	switch poolState { //nolint:gocritic
 	case PoolFactoryStateCreated:
 		if err := e.revertPoolCreated(pool); err != nil {
 			return nil, errors.Wrapf(err, "failed to revert poolCreated for pool %s", pool.Address.String())

@@ -134,7 +134,7 @@ func TestServiceEngineENSV2(t *testing.T) {
 			if ens.BlockNumber != dst {
 				t.Errorf(
 					"invalid block number for ENS %s (txHash %s) - expecting %d, got %d",
-					ens.ID, ens.TxHash, ens.BlockNumber, dst,
+					ens.ID, ens.TxHash, dst, ens.BlockNumber,
 				)
 			}
 		}

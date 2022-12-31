@@ -15,6 +15,7 @@ type Uniswapv3PoolCreated struct {
 	Fee          uint64         `json:"fee"`
 	BlockCreated uint64         `json:"blockCreated"`
 	BlockHash    common.Hash    `json:"blockHash"`
+	TxHash       common.Hash    `json:"txHash"`
 }
 
 type Uniswapv3FactoryWatcherKey struct {
