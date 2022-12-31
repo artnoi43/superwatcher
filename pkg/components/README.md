@@ -41,7 +41,7 @@ them can be used interchangably, as there is no essential difference between any
    Examples from this package includes [`NewSuperWatcherOptions`](./superwatcher.go),
    [`NewEmitterOptions`](./emitter.go), `[NewPollerOptions]`(./poller.go),
    although more examples exist in [`poller`](../../poller/), [`emitter`](../../emitter/),
-   `[emitterclient]`(../../emitterclient/) [`engine`](../../engine/) experimental
+   [`emitterclient`](../../emitterclient/) [`engine`](../../engine/) experimental
    packages.
 
    Unlike the classic method, this prettier style is more prone to user errors
