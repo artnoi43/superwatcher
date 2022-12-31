@@ -59,7 +59,9 @@ func (s *MockDataGatewayENS) GetENSes(context.Context) ([]*entity.ENS, error) {
 
 	var enses []*entity.ENS //nolint:prealloc
 	for _, saved := range s.m {
-		enses = append(enses, saved)
+		if saved != nil {
+			enses = append(enses, saved)
+		}
 	}
 
 	return enses, nil

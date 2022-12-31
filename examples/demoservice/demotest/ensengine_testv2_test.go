@@ -21,7 +21,7 @@ func TestServiceEngineENSV2(t *testing.T) {
 			DataGatewayFirstRun: false, // Normal run
 			Param: reorgsim.Param{
 				StartBlock:    16054000,
-				BlockProgress: 20,
+				BlockProgress: 17,
 				ExitBlock:     16054600,
 			},
 			Events: []reorgsim.ReorgEvent{
@@ -72,41 +72,71 @@ func TestServiceEngineENSV2(t *testing.T) {
 
 	for _, testCase := range testCases {
 		ensStore := datagateway.NewMockDataGatewayENS()
-		fakeRedis, err := runTestServiceEngineENS(testCase, ensStore)
+		_, err := runTestServiceEngineENS(testCase, ensStore)
 		if err != nil {
-			t.Error(err.Error())
+			t.Error("error in servicetest test", err.Error())
 		}
 
-		// Test if moved logs were properly removed
-		movedHashes, logsPark, _ := reorgsim.LogsReorgPaths(testCase.Events)
+		// Test if moved logs were properly removed from their parking blocks
+		movedHashes, logsPark, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
 		debugDB := ensStore.(datagateway.DebugDataGateway)
 		for _, txHash := range movedHashes {
 			parks := logsPark[txHash]
 
-			for _, park := range parks {
-				var foundDel bool
-				for _, writeLog := range debugDB.WriteLogs() {
-					method, _, blockNumber, _, err := writeLog.Unmarshal()
-					if err != nil {
-						t.Fatal("bad writeLog", err.Error())
-					}
-
-					if method != "DEL" {
-						continue
-					}
-
-					if blockNumber == park {
-						foundDel = true
-					}
-				}
-
-				if !foundDel {
-					t.Errorf("moved log did not produce writeLog DEL for txHash %s", txHash.String())
-				}
+			if err := findDeletionFromParks(parks, debugDB); err != nil {
+				t.Error(err.Error())
 			}
 		}
 
-		lastRec, err := fakeRedis.GetLastRecordedBlock(nil)
-		t.Log(lastRec)
+		results, err := ensStore.GetENSes(nil)
+		if err != nil {
+			t.Error("ensStore.GetENSes returned error", err.Error())
+		}
+
+		// Test if final results are correct
+		for _, ens := range results {
+			if ens == nil {
+				t.Fatal("nil ens result")
+			}
+
+			var reorgIndex int
+			for i, event := range testCase.Events {
+				if ens.BlockNumber >= event.ReorgBlock {
+					reorgIndex = i
+				}
+			}
+
+			// Don't check unreorged hash
+			if reorgIndex != 0 {
+				expectedHash := reorgsim.ReorgHash(ens.BlockNumber, reorgIndex)
+				ensBlockHash := common.HexToHash(ens.BlockHash)
+
+				if ensBlockHash != expectedHash {
+					t.Errorf(
+						"unexpected ens blockHash for block %d (reorgIndex %d), expecting %s, got %s",
+						ens.BlockNumber, reorgIndex, expectedHash.String(), ens.BlockHash,
+					)
+				}
+
+				if err := invalidateNullFieldsENS(ens); err != nil {
+					t.Error("ens has invalid values", err.Error())
+				}
+			}
+
+			// Test if moved logs end up with correct values
+			txHash := common.HexToHash(ens.TxHash)
+			dst, ok := logsDst[txHash]
+			if !ok {
+				// Logs was not moved
+				continue
+			}
+
+			if ens.BlockNumber != dst {
+				t.Errorf(
+					"invalid block number for ENS %s (txHash %s) - expecting %d, got %d",
+					ens.ID, ens.TxHash, ens.BlockNumber, dst,
+				)
+			}
+		}
 	}
 }

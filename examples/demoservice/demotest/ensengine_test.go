@@ -4,15 +4,33 @@ import (
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
 )
+
+func invalidateNullFieldsENS(ens *entity.ENS) error {
+	if ens.ID == "" {
+		return errors.New("ens.ID is null")
+	}
+
+	if ens.Name == "" {
+		return errors.New("ens.Name is null")
+	}
+
+	if ens.BlockNumber == 0 {
+		return errors.New("ens.BlockNumber is 0 ")
+	}
+
+	return nil
+}
 
 // TestServiceEngineENSV1 is full tests for SubEngineENS with only 1 reorg event.
 func TestServiceEngineENSV1(t *testing.T) {
@@ -84,26 +102,8 @@ func TestServiceEngineENSV1(t *testing.T) {
 		for _, txHash := range movedHashes {
 			parks := logsPark[txHash]
 
-			for _, park := range parks {
-				var foundDel bool
-				for _, writeLog := range debugDB.WriteLogs() {
-					method, _, blockNumber, _, err := writeLog.Unmarshal()
-					if err != nil {
-						t.Fatal("bad writeLog", err.Error())
-					}
-
-					if method != "DEL" {
-						continue
-					}
-
-					if blockNumber == park {
-						foundDel = true
-					}
-				}
-
-				if !foundDel {
-					t.Errorf("moved log did not produce writeLog DEL for txHash %s", txHash.String())
-				}
+			if err := findDeletionFromParks(parks, debugDB); err != nil {
+				t.Error(err.Error())
 			}
 		}
 
@@ -120,11 +120,8 @@ func TestServiceEngineENSV1(t *testing.T) {
 					t.Fatalf("unexpected block %d hash (ens): expecting %s, got %s", result.BlockNumber, expectedHash, result.BlockHash)
 				}
 
-				if result.ID == "" {
-					t.Fatal("empty ENS ID -- should not happen")
-				}
-				if result.Name == "" {
-					t.Fatal("empty ENS Name -- should not happen")
+				if err := invalidateNullFieldsENS(result); err != nil {
+					t.Error("result has invalid ENS values", err.Error())
 				}
 
 				if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
