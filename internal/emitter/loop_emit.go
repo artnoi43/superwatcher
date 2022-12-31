@@ -21,7 +21,7 @@ type emitterStatus struct {
 
 	GoBackFirstStart bool   `json:"goBackFirstStart"`
 	IsReorging       bool   `json:"isReorging"`
-	RetriesCount     uint64 `json:"goBackRetries"` // Tracks how many times the emitter has to goBack because fromBlock was reorged
+	RetriesCount     uint64 `json:"retriesCount"`
 }
 
 func (e *emitter) sleep() {
@@ -200,6 +200,7 @@ func (e *emitter) computeFromBlockToBlock(
 		e.conf.FilterRange,
 		e.conf.MaxGoBackRetries,
 		e.conf.StartBlock,
+		e.poller.DoReorg(),
 		e.debugger,
 	)
 	if err != nil {
@@ -239,6 +240,7 @@ func computeFromBlockToBlock(
 	filterRange uint64,
 	maxRetries uint64,
 	startBlock uint64,
+	doReorg bool,
 	debugger *debugger.Debugger,
 ) (
 	uint64,
@@ -304,6 +306,7 @@ func computeFromBlockToBlock(
 		}
 
 	default:
+
 		// Call fromBlockToBlock in normal cases
 		// lastRecordedBlock = 80, filterRange = 10
 		// 71  - 90   [normalCase] -> lastRecordedBlock = 90,  lookBack = 10, fwdRange = 90 - 80    = 10

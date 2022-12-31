@@ -181,6 +181,7 @@ func TestComputeFromBlockToBlock(t *testing.T) {
 			test.FilterRange,
 			test.MaxRetries,
 			test.StartBlock,
+			true,
 			debugger.NewDebugger("testComputeFromBlockToBlock", 4),
 		)
 
