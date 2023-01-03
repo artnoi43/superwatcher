@@ -120,7 +120,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 	pollResultChan := make(chan *superwatcher.PollResult)
 
 	fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
-	testPoller := poller.New(nil, nil, conf.DoReorg, conf.FilterRange, sim, conf.LogLevel)
+	testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel)
 	testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
 	ctx, cancel := context.WithCancel(context.Background())

@@ -2,9 +2,10 @@ package poller
 
 import (
 	"context"
-	"fmt"
 	"math/big"
+	"sync"
 
+	"github.com/artnoi43/gsl/concurrent"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -36,6 +37,7 @@ func mapLogs(
 	getHeaderFunc func(context.Context, *big.Int) (superwatcher.BlockHeader, error),
 ) (
 	map[uint64]bool, // Maps blockNumber to reorged status
+	map[uint64]superwatcher.BlockHeader, // Maps blockNumber to blockHeader
 	map[uint64]common.Hash, // Maps blockNumber to blockHash
 	map[uint64][]*types.Log, // Maps blockNumber to logs
 	error,
@@ -70,9 +72,48 @@ func mapLogs(
 		mapFreshLogs[number] = append(mapFreshLogs[number], log)
 	}
 
+	// Get block headers from blocks in mapFreshLogs concurrently
+	var safeMapFreshHeaders struct {
+		sync.RWMutex
+		m map[uint64]superwatcher.BlockHeader
+	}
+	if getHeaderFunc != nil {
+		safeMapFreshHeaders.m = make(map[uint64]superwatcher.BlockHeader)
+		errChan := make(chan error)
+
+		var wg sync.WaitGroup
+		for number := range mapFreshLogs {
+			wg.Add(1)
+			go func(n uint64) {
+				defer wg.Done()
+
+				h, err := getHeaderFunc(ctx, big.NewInt(int64(n)))
+				if err != nil {
+					errChan <- err
+				}
+
+				safeMapFreshHeaders.Lock()
+				defer safeMapFreshHeaders.Unlock()
+
+				safeMapFreshHeaders.m[n] = h
+			}(number)
+		}
+
+		// wg.Wait() is called in WaitAndCollectErrors
+		err := concurrent.WaitAndCollectErrors(&wg, errChan)
+		if err != nil {
+			return nil, nil, nil, nil, errors.Wrap(err, "failed to get headers")
+		}
+	}
+
+	var mapFreshHeaders map[uint64]superwatcher.BlockHeader
+	if safeMapFreshHeaders.m != nil {
+		mapFreshHeaders = safeMapFreshHeaders.m
+	}
+
 	// i.e. poller.DoReorg == false
 	if tracker == nil {
-		return mapRemovedBlocks, mapFreshHashes, mapFreshLogs, nil
+		return mapRemovedBlocks, mapFreshHeaders, mapFreshHashes, mapFreshLogs, nil
 	}
 
 	// Compare all known (tracker) block hashes to new ones
@@ -83,17 +124,21 @@ func mapLogs(
 			continue
 		}
 
-		empty := common.Hash{}
-		if trackerBlock.Hash == empty {
-			panic(fmt.Sprintf("kuy %d", empty))
-		}
-
 		freshHash, ok := mapFreshHashes[number]
 		// Logs may be moved from blockNumber, hence there's no value in mapFreshHashes
 		if !ok {
-			freshHeader, err := getHeaderFunc(ctx, big.NewInt(int64(number)))
-			if err != nil {
-				return nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
+			var freshHeader superwatcher.BlockHeader
+			if mapFreshHeaders != nil {
+				freshHeader = mapFreshHeaders[number]
+			}
+
+			// Fetch header again for this block (with missing log) in case doHeader is false
+			if freshHeader == nil {
+				var err error
+				freshHeader, err = getHeaderFunc(ctx, big.NewInt(int64(number)))
+				if err != nil {
+					return nil, nil, nil, nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
+				}
 			}
 
 			freshHash = freshHeader.Hash()
@@ -114,5 +159,5 @@ func mapLogs(
 		mapRemovedBlocks[number] = true
 	}
 
-	return mapRemovedBlocks, mapFreshHashes, mapFreshLogs, nil
+	return mapRemovedBlocks, mapFreshHeaders, mapFreshHashes, mapFreshLogs, nil
 }

@@ -7,12 +7,13 @@ import (
 )
 
 type config struct {
+	doReorg     bool
+	doHeader    bool
+	logLevel    uint8
+	filterRange uint64
 	client      superwatcher.EthClient
 	addresses   []common.Address
 	topics      [][]common.Hash
-	filterRange uint64
-	doReorg     bool
-	logLevel    uint8
 }
 
 type Option func(*config)
@@ -53,6 +54,12 @@ func WithDoReorg(doReorg bool) Option {
 	}
 }
 
+func WithDoHeader(doHeader bool) Option {
+	return func(c *config) {
+		c.doHeader = doHeader
+	}
+}
+
 func New(options ...Option) superwatcher.EmitterPoller {
 	var c config
 	for _, opt := range options {
@@ -63,6 +70,7 @@ func New(options ...Option) superwatcher.EmitterPoller {
 		c.addresses,
 		c.topics,
 		c.doReorg,
+		c.doHeader,
 		c.filterRange,
 		c.client,
 		c.logLevel,

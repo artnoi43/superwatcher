@@ -1,6 +1,7 @@
 chain: "ethereum"
 superwatcher_config:
   do_reorg: true
+  do_header: true
   node_url: "https://mybestnode.net/0xdeadbeef"
   redis_conn_str: "localhost:6379"
   loop_interval: 1

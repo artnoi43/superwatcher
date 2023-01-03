@@ -130,7 +130,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	}
 
 	// testPoller got nil addresses and topics so it will poll logs from all addresses and topics
-	testPoller := poller.New(nil, nil, conf.DoReorg, conf.FilterRange, sim, conf.LogLevel)
+	testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel)
 
 	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 	errChan := make(chan error, 5)

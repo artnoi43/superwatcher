@@ -37,6 +37,7 @@ func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *config.Config 
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		StartBlock:       startBlock,
 		DoReorg:          true,
+		DoHeader:         true,
 		FilterRange:      10,
 		MaxGoBackRetries: 2,
 		LoopInterval:     0,
