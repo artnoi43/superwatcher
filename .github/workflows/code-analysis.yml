@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"] # "self-hosted", "macos-latest", "windows-latest"
-        go-version: ["1.18.x", ""] # empty string means use go-version-file(go.mod)
+        go-version: [""] # empty string means use go-version-file (go.mod)
     name: Lint, Test and Build (${{ matrix.go-version }} ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     env:
@@ -35,15 +35,19 @@ jobs:
         with:
           header: code-analysis
           message: |
-            ## 🔍 Running Code Analysis & Testing (${{ env.GITHUB_SHA_SHORT }})
+            ## 🔍 Running Code Analysis & Testing (${{ env.GOVERSION }})
             ${{ env.pr_info }}
             _Please wait for the result before merging this pull request._
 
       - name: Install dependencies
         run: go get ./...
 
+      - name: Init `gitignore`d test files
+        run: ./scripts/prepare_files.sh
+
       # Q: Why Reviewdog ?
-      # A: Because golangci-lint action has some issues, not working on self-hosted runners and can't report errors detail on review comments.
+      # A: Because golangci-lint action has some issues, not working on self-hosted runners,
+      # and it can't report errors detail on review comments.
       # See: https://github.com/reviewdog/reviewdog
       - name: Lint with Reviewdog
         uses: reviewdog/action-golangci-lint@v2

@@ -23,12 +23,11 @@ run:
     - ".*/config/config.go"
     - "config/config.go"
   skip-dirs:
-    - "moby-nodejs"
     - "env"
+    - "tmp"
     - "temp.*"
-    - "dist"
-    - ".*node_modules.*"
     - "scripts"
+    - "examples/demoservice/lib/contracts/*"
 
 # See more: https://golangci-lint.run/usage/linters/
 linters:
@@ -84,10 +83,6 @@ issues:
     - text: "copylocks:"
       linters:
         - govet
-    - path: slamm
-      text: "`Cancelled` is a misspelling of `Canceled`"
-      linters:
-        - misspell
 
 linters-settings:
   misspell:
