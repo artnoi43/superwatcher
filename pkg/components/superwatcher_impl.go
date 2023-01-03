@@ -49,6 +49,14 @@ func (spw *superWatcher) DoReorg() bool {
 	return spw.emitter.Poller().DoReorg()
 }
 
+func (spw *superWatcher) SetDoHeader(doHeader bool) {
+	spw.emitter.Poller().SetDoHeader(doHeader)
+}
+
+func (spw *superWatcher) DoHeader() bool {
+	return spw.emitter.Poller().DoHeader()
+}
+
 func (spw *superWatcher) Addresses() []common.Address {
 	return spw.emitter.Poller().Addresses()
 }

@@ -50,7 +50,7 @@ func newSuperwatcherAdvanced( //nolint:unused
 	emitter := components.NewEmitter(conf, ethClient, stateDataGateway, nil, syncChan, resultChan, errChan)
 	emitterClient := components.NewEmitterClient(conf, syncChan, resultChan, errChan)
 	engine := components.NewEngine(emitterClient, serviceEngine, stateDataGateway, conf.LogLevel)
-	poller := components.NewPoller(nil, nil, true, conf.FilterRange, ethClient, conf.LogLevel)
+	poller := components.NewPoller(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, ethClient, conf.LogLevel)
 
 	poller.SetAddresses(addresses)
 	poller.SetTopics([][]common.Hash{topics})
@@ -70,6 +70,8 @@ func newSuperwacherSoyV1( //nolint:unused
 	serviceEngine superwatcher.ServiceEngine,
 ) (superwatcher.Emitter, superwatcher.Engine) {
 	poller := poller.New(
+		poller.WithDoReorg(conf.DoReorg),
+		poller.WithDoHeader(conf.DoHeader),
 		poller.WithEthClient(ethClient),
 		poller.WithFilterRange(conf.FilterRange),
 		poller.WithAddresses(addresses...),
@@ -114,6 +116,8 @@ func newSuperWatcherSoyV2( // nolint:unused
 	errChan := make(chan error)
 
 	return components.NewSuperWatcherOptions(
+		components.WithDoReorg(conf.DoReorg),
+		components.WithDoHeader(conf.DoHeader),
 		components.WithConfig(conf),
 		components.WithAddresses(addresses...),
 		components.WithTopics(topics),

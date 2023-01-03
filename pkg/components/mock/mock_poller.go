@@ -83,6 +83,8 @@ func (p *mockPoller) Poll(
 
 func (p *mockPoller) SetDoReorg(bool)                {}
 func (p *mockPoller) DoReorg() bool                  { return true }
+func (p *mockPoller) SetDoHeader(bool)               {}
+func (p *mockPoller) DoHeader() bool                 { return true }
 func (p *mockPoller) Addresses() []common.Address    { return nil }
 func (p *mockPoller) Topics() [][]common.Hash        { return nil }
 func (p *mockPoller) AddAddresses(...common.Address) {}

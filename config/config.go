@@ -14,6 +14,9 @@ type Config struct {
 	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for superwatcher.PollResult
 	DoReorg bool `mapstructure:"do_reorg" yaml:"do_reorg" json:"doReorg"`
 
+	// DoHeader specifies whether superwatcher.EmitterPoller should fetch block headers too
+	DoHeader bool `mapstructure:"do_header" yaml:"do_header" json:"doHeader"`
+
 	// MaxGoBackRetries is the maximum number of blocks the emitter will go back for. Once this is reached,
 	// the emitter exits on error ErrMaxRetriesReached
 	MaxGoBackRetries uint64 `mapstructure:"max_go_back_retries" yaml:"max_go_back_retries" json:"maxGoBackRetries"`

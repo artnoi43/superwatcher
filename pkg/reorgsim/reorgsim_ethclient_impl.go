@@ -8,13 +8,12 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-
-	"github.com/artnoi43/superwatcher"
 )
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
@@ -77,19 +76,27 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 
 func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	blockNumber := number.Uint64()
+
 	b, ok := r.chain[blockNumber]
 	if !ok {
+		event := r.events[r.currentReorgEvent]
+		toBeForked := blockNumber >= event.ReorgBlock
+		reorgedHere := blockNumber == event.ReorgBlock
+
 		var h common.Hash
-		if blockNumber >= r.events[r.currentReorgEvent].ReorgBlock {
+		if toBeForked {
 			h = ReorgHash(blockNumber, r.currentReorgEvent)
 		} else {
 			h = PRandomHash(blockNumber)
 		}
 
-		return &Block{
+		b = &Block{
 			hash:        h,
 			blockNumber: blockNumber,
-		}, nil
+			reorgedHere: reorgedHere,
+			toBeForked:  toBeForked,
+			logs:        nil,
+		}
 	}
 
 	return b, nil

@@ -19,6 +19,7 @@ type initConfig struct {
 	addresses           []common.Address
 	topics              [][]common.Hash
 	doReorg             bool
+	doHeader            bool
 	filterRange         uint64
 	logLevel            uint8 // redundant in conf, but users may want to set this separately
 	syncChan            chan struct{}
@@ -105,6 +106,12 @@ func WithTopics(topics ...[]common.Hash) Option {
 func WithDoReorg(doReorg bool) Option {
 	return func(c *initConfig) {
 		c.doReorg = doReorg
+	}
+}
+
+func WithDoHeader(doHeader bool) Option {
+	return func(c *initConfig) {
+		c.doHeader = doHeader
 	}
 }
 

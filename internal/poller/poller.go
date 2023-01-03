@@ -22,6 +22,7 @@ type poller struct {
 	filterRange       uint64
 	client            superwatcher.EthClient
 	doReorg           bool
+	doHeader          bool
 
 	tracker  *blockInfoTracker
 	debugger *debugger.Debugger
@@ -31,6 +32,7 @@ func New(
 	addresses []common.Address,
 	topics [][]common.Hash,
 	doReorg bool,
+	doHeader bool,
 	filterRange uint64,
 	client superwatcher.EthClient,
 	logLevel uint8,
@@ -46,6 +48,7 @@ func New(
 		filterRange: filterRange,
 		client:      client,
 		doReorg:     doReorg,
+		doHeader:    doHeader,
 		tracker:     tracker,
 		debugger:    debugger.NewDebugger("poller", logLevel),
 	}
@@ -90,6 +93,20 @@ func (p *poller) DoReorg() bool {
 	defer p.RUnlock()
 
 	return p.doReorg
+}
+
+func (p *poller) SetDoHeader(doReorg bool) {
+	p.Lock()
+	defer p.RUnlock()
+
+	p.doReorg = doReorg
+}
+
+func (p *poller) DoHeader() bool {
+	p.RLock()
+	defer p.RUnlock()
+
+	return p.doHeader
 }
 
 func (p *poller) Addresses() []common.Address {

@@ -18,9 +18,14 @@ type SuperWatcher interface {
 
 // Controller gives users the means and methods to change some of EmitterPoller parameters
 type Controller interface {
+	// SetDoReorg makes the EmitterPoller engage chain reorg detection logic
 	SetDoReorg(bool)
 	// DoReorg returns if EmitterPoller is currently processing chain reorg inside EmitterPoller.Poll
 	DoReorg() bool
+	// SetDoHeader makes the EmitterPoller fetch block header for every block with interesting logs
+	SetDoHeader(bool)
+	// DoHeader returns if the EmitterPoller will fetch block headers for blocks with interesting logs
+	DoHeader() bool
 	// Addresses reads EmitterPoller's current event log addresses for filter query
 	Addresses() []common.Address
 	// Topics reads EmitterPoller's current event log topics for filter query

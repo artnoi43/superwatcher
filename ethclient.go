@@ -5,14 +5,8 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
-
-// BlockHeader is implemented by `*types.Header` and `*reorgsim.Block`.
-type BlockHeader interface {
-	Hash() common.Hash
-}
 
 // EthClient defines all Ethereum client methods used in superwatcher.
 // HeaderByNumber returns BlockHeader because if it uses the actual *types.Header
@@ -46,7 +40,14 @@ func (w *ethClientWrapper) FilterLogs(ctx context.Context, q ethereum.FilterQuer
 }
 
 func (w *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) (BlockHeader, error) {
-	return w.client.HeaderByNumber(ctx, number) //nolint:wrapcheck
+	h, err := w.client.HeaderByNumber(ctx, number)
+	if err != nil {
+		return nil, err // nolint:wrapcheck
+	}
+
+	return &BlockHeaderWrapper{
+		Header: h,
+	}, nil
 }
 
 func WrapEthClient(client ethClient) EthClient {

@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// Block represents the Ethereum Block. It is also used
-// by reorgSim as superwatcher.EmitterBlockHeader.
+// Block represents the Ethereum Block.
+// It is also used as superwatcher.BlockHeader.
 type Block struct {
 	blockNumber uint64
 	hash        common.Hash
@@ -19,6 +19,10 @@ type Block struct {
 	toBeForked  bool // toBeForked marks if this block will later be forked from the old chain according to ReorgEvent
 }
 
+func (b *Block) Logs() []types.Log {
+	return b.logs
+}
+
 // Implements superwatcher.BlockHeader
 // We'll use block in place of *types.Header,
 // because *types.Header is too packed to mock.
@@ -26,8 +30,24 @@ func (b *Block) Hash() common.Hash {
 	return b.hash
 }
 
-func (b *Block) Logs() []types.Log {
-	return b.logs
+// Nonce mocks field *types.Header.Nonce
+func (b *Block) Nonce() types.BlockNonce {
+	return types.EncodeNonce(b.blockNumber)
+}
+
+// Time mocks field *types.Header.Time
+func (b *Block) Time() uint64 {
+	return b.blockNumber
+}
+
+// GasLimit mocks field *types.Header.GasLimit
+func (b *Block) GasLimit() uint64 {
+	return b.blockNumber
+}
+
+// GasUsed mocks field *types.Header.GasUsed
+func (b *Block) GasUsed() uint64 {
+	return b.blockNumber
 }
 
 // reorg takes a block, and simulates chain reorg on that block

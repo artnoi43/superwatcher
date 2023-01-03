@@ -1,8 +1,9 @@
 package emittertest
 
 import (
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
 var TestCasesV1 = []TestConfig{

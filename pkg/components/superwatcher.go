@@ -30,6 +30,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 		conf.addresses,
 		conf.topics,
 		conf.conf.DoReorg || conf.doReorg,
+		conf.conf.DoHeader || conf.doHeader,
 		conf.filterRange,
 		conf.ethClient,
 		logLevel,
