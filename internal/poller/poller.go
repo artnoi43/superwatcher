@@ -95,11 +95,11 @@ func (p *poller) DoReorg() bool {
 	return p.doReorg
 }
 
-func (p *poller) SetDoHeader(doReorg bool) {
+func (p *poller) SetDoHeader(doHeader bool) {
 	p.Lock()
-	defer p.RUnlock()
+	defer p.Unlock()
 
-	p.doReorg = doReorg
+	p.doHeader = doHeader
 }
 
 func (p *poller) DoHeader() bool {
