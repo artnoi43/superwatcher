@@ -60,7 +60,7 @@ func (p *poller) Poll(
 		p.tracker.clearUntil(until)
 	}
 
-	removedBlocks, mapFreshHeaders, mapFreshHashes, mapFreshLogs, err := mapLogs(
+	mapResults, err := mapLogs(
 		ctx,
 		fromBlock,
 		toBlock,
@@ -73,11 +73,16 @@ func (p *poller) Poll(
 		return nil, errors.Wrap(err, "error in mapLogs")
 	}
 
+	wasReorged := make(map[uint64]bool)
+	for number, mapResult := range mapResults {
+		wasReorged[number] = mapResult.reorged
+	}
+
 	// Fills |result| and saves current data back to tracker first.
 	result := new(superwatcher.PollResult)
 	for number := fromBlock; number <= toBlock; number++ {
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
-		if removedBlocks[number] && p.doReorg {
+		if wasReorged[number] && p.doReorg {
 			trackerBlock, foundInTracker := p.tracker.getTrackerBlockInfo(number)
 			if !foundInTracker {
 				p.debugger.Debug(
@@ -92,12 +97,7 @@ func (p *poller) Poll(
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
-			freshHash, ok := mapFreshHashes[number]
-			if !ok {
-				return nil, errors.Wrapf(
-					superwatcher.ErrProcessReorg, "missing corresponding mapFreshHashes values for reorgedBlock %d", number,
-				)
-			}
+			freshHash := mapResults[number].hash
 
 			p.debugger.Debug(
 				1, "chain reorg detected",
@@ -128,29 +128,20 @@ func (p *poller) Poll(
 
 		// New blocks will use fresh information. This includes new block after a reorg.
 		// Only block with logs will be appended to |result.GoodBlocks|.
-		logs, ok := mapFreshLogs[number]
-		if !ok || len(logs) == 0 {
+		mapResult, ok := mapResults[number]
+		if !ok {
 			continue
 		}
 
-		hash, ok := mapFreshHashes[number]
-		if !ok {
-			return nil, errors.Wrapf(errNoHash, "blockNumber %d", number)
-		}
-
-		var header superwatcher.BlockHeader
-		if p.doHeader {
-			header, ok = mapFreshHeaders[number]
-			if !ok {
-				return nil, errors.Wrapf(errNoHeader, "blockNumber %d", number)
-			}
+		if len(mapResult.logs) == 0 {
+			continue
 		}
 
 		goodBlock := superwatcher.BlockInfo{
 			Number: number,
-			Header: header,
-			Hash:   hash,
-			Logs:   logs,
+			Header: mapResult.header,
+			Hash:   mapResult.hash,
+			Logs:   mapResult.logs,
 		}
 
 		if p.doReorg {
@@ -170,7 +161,7 @@ func (p *poller) Poll(
 
 	// If fromBlock reorged, return the result but with non-nil error.
 	// This way, the result still gets emitted, leaving no unseen BlockInfo for the managed engine.
-	if removedBlocks[fromBlock] && p.doReorg {
+	if wasReorged[fromBlock] && p.doReorg {
 		return result, errors.Wrapf(
 			superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
 		)

@@ -43,7 +43,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	mockClient := mockGetHeader{chain: reorgedChain}
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
-	var concatLogs = make(map[uint64][]*types.Log)
+	concatLogs := make(map[uint64][]*types.Log)
 
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
@@ -78,7 +78,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	// Call mapFreshLogs with reorgedLogs
-	wasReorged, _, _, _, err := mapLogs(
+	mapResults, err := mapLogs(
 		nil,
 		tc.FromBlock,
 		tc.ToBlock,
@@ -87,9 +87,13 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 		tracker,
 		mockClient.HeaderByNumber,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "error in mapLogs")
+	}
+
+	wasReorged := make(map[uint64]bool)
+	for k, v := range mapResults {
+		wasReorged[k] = v.reorged
 	}
 
 	for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
@@ -98,8 +102,12 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 			continue
 		}
 
-		reorged := wasReorged[blockNumber]
+		mapResult, ok := mapResults[blockNumber]
+		if !ok {
+			mapResult = new(mapLogsResult)
+		}
 
+		reorged := mapResult.reorged
 		// Any blocks after c.reorgedAt should be reorged.
 		if blockNumber >= reorgEvent.ReorgBlock {
 			if reorged {
