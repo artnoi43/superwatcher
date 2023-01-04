@@ -7,6 +7,7 @@ import (
 )
 
 var (
-	errNoHash   = errors.Wrap(superwatcher.ErrProcessReorg, "missing hash for a block")   // Emitter has a missing block hash
-	errNoHeader = errors.Wrap(superwatcher.ErrProcessReorg, "missing header for a block") // Emitter has a missing block hash
+	errHashesDiffer = errors.Wrap(superwatcher.ErrFetchError, "blockHashes differ")
+	errNoHash       = errors.Wrap(superwatcher.ErrProcessReorg, "missing hash for a block")   // Emitter has a missing block hash
+	errNoHeader     = errors.Wrap(superwatcher.ErrProcessReorg, "missing header for a block") // Emitter has a missing block hash
 )

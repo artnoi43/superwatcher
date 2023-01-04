@@ -94,6 +94,11 @@ func RunServiceTestComponents(tc *TestComponents) (
 // RunService executes the most basic emitter and engine logic, and returns an error from these components.
 func RunService(emitter superwatcher.Emitter, engine superwatcher.Engine) error {
 	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		emitter.Poller().SetDoHeader(false)
+	}()
+
 	var wg sync.WaitGroup
 	var retErr error
 	wg.Add(1)

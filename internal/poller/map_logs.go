@@ -6,14 +6,19 @@ import (
 	"sync"
 
 	"github.com/artnoi43/gsl/concurrent"
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger"
 )
+
+// safeMap wraps map types used in mapLogs for concurrent operations
+type safeMap[V any] struct {
+	sync.RWMutex
+	m map[uint64]V
+}
 
 // mapLogs compare |logs| and their blockHashes to known blockHashes in |tracker.
 // If a block has different tracker blockHash, the blockNumber will be marked true in |mapRemovedBlocks|.
@@ -31,22 +36,26 @@ func mapLogs(
 	toBlock uint64,
 	// logs are slice of pointers to avoid expensive copies.
 	logs []*types.Log,
+	// doHeader specifies if mapLogs will call |getHeaderFunc| for blocks with logs
+	doHeader bool,
 	// tracker is used to store known BlockInfo from previous calls
 	tracker *blockInfoTracker,
 	// getHeaderFunc is used to get block hash for known block with missing logs.
 	getHeaderFunc func(context.Context, *big.Int) (superwatcher.BlockHeader, error),
 ) (
+	// TODO: Maybe use map[uint64]foo instead?
+
 	map[uint64]bool, // Maps blockNumber to reorged status
 	map[uint64]superwatcher.BlockHeader, // Maps blockNumber to blockHeader
 	map[uint64]common.Hash, // Maps blockNumber to blockHash
 	map[uint64][]*types.Log, // Maps blockNumber to logs
 	error,
 ) {
-	// We can actually just return |mapRemovedBlocks|, but we will have to iterate the logs anyway,
-	// so we collect the data into maps here to save costs later.
-	mapRemovedBlocks := make(map[uint64]bool)
-	mapFreshHashes := make(map[uint64]common.Hash)
+	// mapFreshLogs collects logs mapped by their blockNumbers.
 	mapFreshLogs := make(map[uint64][]*types.Log)
+	// mapFreshHashes collects freshHash from logs or headers.
+	// If they are different, mapLogs returns errHashesDiffer.
+	mapFreshHashes := make(map[uint64]common.Hash)
 
 	// Collect mapFreshLogs and mapFreshHashes. All new logs will be collected,
 	// and each log's blockHash will be compare with its neighbors in the same block
@@ -54,16 +63,15 @@ func mapLogs(
 	for _, log := range logs {
 		number := log.BlockNumber
 
-		// Add new blockNumber hash
+		// Add new hash to mapFreshHash
 		if h, ok := mapFreshHashes[number]; !ok {
 			mapFreshHashes[number] = log.BlockHash
+
 		} else if ok {
 			if h != log.BlockHash {
-				logger.Panic(
-					"fresh logs on same block has different blockHash",
-					zap.Uint64("blockNumber", number),
-					zap.String("blockHash0", h.String()),
-					zap.String("blockHash1", log.BlockHash.String()),
+				return nil, nil, nil, nil, errors.Wrapf(
+					errHashesDiffer, "logs in the same block %d has different hash %s vs %s",
+					number, gslutils.StringerToLowerString(h), gslutils.StringerToLowerString(log.BlockHash),
 				)
 			}
 		}
@@ -73,17 +81,16 @@ func mapLogs(
 	}
 
 	// Get block headers from blocks in mapFreshLogs concurrently
-	var safeMapFreshHeaders struct {
-		sync.RWMutex
-		m map[uint64]superwatcher.BlockHeader
-	}
-	if getHeaderFunc != nil {
+	var safeMapFreshHeaders safeMap[superwatcher.BlockHeader]
+
+	if doHeader {
 		safeMapFreshHeaders.m = make(map[uint64]superwatcher.BlockHeader)
 		errChan := make(chan error)
 
 		var wg sync.WaitGroup
 		for number := range mapFreshLogs {
 			wg.Add(1)
+
 			go func(n uint64) {
 				defer wg.Done()
 
@@ -92,10 +99,24 @@ func mapLogs(
 					errChan <- err
 				}
 
-				safeMapFreshHeaders.Lock()
-				defer safeMapFreshHeaders.Unlock()
+				// Invoke anonymous function to early execute the deferred unlock
+				func() {
+					safeMapFreshHeaders.Lock()
+					defer safeMapFreshHeaders.Unlock()
 
-				safeMapFreshHeaders.m[n] = h
+					safeMapFreshHeaders.m[n] = h
+				}()
+
+				// If header hash differs from logHash, cause a return with error
+				// TODO: Maybe we can better handle this?
+				if l := mapFreshLogs[n][0]; l != nil {
+					if headerHash := h.Hash(); headerHash != l.BlockHash {
+						errChan <- errors.Wrapf(
+							errHashesDiffer, "block %d header blockHash %s differ from log's blockHash %s",
+							n, gslutils.StringerToLowerString(headerHash), gslutils.StringerToLowerString(l.BlockHash),
+						)
+					}
+				}
 			}(number)
 		}
 
@@ -106,12 +127,10 @@ func mapLogs(
 		}
 	}
 
-	var mapFreshHeaders map[uint64]superwatcher.BlockHeader
-	if safeMapFreshHeaders.m != nil {
-		mapFreshHeaders = safeMapFreshHeaders.m
-	}
+	mapFreshHeaders := safeMapFreshHeaders.m
+	mapRemovedBlocks := make(map[uint64]bool)
 
-	// i.e. poller.DoReorg == false
+	// i.e. if poller.doReorg == false
 	if tracker == nil {
 		return mapRemovedBlocks, mapFreshHeaders, mapFreshHashes, mapFreshLogs, nil
 	}
@@ -119,13 +138,13 @@ func mapLogs(
 	// Compare all known (tracker) block hashes to new ones
 	for number := toBlock; number >= fromBlock; number-- {
 		// Continue if log.BlockNumber was never saved to tracker
-		trackerBlock, found := tracker.getTrackerBlockInfo(number)
-		if !found {
+		trackerBlock, ok := tracker.getTrackerBlockInfo(number)
+		if !ok {
 			continue
 		}
 
+		// Logs may be moved from blockNumber, hence there's no value in mapFreshHashes (!ok)
 		freshHash, ok := mapFreshHashes[number]
-		// Logs may be moved from blockNumber, hence there's no value in mapFreshHashes
 		if !ok {
 			var freshHeader superwatcher.BlockHeader
 			if mapFreshHeaders != nil {

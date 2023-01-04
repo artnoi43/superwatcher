@@ -83,6 +83,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 		tc.FromBlock,
 		tc.ToBlock,
 		gslutils.CollectPointers(reorgedLogs),
+		true,
 		tracker,
 		mockClient.HeaderByNumber,
 	)

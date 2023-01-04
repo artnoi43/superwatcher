@@ -44,26 +44,27 @@ func (b *BlockInfo) BlockNumberString() string {
 	return fmt.Sprintf("%d", b.Number)
 }
 
+// BlockHeaderWrappers wrap *types.Header to implenent BlockHeader
 type BlockHeaderWrapper struct {
 	Header *types.Header
 }
 
-func (h *BlockHeaderWrapper) Hash() common.Hash {
+func (h BlockHeaderWrapper) Hash() common.Hash {
 	return h.Header.Hash()
 }
 
-func (h *BlockHeaderWrapper) Nonce() types.BlockNonce {
+func (h BlockHeaderWrapper) Nonce() types.BlockNonce {
 	return h.Header.Nonce
 }
 
-func (h *BlockHeaderWrapper) Time() uint64 {
+func (h BlockHeaderWrapper) Time() uint64 {
 	return h.Header.Time
 }
 
-func (h *BlockHeaderWrapper) GasLimit() uint64 {
+func (h BlockHeaderWrapper) GasLimit() uint64 {
 	return h.Header.GasLimit
 }
 
-func (h *BlockHeaderWrapper) GasUsed() uint64 {
+func (h BlockHeaderWrapper) GasUsed() uint64 {
 	return h.Header.GasUsed
 }

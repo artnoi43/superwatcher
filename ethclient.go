@@ -45,7 +45,7 @@ func (w *ethClientWrapper) HeaderByNumber(ctx context.Context, number *big.Int) 
 		return nil, err // nolint:wrapcheck
 	}
 
-	return &BlockHeaderWrapper{
+	return BlockHeaderWrapper{
 		Header: h,
 	}, nil
 }

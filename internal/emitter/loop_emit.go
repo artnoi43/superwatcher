@@ -105,11 +105,15 @@ func (e *emitter) loopEmit(
 			if err != nil {
 				if errors.Is(err, superwatcher.ErrProcessReorg) {
 					e.debugger.Debug(
-						1, "got errProcessReorg - contact prem@cleverse.com for reporting this bug",
+						1, "got ErrProcessReorg - contact prem@cleverse.com for reporting this bug",
 						zap.Error(err),
 					)
 				}
-				// Do not return, we'd still emit this result if fromBlock reorged
+				if errors.Is(err, superwatcher.ErrFetchError) {
+					e.debugger.Debug(
+						1, "got ErrFetchError, blockchain node may have behaved unexpectedly",
+					)
+				}
 				if !errors.Is(err, superwatcher.ErrFromBlockReorged) {
 					return errors.Wrap(err, "unexpected poller error")
 				}

@@ -60,18 +60,14 @@ func (p *poller) Poll(
 		p.tracker.clearUntil(until)
 	}
 
-	var getHeaderFunc func(context.Context, *big.Int) (superwatcher.BlockHeader, error)
-	if p.doHeader {
-		getHeaderFunc = p.client.HeaderByNumber
-	}
-
 	removedBlocks, mapFreshHeaders, mapFreshHashes, mapFreshLogs, err := mapLogs(
 		ctx,
 		fromBlock,
 		toBlock,
 		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
+		p.doHeader,
 		p.tracker,
-		getHeaderFunc,
+		p.client.HeaderByNumber,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in mapLogs")
