@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/artnoi43/superwatcher"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
+	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
 const (
@@ -26,11 +28,11 @@ const (
 )
 
 func TestHandleGoodLogs(t *testing.T) {
-	ensLogs, err := soyutils.ReadFileJSON[[]*types.Log](logsPathENS + "/logs_multi_names.json")
+	ensLogs, err := soyutils.ReadFileJSON[[]types.Log](logsPathENS + "/logs_multi_names.json")
 	if err != nil {
 		t.Skip("bad or missing ENS logs file:", err.Error())
 	}
-	poolFactoryLogs, err := soyutils.ReadFileJSON[[]*types.Log](logsPathPoolFactory + "/log_poolcreated.json")
+	poolFactoryLogs, err := soyutils.ReadFileJSON[[]types.Log](logsPathPoolFactory + "/log_poolcreated.json")
 	if err != nil {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
@@ -65,19 +67,33 @@ func TestHandleGoodLogs(t *testing.T) {
 	routerEngine := New(routes, services, 2)
 
 	logs := append(ensLogs, poolFactoryLogs...)
-	testHandleGoodLogs(t, routerEngine, logs, 2)
+	mappedLogs := reorgsim.MapLogsToNumber(logs)
+	var blocks []*superwatcher.BlockInfo
+
+	for number, blockLogs := range mappedLogs {
+		if len(blockLogs) == 0 {
+			continue
+		}
+
+		blockInfo := new(superwatcher.BlockInfo)
+		blockInfo.Number = number
+		blockInfo.Hash = blockLogs[0].BlockHash
+		blockInfo.Logs = gslutils.CollectPointers(blockLogs)
+	}
+
+	testHandleGoodBlocks(t, routerEngine, blocks, 2)
 }
 
-func testHandleGoodLogs(
+func testHandleGoodBlocks(
 	t *testing.T,
 	routerEngine superwatcher.ServiceEngine,
-	logs []*types.Log,
+	blocks []*superwatcher.BlockInfo,
 	numSubEngines int, // Number of subEngines within the router
 ) {
 
 	// Should have len == 1, since this is just a single call to HandleGoodLogs
 	// and the demoEngine only has 1 sub-engine.
-	mapArtifacts, err := routerEngine.HandleGoodLogs(logs, nil)
+	mapArtifacts, err := routerEngine.HandleGoodBlocks(blocks, nil)
 	if err != nil {
 		t.Errorf("error in demoEngine.HandleGoodLogs: %s", err.Error())
 	}

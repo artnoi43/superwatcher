@@ -16,14 +16,25 @@ import (
 
 func TestRouterArtifacts(t *testing.T) {
 	logsPath := "../../../../test_logs/servicetest/logs_servicetest_16054000_16054100.json"
-	logs := reorgsim.InitLogsFromFiles(logsPath)
-	logsCasted := gslutils.CollectPointers(logs)
+	logs := reorgsim.InitMappedLogsFromFiles(logsPath)
+
+	var blocks []*superwatcher.BlockInfo
+	for number, blockLogs := range logs {
+		if len(blockLogs) == 0 {
+			continue
+		}
+
+		blockInfo := new(superwatcher.BlockInfo)
+		blockInfo.Number = number
+		blockInfo.Logs = gslutils.CollectPointers(blockLogs)
+		blocks = append(blocks, blockInfo)
+	}
 
 	dgwENS := datagateway.NewMockDataGatewayENS()
 	dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
 	router := NewMockRouter(4, dgwENS, dgwPoolFactory)
 
-	mapArtifacts, err := router.HandleGoodLogs(logsCasted, nil)
+	mapArtifacts, err := router.HandleGoodBlocks(blocks, nil)
 	if err != nil {
 		t.Error(err.Error())
 	}

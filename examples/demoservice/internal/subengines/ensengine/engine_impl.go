@@ -19,8 +19,8 @@ import (
 // The sub-engine uses entity.ENS as superwatcher.Artifact
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *ensEngine) HandleGoodLogs(
-	logs []*types.Log,
+func (e *ensEngine) HandleGoodBlocks(
+	blocks []*superwatcher.BlockInfo,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
@@ -29,17 +29,19 @@ func (e *ensEngine) HandleGoodLogs(
 	e.debugger.Debug(3, "HandleGoodLogs called")
 
 	outArtifacts := make(map[common.Hash][]superwatcher.Artifact)
-	for _, log := range logs {
-		logArtifact, err := e.HandleGoodLog(log, artifacts)
-		if err != nil {
-			if errors.Is(err, internal.ErrNoNeedHandle) {
-				continue
+	for _, block := range blocks {
+		for _, log := range block.Logs {
+			logArtifact, err := e.HandleGoodLog(log, artifacts)
+			if err != nil {
+				if errors.Is(err, internal.ErrNoNeedHandle) {
+					continue
+				}
+				return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
 			}
-			return nil, errors.Wrapf(err, "HandleGoodLog failed on log txHash %s", log.BlockHash.String())
-		}
 
-		artifacts = append(artifacts, logArtifact)
-		outArtifacts[log.BlockHash] = append(outArtifacts[log.BlockHash], logArtifact)
+			artifacts = append(artifacts, logArtifact)
+			outArtifacts[log.BlockHash] = append(outArtifacts[log.BlockHash], logArtifact)
+		}
 	}
 
 	return outArtifacts, nil
@@ -120,27 +122,29 @@ func (e *ensEngine) HandleGoodLog(
 	return artifact, err
 }
 
-func (e *ensEngine) HandleReorgedLogs(
-	logs []*types.Log,
+func (e *ensEngine) HandleReorgedBlocks(
+	blocks []*superwatcher.BlockInfo,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
-	e.debugger.Debug(1, fmt.Sprintf("got %d reorged logs and %d artifacts", len(logs), len(artifacts)), zap.Any("artifacts", artifacts))
+	e.debugger.Debug(1, fmt.Sprintf("got %d reorged blocks and %d artifacts", len(blocks), len(artifacts)), zap.Any("artifacts", artifacts))
 
 	outputArtifacts := make(map[common.Hash][]superwatcher.Artifact)
-	for _, log := range logs {
-		ens, err := e.handleReorgedLog(log, artifacts)
-		if err != nil {
-			return nil, errors.Wrap(err, "ensEngine.handleReorgedLog failed")
-		}
+	for _, block := range blocks {
+		for _, log := range block.Logs {
+			ens, err := e.handleReorgedLog(log, artifacts)
+			if err != nil {
+				return nil, errors.Wrap(err, "ensEngine.handleReorgedLog failed")
+			}
 
-		outputArtifacts[log.BlockHash] = append(outputArtifacts[log.BlockHash], ens)
+			outputArtifacts[log.BlockHash] = append(outputArtifacts[log.BlockHash], ens)
 
-		err = e.dataGateway.DelENS(context.Background(), &ens.ENS)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", gslutils.StringerToLowerString(log.BlockHash))
+			err = e.dataGateway.DelENS(context.Background(), &ens.ENS)
+			if err != nil {
+				return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", gslutils.StringerToLowerString(log.BlockHash))
+			}
 		}
 	}
 

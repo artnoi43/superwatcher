@@ -30,8 +30,12 @@ func testHandleENSLogs(t *testing.T, logsJSON, logsName string) {
 	ensEngine := bundle.Engine
 	ensNamesExpected := expecteds[logsJSON]
 
+	blocks := []*superwatcher.BlockInfo{
+		{Logs: logs},
+	}
+
 	var artifacts []superwatcher.Artifact
-	_, err := ensEngine.HandleGoodLogs(logs, artifacts)
+	_, err := ensEngine.HandleGoodBlocks(blocks, artifacts)
 	if err != nil {
 		t.Errorf("HandleGoodLogs error: %s", err.Error())
 	}
@@ -67,11 +71,14 @@ func TestCountArtifacts(t *testing.T) {
 		if err := json.Unmarshal([]byte(logsJSON), &logs); err != nil {
 			t.Fatalf("error unmarshaling %s: %s", logsName, err.Error())
 		}
+		blocks := []*superwatcher.BlockInfo{
+			{Logs: logs},
+		}
 
 		bundle := NewTestSuiteENS(datagateway.NewMockDataGatewayENS(), 2)
 		ensEngine := bundle.Engine
 
-		artifacts, err := ensEngine.HandleGoodLogs(logs, []superwatcher.Artifact{})
+		artifacts, err := ensEngine.HandleGoodBlocks(blocks, []superwatcher.Artifact{})
 		if err != nil {
 			t.Errorf("failed to process %s", logsName)
 		}

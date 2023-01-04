@@ -118,7 +118,7 @@ func testFilterLogsReorg(t *testing.T, caseNumber int, testConf multiReorgConfig
 			}
 		}
 
-		mappedLogs := mapLogsToNumber(logs)
+		mappedLogs := MapLogsToNumber(logs)
 
 		for blockNumber, blockLogs := range mappedLogs {
 			for _, moves := range event.MovedLogs {

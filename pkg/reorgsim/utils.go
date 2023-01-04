@@ -27,7 +27,7 @@ func InitMappedLogsFromFiles(filenames ...string) map[uint64][]types.Log {
 		logs := readLogsJSON(filename)
 		hardcodedLogs = append(hardcodedLogs, logs...)
 	}
-	mappedLogs := mapLogsToNumber(hardcodedLogs)
+	mappedLogs := MapLogsToNumber(hardcodedLogs)
 
 	return mappedLogs
 }
@@ -85,7 +85,7 @@ func LogsReorgPaths(events []ReorgEvent) ([]common.Hash, map[common.Hash][]uint6
 	return logsHashes, logsPark, logsDest
 }
 
-func mapLogsToNumber(logs []types.Log) map[uint64][]types.Log {
+func MapLogsToNumber(logs []types.Log) map[uint64][]types.Log {
 	m := make(map[uint64][]types.Log)
 	for _, log := range logs {
 		m[log.BlockNumber] = append(m[log.BlockNumber], log)

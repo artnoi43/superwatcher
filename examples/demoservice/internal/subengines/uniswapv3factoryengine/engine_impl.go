@@ -2,7 +2,6 @@ package uniswapv3factoryengine
 
 import (
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -23,30 +22,32 @@ func (a PoolFactoryArtifact) ForSubEngine() subengines.SubEngineEnum {
 }
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
-func (e *uniswapv3PoolFactoryEngine) HandleGoodLogs(
-	logs []*types.Log,
+func (e *uniswapv3PoolFactoryEngine) HandleGoodBlocks(
+	blocks []*superwatcher.BlockInfo,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
-	// New artifact is created for new logs
 	retArtifacts := make(map[common.Hash][]superwatcher.Artifact)
-	for _, log := range logs {
-		logArtifact, err := e.handleGoodLog(log)
-		if err != nil {
-			return nil, errors.Wrapf(err, "poolfactory.HandleGoodLog failed on log txHash %s", log.BlockHash.String())
-		}
+	for _, block := range blocks {
+		// New artifact is created for new logs
+		for _, log := range block.Logs {
+			logArtifact, err := e.handleGoodLog(log)
+			if err != nil {
+				return nil, errors.Wrapf(err, "poolfactory.HandleGoodLog failed on log txHash %s", log.BlockHash.String())
+			}
 
-		retArtifacts[log.BlockHash] = append(retArtifacts[log.BlockHash], logArtifact)
+			retArtifacts[log.BlockHash] = append(retArtifacts[log.BlockHash], logArtifact)
+		}
 	}
 
 	// poolArtifact is a map, use one instance returned from HandleGoodLog
 	return retArtifacts, nil
 }
 
-func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(
-	logs []*types.Log,
+func (e *uniswapv3PoolFactoryEngine) HandleReorgedBlocks(
+	blocks []*superwatcher.BlockInfo,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
@@ -55,13 +56,15 @@ func (e *uniswapv3PoolFactoryEngine) HandleReorgedLogs(
 	e.debugger.Debug(1, "poolfactory.HandleReorgedLogs", zap.Any("input artifacts", artifacts))
 
 	retArtifacts := make(map[common.Hash][]superwatcher.Artifact)
-	for _, log := range logs {
-		logArtifact, err := e.handleReorgedLog(log, artifacts)
-		if err != nil {
-			return nil, errors.Wrap(err, "uniswapv3PoolFactoryEngine.handleReorgedLog failed")
-		}
+	for _, block := range blocks {
+		for _, log := range block.Logs {
+			logArtifact, err := e.handleReorgedLog(log, artifacts)
+			if err != nil {
+				return nil, errors.Wrap(err, "uniswapv3PoolFactoryEngine.handleReorgedLog failed")
+			}
 
-		retArtifacts[log.BlockHash] = append(retArtifacts[log.BlockHash], logArtifact)
+			retArtifacts[log.BlockHash] = append(retArtifacts[log.BlockHash], logArtifact)
+		}
 	}
 
 	return retArtifacts, nil
