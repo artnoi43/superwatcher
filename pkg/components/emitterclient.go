@@ -3,12 +3,11 @@ package components
 import (
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitterclient"
 )
 
 func NewEmitterClient(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	syncChan chan<- struct{},
 	pollResultChan <-chan *superwatcher.PollResult,
 	errChan <-chan error,

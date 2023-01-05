@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -17,7 +16,7 @@ type emitter struct {
 	sync.RWMutex
 
 	// These fields are used for filtering event logs
-	conf *config.Config
+	conf *superwatcher.Config
 
 	// client is an implementation of `superwatcher.EthClient`.
 	// client.FilterLogs method will be embed into emitterPoller.
@@ -42,7 +41,7 @@ type emitter struct {
 }
 
 func New(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	client superwatcher.EthClient,
 	stateDataGateway superwatcher.GetStateDataGateway,
 	poller superwatcher.EmitterPoller,

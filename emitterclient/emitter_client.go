@@ -4,12 +4,11 @@ import (
 	"github.com/artnoi43/gsl/gslutils"
 
 	"github.com/artnoi43/superwatcher"
-	spwconf "github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitterclient"
 )
 
 type config struct {
-	conf                *spwconf.Config
+	conf                *superwatcher.Config
 	client              superwatcher.EthClient
 	getStateDataGateway superwatcher.GetStateDataGateway
 	syncChan            chan<- struct{}
@@ -20,7 +19,7 @@ type config struct {
 
 type Option func(*config)
 
-func WithConfig(conf *spwconf.Config) Option {
+func WithConfig(conf *superwatcher.Config) Option {
 	return func(c *config) {
 		c.conf = conf
 	}

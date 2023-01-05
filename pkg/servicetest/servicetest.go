@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/components"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
@@ -25,15 +24,15 @@ type TestCase struct {
 // TestComponents is used by RunServiceTestComponents to instantiate
 // superwatcher.Emitter and superwatcher.Engine for RunService
 type TestComponents struct {
-	conf           *config.Config
+	conf           *superwatcher.Config
 	client         superwatcher.EthClient
 	serviceEngine  superwatcher.ServiceEngine
 	dataGatewayGet superwatcher.GetStateDataGateway
 	dataGatewaySet superwatcher.SetStateDataGateway
 }
 
-func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *config.Config {
-	return &config.Config{
+func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *superwatcher.Config {
+	return &superwatcher.Config{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		StartBlock:       startBlock,
 		DoReorg:          true,
@@ -46,7 +45,7 @@ func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *config.Config 
 }
 
 func InitTestComponents(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	serviceEngine superwatcher.ServiceEngine,
 	param reorgsim.Param,
 	events []reorgsim.ReorgEvent,

@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/internal/poller"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
@@ -91,7 +90,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	t.Logf("testConfig for case %d: %s", caseNumber, b)
 
 	type serviceConfig struct {
-		SuperWatcherConfig *config.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
+		SuperWatcherConfig *superwatcher.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
 	}
 
 	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)

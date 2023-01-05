@@ -4,7 +4,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 )
 
 type initConfig struct {
@@ -13,7 +12,7 @@ type initConfig struct {
 	// emitterClient superwatcher.EmitterClient
 	// engine        superwatcher.Engine
 
-	conf                *config.Config
+	conf                *superwatcher.Config
 	serviceEngine       superwatcher.ServiceEngine
 	ethClient           superwatcher.EthClient
 	addresses           []common.Address
@@ -31,7 +30,7 @@ type initConfig struct {
 
 type Option func(*initConfig)
 
-func WithConfig(conf *config.Config) Option {
+func WithConfig(conf *superwatcher.Config) Option {
 	return func(c *initConfig) {
 		c.conf = conf
 	}

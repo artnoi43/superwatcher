@@ -1,4 +1,4 @@
-package config
+package superwatcher
 
 // Config is superwatcher-wide configuration
 type Config struct {

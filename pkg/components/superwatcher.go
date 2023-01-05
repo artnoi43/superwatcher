@@ -5,7 +5,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -64,7 +63,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 }
 
 func NewSuperWatcherDefault(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	getStateDataGateway superwatcher.GetStateDataGateway,
 	setStateDataGateway superwatcher.SetStateDataGateway,

@@ -4,7 +4,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	spwconf "github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/emitter"
 	"github.com/artnoi43/superwatcher/engine"
 	"github.com/artnoi43/superwatcher/pkg/components"
@@ -13,7 +12,7 @@ import (
 
 // This demo function calls components.NewDefault, which is the preferred way to init superwatcher for most cases.
 func newSuperWatcherPreferred( //nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -36,7 +35,7 @@ func newSuperWatcherPreferred( //nolint:unused
 // This demo function demonstrates how users can use the components package
 // to init superwatcher components individually
 func newSuperwatcherAdvanced( //nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -62,7 +61,7 @@ func newSuperwatcherAdvanced( //nolint:unused
 
 // This demo function demonstrates how users can use OptionFunc to initiate superwatcher
 func newSuperwacherSoyV1( //nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -104,7 +103,7 @@ func newSuperwacherSoyV1( //nolint:unused
 }
 
 func newSuperWatcherSoyV2( // nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
