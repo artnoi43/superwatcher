@@ -43,7 +43,7 @@ func (p *mockPoller) Poll(
 
 	if p.seen[reorgedBlock] <= 1 || p.seen[reorgedBlock] > 3 {
 		for n := fromBlock; n <= toBlock; n++ {
-			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
+			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.Block{
 				Number: n,
 				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})
@@ -62,13 +62,13 @@ func (p *mockPoller) Poll(
 	// reorgBlock is somewhere between fromBlock -> toBlock
 	if fromBlock != reorgedBlock {
 		for n := fromBlock; n < reorgedBlock; n++ {
-			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
+			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.Block{
 				Number: n,
 				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})
 		}
 		for n := reorgedBlock; n <= toBlock; n++ {
-			result.ReorgedBlocks = append(result.ReorgedBlocks, &superwatcher.BlockInfo{
+			result.ReorgedBlocks = append(result.ReorgedBlocks, &superwatcher.Block{
 				Number: n,
 				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})

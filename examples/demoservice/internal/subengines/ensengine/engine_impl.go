@@ -20,7 +20,7 @@ import (
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *ensEngine) HandleGoodBlocks(
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
@@ -123,7 +123,7 @@ func (e *ensEngine) HandleGoodLog(
 }
 
 func (e *ensEngine) HandleReorgedBlocks(
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,

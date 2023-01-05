@@ -23,7 +23,7 @@ func (a PoolFactoryArtifact) ForSubEngine() subengines.SubEngineEnum {
 
 // MapLogToItem wraps mapLogToItem, so the latter can be unit tested.
 func (e *uniswapv3PoolFactoryEngine) HandleGoodBlocks(
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
@@ -47,7 +47,7 @@ func (e *uniswapv3PoolFactoryEngine) HandleGoodBlocks(
 }
 
 func (e *uniswapv3PoolFactoryEngine) HandleReorgedBlocks(
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,

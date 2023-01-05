@@ -24,7 +24,7 @@ type poller struct {
 	doReorg           bool
 	doHeader          bool
 
-	tracker  *blockInfoTracker
+	tracker  *blockTracker
 	debugger *debugger.Debugger
 }
 
@@ -37,7 +37,7 @@ func New(
 	client superwatcher.EthClient,
 	logLevel uint8,
 ) superwatcher.EmitterPoller {
-	var tracker *blockInfoTracker
+	var tracker *blockTracker
 	if doReorg {
 		tracker = newTracker("poller", logLevel)
 	}

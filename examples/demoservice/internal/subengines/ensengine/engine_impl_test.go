@@ -30,7 +30,7 @@ func testHandleENSLogs(t *testing.T, logsJSON, logsName string) {
 	ensEngine := bundle.Engine
 	ensNamesExpected := expecteds[logsJSON]
 
-	blocks := []*superwatcher.BlockInfo{
+	blocks := []*superwatcher.Block{
 		{Logs: logs},
 	}
 
@@ -71,7 +71,7 @@ func TestCountArtifacts(t *testing.T) {
 		if err := json.Unmarshal([]byte(logsJSON), &logs); err != nil {
 			t.Fatalf("error unmarshaling %s: %s", logsName, err.Error())
 		}
-		blocks := []*superwatcher.BlockInfo{
+		blocks := []*superwatcher.Block{
 			{Logs: logs},
 		}
 

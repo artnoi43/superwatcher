@@ -38,8 +38,8 @@ func mapLogs(
 	logs []*types.Log,
 	// doHeader specifies if mapLogs will call |getHeaderFunc| for blocks with logs
 	doHeader bool,
-	// tracker is used to store known BlockInfo from previous calls
-	tracker *blockInfoTracker,
+	// tracker is used to store known Block from previous calls
+	tracker *blockTracker,
 	// getHeaderFunc is used to get block hash for known block with missing logs.
 	client superwatcher.EthClient,
 ) (
@@ -121,7 +121,7 @@ func mapLogs(
 	// Compare all known (tracker) block hashes to new ones
 	for number := toBlock; number >= fromBlock; number-- {
 		// Continue if |number| was never saved to tracker
-		trackerBlock, ok := tracker.getTrackerBlockInfo(number)
+		trackerBlock, ok := tracker.getTrackerBlock(number)
 		if !ok {
 			continue
 		}

@@ -68,17 +68,18 @@ func TestHandleGoodLogs(t *testing.T) {
 
 	logs := append(ensLogs, poolFactoryLogs...)
 	mappedLogs := reorgsim.MapLogsToNumber(logs)
-	var blocks []*superwatcher.BlockInfo
+	var blocks []*superwatcher.Block
 
 	for number, blockLogs := range mappedLogs {
 		if len(blockLogs) == 0 {
 			continue
 		}
 
-		blockInfo := new(superwatcher.BlockInfo)
-		blockInfo.Number = number
-		blockInfo.Hash = blockLogs[0].BlockHash
-		blockInfo.Logs = gslutils.CollectPointers(blockLogs)
+		blocks = append(blocks, &superwatcher.Block{
+			Number: number,
+			Hash:   blockLogs[0].BlockHash,
+			Logs:   gslutils.CollectPointers(blockLogs),
+		})
 	}
 
 	testHandleGoodBlocks(t, routerEngine, blocks, 2)
@@ -87,7 +88,7 @@ func TestHandleGoodLogs(t *testing.T) {
 func testHandleGoodBlocks(
 	t *testing.T,
 	routerEngine superwatcher.ServiceEngine,
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	numSubEngines int, // Number of subEngines within the router
 ) {
 

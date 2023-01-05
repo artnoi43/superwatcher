@@ -14,7 +14,7 @@ import (
 )
 
 func (e *routerEngine) HandleGoodBlocks(
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact, // Ignored
 ) (
 	map[common.Hash][]superwatcher.Artifact,
@@ -50,7 +50,7 @@ func (e *routerEngine) HandleGoodBlocks(
 }
 
 func (e *routerEngine) HandleReorgedBlocks(
-	blocks []*superwatcher.BlockInfo,
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,

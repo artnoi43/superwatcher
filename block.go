@@ -1,26 +1,30 @@
 package superwatcher
 
 import (
-	"fmt"
-
 	"github.com/artnoi43/gsl/gslutils"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// BlockInfo represents the minimum block info needed for superwatcher.
-type BlockInfo struct {
+// Block represents the minimum block info needed for superwatcher.
+// Block data can be retrieved from Block itself or its Header field.
+type Block struct {
 	// LogsMigrated indicates whether all interesting logs were moved/migrated
 	// _from_ this block after a chain reorg or not. The field is primarily used
-	// by EmitterPoller to trigger the poller to get new, fresh block Hash for a block.
-	// The field should always be false if the BlockInfo is in PollResult.GoodBlocks.
+	// by EmitterPoller to trigger the poller to get new, fresh block hash for a block.
+	// The field should always be false if the Block is in PollResult.GoodBlocks.
 	LogsMigrated bool `json:"logsMigrated"`
 
 	Number uint64       `json:"number"`
 	Hash   common.Hash  `json:"hash"`
 	Header BlockHeader  `json:"-"`
 	Logs   []*types.Log `json:"logs"`
+}
+
+// String returns the block hash with 0x prepended in all lowercase string.
+func (b *Block) String() string {
+	return gslutils.StringerToLowerString(b.Hash)
 }
 
 // BlockHeader is implemented by `blockHeaderWrapper` and `*reorgsim.Block`.
@@ -34,15 +38,6 @@ type BlockHeader interface {
 	Time() uint64
 	GasLimit() uint64
 	GasUsed() uint64
-}
-
-// String returns the block hash with 0x prepended in all lowercase string.
-func (b *BlockInfo) String() string {
-	return gslutils.StringerToLowerString(b.Hash)
-}
-
-func (b *BlockInfo) BlockNumberString() string {
-	return fmt.Sprintf("%d", b.Number)
 }
 
 // BlockHeaderWrappers wrap *types.Header to implenent BlockHeader

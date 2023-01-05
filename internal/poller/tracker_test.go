@@ -11,24 +11,24 @@ import (
 )
 
 // TestUpdateTrackerValues tests if the tracker's values would change
-// if we update the *BlockInfo from outside of tracker.
-// This is important, because of how we handle BlockInfo.LogsMigrated.
+// if we update the *Block from outside of tracker.
+// This is important, because of how we handle Block.LogsMigrated.
 func TestUpdateTrackerValues(t *testing.T) {
-	b := &superwatcher.BlockInfo{
+	b := &superwatcher.Block{
 		Number: 69,
 		Hash:   common.BigToHash(big.NewInt(69)),
 		Logs:   nil,
 	}
 
 	tracker := newTracker("testTracker", 4)
-	tracker.addTrackerBlockInfo(b)
+	tracker.addTrackerBlock(b)
 
 	h100 := common.BigToHash(big.NewInt(100))
 	b.Hash = h100
 
-	trackerBlock, found := tracker.getTrackerBlockInfo(69)
+	trackerBlock, found := tracker.getTrackerBlock(69)
 	if !found {
-		t.Fatal("missing tracker blockInfo")
+		t.Fatal("missing tracker block")
 	}
 
 	if trackerBlock.Hash != b.Hash || trackerBlock.Hash != h100 {

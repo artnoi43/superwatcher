@@ -172,7 +172,7 @@ Below is a simple diagram that describes how these components work together.
 ├─────────────────────────────────────  superwatcher.Poller  ────────┤        │                         │     │      │                         │
 │                                        (*poller.poller)            │        │                         ▼     │      │                         │
 │                                                                    │        │      engine.handleResults  ───┼──────┘                         │
-│ blockInfoTracker ──────────────────────►  Poller.Poll              │        │               ▲               │                                │
+│  blockTracker    ──────────────────────►  Poller.Poll              │        │               ▲               │                                │
 │                   previous blockHashes                             │        │               │ metadata      │                                │
 │                                               ▲                    │        │               │               │                                │
 │                                               │ New []types.Log    │        │                               │                                │

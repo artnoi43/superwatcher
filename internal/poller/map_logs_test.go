@@ -54,7 +54,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 		logs := gslutils.CollectPointers(blockLogs)
 		concatLogs[blockNumber] = append(concatLogs[blockNumber], logs...)
 
-		tracker.addTrackerBlockInfo(&superwatcher.BlockInfo{
+		tracker.addTrackerBlock(&superwatcher.Block{
 			Logs:   logs,
 			Hash:   block.Hash(),
 			Number: blockNumber,

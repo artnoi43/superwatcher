@@ -10,8 +10,8 @@ import (
 	"github.com/artnoi43/superwatcher"
 )
 
-func newBlockInfo(number uint64) *superwatcher.BlockInfo {
-	return &superwatcher.BlockInfo{
+func newBlock(number uint64) *superwatcher.Block {
+	return &superwatcher.Block{
 		Number: number,
 		Hash:   common.BigToHash(big.NewInt(int64(number))),
 	}
@@ -29,7 +29,7 @@ func TestMetadataTracker(t *testing.T) {
 	trackerKey := callerMethod("testTracker")
 
 	// GetBlockMetadata should not return nil even if it's empty
-	block69 := newBlockInfo(69)
+	block69 := newBlock(69)
 	if met := tracker.GetBlockMetadata(trackerKey, block69.Number, block69.String()); met == nil {
 		t.Fatal("GetBlockMetadata returns nil")
 	} else {

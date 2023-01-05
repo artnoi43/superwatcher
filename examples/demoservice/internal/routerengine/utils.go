@@ -26,20 +26,19 @@ func (e *routerEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubE
 	return logsMap
 }
 
-func (e *routerEngine) mapBlocksToSubEngine(blocks []*superwatcher.BlockInfo) map[subengines.SubEngineEnum][]*superwatcher.BlockInfo {
-	blocksMap := make(map[subengines.SubEngineEnum][]*superwatcher.BlockInfo)
+func (e *routerEngine) mapBlocksToSubEngine(blocks []*superwatcher.Block) map[subengines.SubEngineEnum][]*superwatcher.Block {
+	blocksMap := make(map[subengines.SubEngineEnum][]*superwatcher.Block)
 
 	for _, block := range blocks {
 		logsMap := e.mapLogsToSubEngine(block.Logs)
 
 		for subEngine, logs := range logsMap {
-			blockInfo := new(superwatcher.BlockInfo)
-			blockInfo.Number = block.Number
-			blockInfo.Hash = block.Hash
-			blockInfo.Header = block.Header
-			blockInfo.Logs = logs
-
-			blocksMap[subEngine] = append(blocksMap[subEngine], blockInfo)
+			blocksMap[subEngine] = append(blocksMap[subEngine], &superwatcher.Block{
+				Number: block.Number,
+				Hash:   block.Hash,
+				Header: block.Header,
+				Logs:   logs,
+			})
 		}
 	}
 

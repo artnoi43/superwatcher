@@ -83,10 +83,10 @@ func (p *poller) Poll(
 	for number := fromBlock; number <= toBlock; number++ {
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
 		if wasReorged[number] && p.doReorg {
-			trackerBlock, foundInTracker := p.tracker.getTrackerBlockInfo(number)
+			trackerBlock, foundInTracker := p.tracker.getTrackerBlock(number)
 			if !foundInTracker {
 				p.debugger.Debug(
-					1, "blockInfo marked as reorged but was not found in tracker",
+					1, "block marked as reorged but was not found in tracker",
 					zap.Uint64("blockNumber", number),
 					zap.String("freshHash", trackerBlock.String()),
 				)
@@ -107,7 +107,7 @@ func (p *poller) Poll(
 			)
 
 			// Copy to avoid mutated trackerBlock which might break poller logic.
-			// After the copy, result.ReorgedBlocks consumer may freely mutate their *BlockInfo.
+			// After the copy, result.ReorgedBlocks consumer may freely mutate their *Block.
 			copiedFromTracker := *trackerBlock
 			result.ReorgedBlocks = append(result.ReorgedBlocks, &copiedFromTracker)
 
@@ -137,7 +137,7 @@ func (p *poller) Poll(
 			continue
 		}
 
-		goodBlock := superwatcher.BlockInfo{
+		goodBlock := superwatcher.Block{
 			Number: number,
 			Header: mapResult.header,
 			Hash:   mapResult.hash,
@@ -145,7 +145,7 @@ func (p *poller) Poll(
 		}
 
 		if p.doReorg {
-			p.tracker.addTrackerBlockInfo(&goodBlock)
+			p.tracker.addTrackerBlock(&goodBlock)
 		}
 
 		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.
@@ -160,7 +160,7 @@ func (p *poller) Poll(
 	p.lastRecordedBlock = result.LastGoodBlock
 
 	// If fromBlock reorged, return the result but with non-nil error.
-	// This way, the result still gets emitted, leaving no unseen BlockInfo for the managed engine.
+	// This way, the result still gets emitted, leaving no unseen Block for the managed engine.
 	if wasReorged[fromBlock] && p.doReorg {
 		return result, errors.Wrapf(
 			superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,

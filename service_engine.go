@@ -18,10 +18,10 @@ type BaseServiceEngine interface {
 // It is the preferred way to use superwatcher
 type ServiceEngine interface {
 	BaseServiceEngine
-	// HandleGoodLogs handles new, canonical BlockInfos. The return type is map of blockHash to []Artifact
-	HandleGoodBlocks([]*BlockInfo, []Artifact) (map[common.Hash][]Artifact, error)
-	// HandleReorgedLogs handles reorged (removed) BlockInfos. The return type is map of blockHash to []Artifact
-	HandleReorgedBlocks([]*BlockInfo, []Artifact) (map[common.Hash][]Artifact, error)
+	// HandleGoodLogs handles new, canonical `Block`s. The return type is map of blockHash to []Artifact
+	HandleGoodBlocks([]*Block, []Artifact) (map[common.Hash][]Artifact, error)
+	// HandleReorgedLogs handles reorged (removed) `Block`s. The return type is map of blockHash to []Artifact
+	HandleReorgedBlocks([]*Block, []Artifact) (map[common.Hash][]Artifact, error)
 }
 
 // ThinServiceEngine is embedded and injected into thinEngine, a thin implementation of Engine without managed states.

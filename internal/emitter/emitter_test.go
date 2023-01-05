@@ -156,7 +156,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	}()
 
 	var seenLogs []*types.Log
-	latestGoodBlocks := make(map[uint64]*superwatcher.BlockInfo)
+	latestGoodBlocks := make(map[uint64]*superwatcher.Block)
 	movedToCount := make(map[common.Hash]bool)
 
 	var prevResult *superwatcher.PollResult

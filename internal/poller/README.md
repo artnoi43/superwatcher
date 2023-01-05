@@ -29,7 +29,7 @@ type `superwatcher.PollResult`, just use `poller.poller`.
 
 > See [`map_log.go`](./map_log.go)
 
-The poller uses [`blockInfoTracker`](./tracker.go) to compare current block hashes
+The poller uses [`blockTracker`](./tracker.go) to compare current block hashes
 with known block hashes for the block number from the last call to `*poller.Poll`.
 
 Once a block hash differs for a block, `mapLogs` marked the block number, and `poller`

@@ -18,16 +18,16 @@ func TestRouterArtifacts(t *testing.T) {
 	logsPath := "../../../../test_logs/servicetest/logs_servicetest_16054000_16054100.json"
 	logs := reorgsim.InitMappedLogsFromFiles(logsPath)
 
-	var blocks []*superwatcher.BlockInfo
+	var blocks []*superwatcher.Block
 	for number, blockLogs := range logs {
 		if len(blockLogs) == 0 {
 			continue
 		}
 
-		blockInfo := new(superwatcher.BlockInfo)
-		blockInfo.Number = number
-		blockInfo.Logs = gslutils.CollectPointers(blockLogs)
-		blocks = append(blocks, blockInfo)
+		blocks = append(blocks, &superwatcher.Block{
+			Number: number,
+			Logs:   gslutils.CollectPointers(blockLogs),
+		})
 	}
 
 	dgwENS := datagateway.NewMockDataGatewayENS()
