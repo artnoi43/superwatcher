@@ -16,7 +16,7 @@ type BatchCallable interface {
 // It then used |ctx| and the slice []rpc.BatchElem to call client.BatchCallContext.
 // After the client call, it interates through |calls| and call batchCall.Unmarshal.
 // This means that batchCalls will have their values updated from Unmarshal after BatchCall returns.
-func BatchCall(ctx context.Context, client rpcEthClient, batchCalls []BatchCallable) error {
+func BatchCall(ctx context.Context, client EthClientRPC, batchCalls []BatchCallable) error {
 	batchElems := make([]rpc.BatchElem, len(batchCalls))
 	for i, call := range batchCalls {
 		elem, err := call.Marshal()

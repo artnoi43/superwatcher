@@ -10,26 +10,40 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-// headerByNumberBatch is an intermediate type for getting block headers in batch call.
+// headerByNumberBatch is an intermediate type for marshaling and unmarshaling rpc.BatchElem.
 // It implements superwatcher.BatchCallable, so it can be passed to superwatcher.BatchCallContext.
 type headerByNumberBatch struct {
-	Number uint64
-	Header superwatcher.BlockHeader
+	client string                   // filled by mapLogs from reflect.TypeOf(client).String()
+	number uint64                   // filled by mapLogs
+	header superwatcher.BlockHeader // filled by Unmarshal
 }
 
 // Marshal returns BatchElem for calling `eth_getBlockByNumber` with h.Number,
 // and h.Result will be of type *types.Header.
 func (h *headerByNumberBatch) Marshal() (rpc.BatchElem, error) {
-	var header types.Header
+	// For mock testing with reorgsim
+	if h.client == "*reorgsim.ReorgSim" {
+		return rpc.BatchElem{
+			Method: superwatcher.MethodGetBlockByNumber,
+			Args: []interface{}{
+				hexutil.EncodeBig(big.NewInt(int64(h.number))),
+				false,
+			},
+			Result: &reorgsim.Block{},
+			Error:  nil,
+		}, nil
+	}
+
 	return rpc.BatchElem{
 		Method: superwatcher.MethodGetBlockByNumber,
 		Args: []interface{}{
-			hexutil.EncodeBig(big.NewInt(int64(h.Number))),
+			hexutil.EncodeBig(big.NewInt(int64(h.number))),
 			false,
 		},
-		Result: &header,
+		Result: &types.Header{},
 		Error:  nil,
 	}, nil
 }
@@ -38,12 +52,12 @@ func (h *headerByNumberBatch) Unmarshal(elem rpc.BatchElem) error {
 	switch header := elem.Result.(type) {
 	case *types.Header:
 		// If *types.Header, wrap with BlockHeaderWrapper to implement superwatcher.BlockHeader
-		h.Header = superwatcher.BlockHeaderWrapper{Header: header}
+		h.header = superwatcher.BlockHeaderWrapper{Header: header}
 
 	case superwatcher.BlockHeader:
 		// Otherwise if it's already a BlockHeader, just use it
 		// e.g. when the client is reorgsim.ReorgSim, which overwrites elem.Result with *reorgsim.Block.
-		h.Header = header
+		h.header = header
 
 	default:
 		return fmt.Errorf(

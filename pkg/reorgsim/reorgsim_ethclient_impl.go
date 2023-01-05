@@ -135,14 +135,14 @@ func (r *ReorgSim) BatchCallContext(ctx context.Context, elems []rpc.BatchElem) 
 			} else {
 				hash = PRandomHash(number)
 			}
-			//
+
 			b = &Block{
 				BlockNumber: number,
 				hash:        hash,
 			}
 		}
 
-		elem.Result = b
+		elems[i].Result = b
 	}
 
 	return nil

@@ -20,7 +20,7 @@ type EthClient interface {
 	BlockNumber(context.Context) (uint64, error)
 	FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error)
 	HeaderByNumber(context.Context, *big.Int) (BlockHeader, error)
-	rpcEthClient
+	EthClientRPC
 }
 
 // ethClient represents methods superwatcher expects to use from a real *ethclient.Client.
@@ -30,9 +30,9 @@ type ethClient interface {
 	HeaderByNumber(context.Context, *big.Int) (*types.Header, error)
 }
 
-// rpcEthClient is used by poller to get data from client in batch,
-// e.g. when getting blocks in batch
-type rpcEthClient interface {
+// EthClientRPC is used by poller to get data from client in batch,
+// e.g. when getting blocks or block headers in batch
+type EthClientRPC interface {
 	BatchCallContext(context.Context, []rpc.BatchElem) error
 }
 
@@ -40,7 +40,7 @@ type rpcEthClient interface {
 // with its HeaderByNumber method signature
 type ethClientWrapper struct {
 	client    ethClient
-	rpcClient rpcEthClient
+	rpcClient EthClientRPC
 }
 
 func (w *ethClientWrapper) BlockNumber(ctx context.Context) (uint64, error) {
@@ -71,6 +71,7 @@ func NewEthClient(ctx context.Context, url string) EthClient {
 	if err != nil {
 		panic("failed to create new rpcClient " + err.Error())
 	}
+
 	return &ethClientWrapper{
 		rpcClient: rpcClient,
 		client:    ethclient.NewClient(rpcClient),

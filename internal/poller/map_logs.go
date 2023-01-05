@@ -3,6 +3,7 @@ package poller
 import (
 	"context"
 	"math/big"
+	"reflect"
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/ethereum/go-ethereum/common"
@@ -70,16 +71,19 @@ func mapLogs(
 		mapResults[number].logs = append(mapResults[number].logs, log)
 	}
 
+	clientType := reflect.TypeOf(client).String()
 	if doHeader {
 		// Get block headers using BatchCallContext
 		var batchCalls []superwatcher.BatchCallable
 		for i := toBlock; i >= fromBlock; i-- {
+			// Only get headers for blocks with log results
 			if _, ok := mapResults[i]; !ok {
 				continue
 			}
 
 			batchCalls = append(batchCalls, &headerByNumberBatch{
-				Number: i,
+				number: i,
+				client: clientType,
 			})
 		}
 
@@ -87,21 +91,23 @@ func mapLogs(
 			return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
 		}
 
+		// Collect results of batchCalls into mapResults
 		for _, getHeaderCall := range batchCalls {
 			call, ok := getHeaderCall.(*headerByNumberBatch)
 			if !ok {
-				return nil, errors.New("type assertion failed: getHeaderCall is not *superwatcher.HeaderByNumberBatchCallable")
+				return nil, errors.New("type assertion failed: getHeaderCall is not *headerByNumberBatch")
 			}
-			mapResult, ok := mapResults[call.Number]
+
+			mapResult, ok := mapResults[call.number]
 			if !ok {
-				return nil, errors.Wrap(superwatcher.ErrProcessReorg, "a header did not have result")
+				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block header %d did not have result", call.number)
 			}
 
-			if headerHash := call.Header.Hash(); headerHash != mapResult.hash {
-				return nil, errors.Wrapf(superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s", headerHash.String(), call.Number, mapResult.hash.String())
+			if headerHash := call.header.Hash(); headerHash != mapResult.hash {
+				return nil, errors.Wrapf(superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s", headerHash.String(), call.number, mapResult.hash.String())
 			}
 
-			mapResult.header = call.Header
+			mapResult.header = call.header
 		}
 	}
 
@@ -128,7 +134,7 @@ func mapLogs(
 		}
 
 		if mapResult == nil {
-			return nil, errors.Wrap(superwatcher.ErrProcessReorg, "nil result after check")
+			return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "nil result from block %d after check", number)
 		}
 
 		// If hash is empty, we know for a fact that the logs were entirely moved from this block
