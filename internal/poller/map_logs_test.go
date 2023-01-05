@@ -40,7 +40,10 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	oldChain, reorgedChain := reorgsim.NewBlockChainReorgMoveLogs(logs, *reorgEvent)
-	mockClient := mockGetHeader{chain: reorgedChain}
+	mockClient, err := reorgsim.NewReorgSim(tc.Param, []reorgsim.ReorgEvent{tc.Events[0]}, reorgedChain, nil, "", 4)
+	if err != nil {
+		return errors.Wrap(err, "cannot init ReorgSim for testMapLogsV1")
+	}
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
 	concatLogs := make(map[uint64][]*types.Log)
@@ -85,7 +88,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 		gslutils.CollectPointers(reorgedLogs),
 		true,
 		tracker,
-		mockClient.HeaderByNumber,
+		mockClient,
 	)
 	if err != nil {
 		return errors.Wrap(err, "error in mapLogs")

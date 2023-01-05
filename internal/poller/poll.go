@@ -67,7 +67,7 @@ func (p *poller) Poll(
 		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
 		p.doHeader,
 		p.tracker,
-		p.client.HeaderByNumber,
+		p.client,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in mapLogs")

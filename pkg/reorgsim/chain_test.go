@@ -175,7 +175,7 @@ func prontLogs(logs []types.Log) {
 func prontBlockChain(chain BlockChain) {
 	for _, b := range chain {
 		fmt.Println(
-			"blockNumber", b.blockNumber,
+			"blockNumber", b.BlockNumber,
 			"blockhash", b.Hash().String(),
 			"len(logs)", len(b.logs),
 			"forked", b.toBeForked,

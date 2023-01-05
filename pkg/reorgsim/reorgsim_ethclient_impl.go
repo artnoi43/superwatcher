@@ -8,12 +8,15 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/artnoi43/superwatcher"
 )
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
@@ -43,7 +46,7 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 
 		r.debugger.Debug(
 			3, "FilterLogs block",
-			zap.Uint64("blockNumber", b.blockNumber),
+			zap.Uint64("blockNumber", b.BlockNumber),
 			zap.String("blockHash", b.hash.String()),
 			zap.Uint64("currentBlock", r.currentBlock),
 			zap.Bool("toBeForked", b.toBeForked),
@@ -92,7 +95,7 @@ func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwa
 
 		b = &Block{
 			hash:        h,
-			blockNumber: blockNumber,
+			BlockNumber: blockNumber,
 			reorgedHere: reorgedHere,
 			toBeForked:  toBeForked,
 			logs:        nil,
@@ -100,4 +103,47 @@ func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwa
 	}
 
 	return b, nil
+}
+
+// BatchCallContext only processes `"eth_getBlockByNumber" RPC method calls.
+// Each elem.Result in elems will be overwritten with *Block (implements superwatcher.BlockHeader)
+// from the current chain
+func (r *ReorgSim) BatchCallContext(ctx context.Context, elems []rpc.BatchElem) error {
+	r.RLock()
+	defer r.RUnlock()
+
+	for i, elem := range elems {
+		if elem.Method != superwatcher.MethodGetBlockByNumber {
+			continue
+		}
+
+		// Get blockNumber from the first string argument
+		bn, err := hexutil.DecodeBig(elem.Args[0].(string))
+		if err != nil {
+			return errors.Wrapf(err, "elems[%d] has invalid argument for method %s", i, superwatcher.MethodGetBlockByNumber)
+		}
+
+		number := bn.Uint64()
+		b, ok := r.chain[number]
+		if !ok {
+			event := r.events[r.currentReorgEvent]
+			toBeForked := number >= event.ReorgBlock
+
+			var hash common.Hash
+			if toBeForked {
+				hash = ReorgHash(number, r.currentReorgEvent)
+			} else {
+				hash = PRandomHash(number)
+			}
+			//
+			b = &Block{
+				BlockNumber: number,
+				hash:        hash,
+			}
+		}
+
+		elem.Result = b
+	}
+
+	return nil
 }

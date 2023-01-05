@@ -28,6 +28,7 @@ type BlockInfo struct {
 // More methods may be added as our needs for data from the headers grow,
 // or we (i.e. you) can mock the actual *types.Header in reorgsim instead :)
 type BlockHeader interface {
+	Number() uint64
 	Hash() common.Hash
 	Nonce() types.BlockNonce
 	Time() uint64
@@ -47,6 +48,10 @@ func (b *BlockInfo) BlockNumberString() string {
 // BlockHeaderWrappers wrap *types.Header to implenent BlockHeader
 type BlockHeaderWrapper struct {
 	Header *types.Header
+}
+
+func (h BlockHeaderWrapper) Number() uint64 {
+	return h.Header.Number.Uint64()
 }
 
 func (h BlockHeaderWrapper) Hash() common.Hash {

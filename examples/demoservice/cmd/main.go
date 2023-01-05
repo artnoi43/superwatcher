@@ -7,7 +7,6 @@ import (
 
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
@@ -36,11 +35,6 @@ func main() {
 	chain := conf.Chain
 	if chain == "" {
 		panic("empty chain")
-	}
-
-	ethClient, err := ethclient.Dial(conf.SuperWatcherConfig.NodeURL)
-	if err != nil {
-		panic("new ethclient failed: " + err.Error())
 	}
 
 	rdb := redis.NewClient(&redis.Options{
@@ -84,10 +78,18 @@ func main() {
 	pollResultChan := make(chan *superwatcher.PollResult)
 	errChan := make(chan error)
 
+	ctx, cancel := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGQUIT,
+		syscall.SIGTERM,
+	)
+
 	// There are many ways to init superwatcher components. See package pkg/components
 	watcher := components.NewSuperWatcherOptions(
 		components.WithConfig(conf.SuperWatcherConfig),
-		components.WithEthClient(superwatcher.WrapEthClient(ethClient)),
+		components.WithEthClient(superwatcher.NewEthClient(ctx, conf.SuperWatcherConfig.NodeURL)),
 		components.WithGetStateDataGateway(stateDataGateway),
 		components.WithSetStateDataGateway(stateDataGateway),
 		components.WithServiceEngine(demoEngine),
@@ -97,6 +99,12 @@ func main() {
 		components.WithAddresses(emitterAddresses...),
 		components.WithTopics(emitterTopics),
 	)
+
+	if err := watcher.Run(ctx, cancel); err != nil {
+		logger.Debug("watcher.Run exited", zap.Error(err))
+	}
+
+	// =====================================================================
 
 	// Or you can use a more direct approach without using options
 	// watcher := components.NewSuperWatcherDefault(
@@ -111,20 +119,9 @@ func main() {
 	// 	[][]common.Hash{emitterTopics},
 	// )
 
-	ctx, cancel := signal.NotifyContext(
-		context.Background(),
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGQUIT,
-		syscall.SIGTERM,
-	)
-
-	if err := watcher.Run(ctx, cancel); err != nil {
-		logger.Debug("watcher.Run exited", zap.Error(err))
-	}
+	// =====================================================================
 
 	// Alternatively, we can run the components manually
-
 	// watcherEmitter, watcherEngine := newSuperWatcherPreferred(
 	// 	conf.SuperWatcherConfig,
 	// 	ethClient,
