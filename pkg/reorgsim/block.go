@@ -11,7 +11,7 @@ import (
 // Block represents the Ethereum Block.
 // It is also used as superwatcher.BlockHeader.
 type Block struct {
-	BlockNumber uint64
+	blockNumber uint64
 	hash        common.Hash
 	logs        []types.Log
 
@@ -20,7 +20,7 @@ type Block struct {
 }
 
 func (b *Block) Number() uint64 {
-	return b.BlockNumber
+	return b.blockNumber
 }
 
 // Implements superwatcher.BlockHeader
@@ -36,22 +36,22 @@ func (b *Block) Logs() []types.Log {
 
 // Nonce mocks field *types.Header.Nonce
 func (b *Block) Nonce() types.BlockNonce {
-	return types.EncodeNonce(b.BlockNumber)
+	return types.EncodeNonce(b.blockNumber)
 }
 
 // Time mocks field *types.Header.Time
 func (b *Block) Time() uint64 {
-	return b.BlockNumber
+	return b.blockNumber
 }
 
 // GasLimit mocks field *types.Header.GasLimit
 func (b *Block) GasLimit() uint64 {
-	return b.BlockNumber
+	return b.blockNumber
 }
 
 // GasUsed mocks field *types.Header.GasUsed
 func (b *Block) GasUsed() uint64 {
-	return b.BlockNumber
+	return b.blockNumber
 }
 
 // reorg takes a block, and simulates chain reorg on that block
@@ -59,7 +59,7 @@ func (b *Block) GasUsed() uint64 {
 // math.RandInt(seed) is mixed with b.blockNumber to produce different
 // block hash for the same block across different chains created by []ReorgEvent.
 func (b *Block) reorg(reorgIndex int) *Block {
-	reorgedHash := ReorgHash(b.BlockNumber, reorgIndex)
+	reorgedHash := ReorgHash(b.blockNumber, reorgIndex)
 
 	logs := make([]types.Log, len(b.logs))
 	copy(logs, b.logs)
@@ -70,7 +70,7 @@ func (b *Block) reorg(reorgIndex int) *Block {
 	}
 
 	return &Block{
-		BlockNumber: b.BlockNumber,
+		blockNumber: b.blockNumber,
 		hash:        reorgedHash,
 		logs:        logs,
 		reorgedHere: b.reorgedHere,
@@ -80,7 +80,7 @@ func (b *Block) reorg(reorgIndex int) *Block {
 
 func (b *Block) removeLogs(txHashes []common.Hash) {
 	if len(b.logs) == 0 {
-		panic(fmt.Sprintf("block %d has no logs", b.BlockNumber))
+		panic(fmt.Sprintf("block %d has no logs", b.blockNumber))
 	}
 
 	// Only keep log whose TxHash is not in |txHashes|.

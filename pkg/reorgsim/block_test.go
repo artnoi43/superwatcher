@@ -18,7 +18,7 @@ func TestReorg(t *testing.T) {
 	prontMapLen(oldLogsByTxHash, "txHash", "len(logs)")
 
 	b := Block{
-		BlockNumber: blockNumber,
+		blockNumber: blockNumber,
 		hash:        common.BigToHash(big.NewInt(69)),
 		logs:        blockLogs,
 		reorgedHere: false,

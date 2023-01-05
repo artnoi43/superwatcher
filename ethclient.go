@@ -10,7 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-const MethodGetBlockByNumber = "eth_getBlockByNumber"
+// EthClientRPC is used by poller to get data from client in batch,
+// e.g. when getting blocks or block headers in batch
+type EthClientRPC interface {
+	BatchCallContext(context.Context, []rpc.BatchElem) error
+}
 
 // EthClient defines all Ethereum client methods used in superwatcher.
 // HeaderByNumber returns BlockHeader because if it uses the actual *types.Header
@@ -20,7 +24,7 @@ type EthClient interface {
 	BlockNumber(context.Context) (uint64, error)
 	FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error)
 	HeaderByNumber(context.Context, *big.Int) (BlockHeader, error)
-	EthClientRPC
+	EthClientRPC // EthClient will need to be able to do batch RPC calls
 }
 
 // ethClient represents methods superwatcher expects to use from a real *ethclient.Client.
@@ -28,12 +32,6 @@ type ethClient interface {
 	BlockNumber(context.Context) (uint64, error)
 	FilterLogs(context.Context, ethereum.FilterQuery) ([]types.Log, error)
 	HeaderByNumber(context.Context, *big.Int) (*types.Header, error)
-}
-
-// EthClientRPC is used by poller to get data from client in batch,
-// e.g. when getting blocks or block headers in batch
-type EthClientRPC interface {
-	BatchCallContext(context.Context, []rpc.BatchElem) error
 }
 
 // ethClientWrapper wraps *ethclient.Client to implement EthClient

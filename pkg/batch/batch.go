@@ -1,22 +1,27 @@
-package superwatcher
+package batch
 
 import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 )
 
-type BatchCallable interface {
+// Interface is an intermediate type for passing to CallBatch.
+type Interface interface {
 	Marshal() (rpc.BatchElem, error)
 	Unmarshal(rpc.BatchElem) error
 }
 
-// BatchCall gets []rpc.BatchElem from each batchCall.Marshal() in |batchCalls|.
+const MethodGetBlockByNumber = "eth_getBlockByNumber"
+
+// CallBatch gets []rpc.BatchElem from each batchCall.Marshal() in |batchCalls|.
 // It then used |ctx| and the slice []rpc.BatchElem to call client.BatchCallContext.
-// After the client call, it interates through |calls| and call batchCall.Unmarshal.
-// This means that batchCalls will have their values updated from Unmarshal after BatchCall returns.
-func BatchCall(ctx context.Context, client EthClientRPC, batchCalls []BatchCallable) error {
+// After the client call, it interates through |calls| calling Unmarshal.
+// This means that batchCalls will have their values updated from Unmarshal after CallBatch returns.
+func CallBatch(ctx context.Context, client superwatcher.EthClientRPC, batchCalls []Interface) error {
 	batchElems := make([]rpc.BatchElem, len(batchCalls))
 	for i, call := range batchCalls {
 		elem, err := call.Marshal()

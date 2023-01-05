@@ -10,24 +10,26 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/batch"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-// headerByNumberBatch is an intermediate type for marshaling and unmarshaling rpc.BatchElem.
-// It implements superwatcher.BatchCallable, so it can be passed to superwatcher.BatchCallContext.
+// headerByNumberBatch is an intermediate type for marshaling and
+// unmarshaling rpc.BatchElem for method batch.MethodGetBlockByNumber.
+// It implements batch.Interface, so it can be passed to batch.CallBatch.
 type headerByNumberBatch struct {
 	client string                   // filled by mapLogs from reflect.TypeOf(client).String()
 	number uint64                   // filled by mapLogs
 	header superwatcher.BlockHeader // filled by Unmarshal
 }
 
-// Marshal returns BatchElem for calling `eth_getBlockByNumber` with h.Number,
-// and h.Result will be of type *types.Header.
+// Marshal returns BatchElem for calling RPC method `eth_getBlockByNumber` (`batch.MethodGetBlockByNumber`)
+// with h.Number, and h.Result will be of type *types.Header.
 func (h *headerByNumberBatch) Marshal() (rpc.BatchElem, error) {
 	// For mock testing with reorgsim
 	if h.client == "*reorgsim.ReorgSim" {
 		return rpc.BatchElem{
-			Method: superwatcher.MethodGetBlockByNumber,
+			Method: batch.MethodGetBlockByNumber,
 			Args: []interface{}{
 				hexutil.EncodeBig(big.NewInt(int64(h.number))),
 				false,
@@ -38,7 +40,7 @@ func (h *headerByNumberBatch) Marshal() (rpc.BatchElem, error) {
 	}
 
 	return rpc.BatchElem{
-		Method: superwatcher.MethodGetBlockByNumber,
+		Method: batch.MethodGetBlockByNumber,
 		Args: []interface{}{
 			hexutil.EncodeBig(big.NewInt(int64(h.number))),
 			false,

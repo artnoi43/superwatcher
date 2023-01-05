@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/superwatcher/pkg/batch"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -74,7 +75,7 @@ func mapLogs(
 	clientType := reflect.TypeOf(client).String()
 	if doHeader {
 		// Get block headers using BatchCallContext
-		var batchCalls []superwatcher.BatchCallable
+		var batchCalls []batch.Interface
 		for i := toBlock; i >= fromBlock; i-- {
 			// Only get headers for blocks with log results
 			if _, ok := mapResults[i]; !ok {
@@ -87,7 +88,7 @@ func mapLogs(
 			})
 		}
 
-		if err := superwatcher.BatchCall(ctx, client, batchCalls); err != nil {
+		if err := batch.CallBatch(ctx, client, batchCalls); err != nil {
 			return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
 		}
 

@@ -85,7 +85,7 @@ func (chain BlockChain) moveLogs(
 
 			// Change log.BlockHash to new BlockHash
 			for i := range logsToMove {
-				logsToMove[i].BlockNumber = targetBlock.BlockNumber
+				logsToMove[i].BlockNumber = targetBlock.blockNumber
 				logsToMove[i].BlockHash = targetBlock.hash
 			}
 
@@ -130,7 +130,7 @@ func newBlockChain(
 		}
 
 		chain[blockNumber] = &Block{
-			BlockNumber: blockNumber,
+			blockNumber: blockNumber,
 			hash:        logs[0].BlockHash,
 			logs:        logs,
 			reorgedHere: blockNumber == reorgedBlock,
@@ -182,7 +182,7 @@ func NewBlockChain(
 
 			if b, ok := forkedChain[prevFrom]; !ok || b == nil {
 				fromBlock := &Block{
-					BlockNumber: prevFrom,
+					blockNumber: prevFrom,
 					reorgedHere: prevFrom == event.ReorgBlock,
 					toBeForked:  true,
 				}
@@ -203,7 +203,7 @@ func NewBlockChain(
 
 			if _, ok := prevChain[forkedTo]; !ok {
 				toBlock := &Block{
-					BlockNumber: forkedTo,
+					blockNumber: forkedTo,
 					reorgedHere: forkedTo == event.ReorgBlock,
 					toBeForked:  true,
 				}
@@ -274,7 +274,7 @@ func NewBlockChainReorgMoveLogs(
 			// because the block needs to have different blockHash vs the reorgedBlock's hash (PRandomHash()).
 			if _, ok := chain[moveToBlock]; !ok {
 				toBlock := &Block{
-					BlockNumber: moveToBlock,
+					blockNumber: moveToBlock,
 					reorgedHere: moveToBlock == event.ReorgBlock,
 					toBeForked:  true,
 				}
