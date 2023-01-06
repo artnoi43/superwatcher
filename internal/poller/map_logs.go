@@ -3,10 +3,8 @@ package poller
 import (
 	"context"
 	"math/big"
-	"reflect"
 
 	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher/pkg/batch"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -72,43 +70,35 @@ func mapLogs(
 		mapResults[number].logs = append(mapResults[number].logs, log)
 	}
 
-	clientType := reflect.TypeOf(client).String()
 	if doHeader {
 		// Get block headers using BatchCallContext
-		var batchCalls []batch.Interface
+		var blocksWithLogs []uint64
 		for i := toBlock; i >= fromBlock; i-- {
 			// Only get headers for blocks with log results
 			if _, ok := mapResults[i]; !ok {
 				continue
 			}
 
-			batchCalls = append(batchCalls, &headerByNumberBatch{
-				number: i,
-				client: clientType,
-			})
+			blocksWithLogs = append(blocksWithLogs, i)
 		}
 
-		if err := batch.CallBatch(ctx, client, batchCalls); err != nil {
-			return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
+		mapFreshHeaders, err := getHeadersByNumbers(ctx, client, blocksWithLogs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to getHeadersByNumbers")
 		}
 
 		// Collect results of batchCalls into mapResults
-		for _, getHeaderCall := range batchCalls {
-			call, ok := getHeaderCall.(*headerByNumberBatch)
+		for number, header := range mapFreshHeaders {
+			mapResult, ok := mapResults[number]
 			if !ok {
-				return nil, errors.New("type assertion failed: getHeaderCall is not *headerByNumberBatch")
+				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block %d header is missing result", number)
 			}
 
-			mapResult, ok := mapResults[call.number]
-			if !ok {
-				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block header %d did not have result", call.number)
+			if headerHash := header.Hash(); headerHash != mapResult.hash {
+				return nil, errors.Wrapf(superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s", headerHash.String(), number, mapResult.hash.String())
 			}
 
-			if headerHash := call.header.Hash(); headerHash != mapResult.hash {
-				return nil, errors.Wrapf(superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s", headerHash.String(), call.number, mapResult.hash.String())
-			}
-
-			mapResult.header = call.header
+			mapResult.header = header
 		}
 	}
 

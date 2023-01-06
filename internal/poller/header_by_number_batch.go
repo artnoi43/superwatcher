@@ -1,6 +1,7 @@
 package poller
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -8,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/batch"
@@ -18,9 +20,9 @@ import (
 // unmarshaling rpc.BatchElem for method batch.MethodGetBlockByNumber.
 // It implements batch.Interface, so it can be passed to batch.CallBatch.
 type headerByNumberBatch struct {
-	client string                   // filled by mapLogs from reflect.TypeOf(client).String()
-	number uint64                   // filled by mapLogs
-	header superwatcher.BlockHeader // filled by Unmarshal
+	client string                   // filled by getHeadersByNumbers from reflect.TypeOf(client).String()
+	number uint64                   // filled by getHeadersByNumbers
+	header superwatcher.BlockHeader // filled by headerByNumberBatch.Unmarshal
 }
 
 // Marshal returns BatchElem for calling RPC method `eth_getBlockByNumber` (`batch.MethodGetBlockByNumber`)
@@ -69,4 +71,35 @@ func (h *headerByNumberBatch) Unmarshal(elem rpc.BatchElem) error {
 	}
 
 	return nil
+}
+
+func getHeadersByNumbers(
+	ctx context.Context,
+	client superwatcher.EthClientRPC,
+	numbers []uint64,
+) (
+	map[uint64]superwatcher.BlockHeader,
+	error,
+) {
+	typeOfClient := reflect.TypeOf(client).String()
+	elems := make([]batch.Interface, len(numbers))
+	for i := range numbers {
+		elems[i] = &headerByNumberBatch{
+			number: numbers[i],
+			client: typeOfClient,
+		}
+	}
+
+	// Call results will be stored in elems
+	if err := batch.CallBatch(ctx, client, elems); err != nil {
+		return nil, errors.Wrap(err, "failed to batch get block headers")
+	}
+
+	results := make(map[uint64]superwatcher.BlockHeader)
+	for _, elem := range elems {
+		getHeaderCall := elem.(*headerByNumberBatch)
+		results[getHeaderCall.number] = getHeaderCall.header
+	}
+
+	return nil, nil
 }
