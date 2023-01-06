@@ -101,5 +101,5 @@ func getHeadersByNumbers(
 		results[getHeaderCall.number] = getHeaderCall.header
 	}
 
-	return nil, nil
+	return results, nil
 }
