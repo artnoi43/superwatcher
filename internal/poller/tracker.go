@@ -1,6 +1,7 @@
 package poller
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -62,6 +63,16 @@ func (t *blockTracker) getTrackerBlock(blockNumber uint64) (*superwatcher.Block,
 	}
 
 	return val, true
+}
+
+func (t *blockTracker) removeBlock(blockNumber uint64) error {
+	k := strconv.FormatUint(blockNumber, 10)
+	del := t.sortedSet.Remove(k)
+	if del == nil {
+		return errors.New("node was not in set")
+	}
+
+	return nil
 }
 
 // clearUntil removes `*Block` in t from left to right.

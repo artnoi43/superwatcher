@@ -152,6 +152,7 @@ func mapLogs(
 		}
 
 		mapResult, ok := mapResults[n]
+
 		// If !ok, then it's one of blocksMissingLogs
 		if !ok {
 			// Mark blocks with missing logs as reorged. Do not overwrite tracker data here,
@@ -161,11 +162,6 @@ func mapLogs(
 			newHeader, ok := headers[n]
 			if !ok {
 				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block %d (missing logs) header not found", n)
-			}
-
-			trackerBlock, ok := tracker.getTrackerBlock(n)
-			if !ok {
-				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block %d (missing logs) not found in tracker", n)
 			}
 
 			newHash := newHeader.Hash()

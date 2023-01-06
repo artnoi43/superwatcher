@@ -120,9 +120,11 @@ func (p *poller) Poll(
 					zap.String("trackerHash", trackerBlock.String()),
 				)
 
-				// Update values in tracker
-				trackerBlock.Hash = freshHash
-				trackerBlock.Logs = nil
+				// Remove from tracker if there's no logs, to avoid mapLogs getting headers
+				// for empty blocks more than once.
+				if err := p.tracker.removeBlock(number); err != nil {
+					return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
+				}
 			}
 		}
 
