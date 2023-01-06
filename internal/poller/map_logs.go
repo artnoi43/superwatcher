@@ -109,7 +109,7 @@ func mapLogs(
 		// Collect results of batchCalls into mapResults
 		for n, header := range headers {
 			mapResult, ok := mapResults[n]
-			// Should be one from blocksMissingLogs
+			// Should be one of the blocksMissingLogs
 			if !ok {
 				if !gslutils.Contains(blocksMissingLogs, n) {
 					return nil, errors.Wrap(superwatcher.ErrProcessReorg, "got headers but no result and not missing logs")

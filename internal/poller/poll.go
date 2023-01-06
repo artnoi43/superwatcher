@@ -73,16 +73,20 @@ func (p *poller) Poll(
 		return nil, errors.Wrap(err, "error in mapLogs")
 	}
 
-	wasReorged := make(map[uint64]bool)
-	for number, mapResult := range mapResults {
-		wasReorged[number] = mapResult.reorged
-	}
-
 	// Fills |result| and saves current data back to tracker first.
 	result := new(superwatcher.PollResult)
 	for number := fromBlock; number <= toBlock; number++ {
+		// Only blocks in mapResults are worth processing. There are 3 reasons a block is in mapResults:
+		// (1) block has >=1 interesting log
+		// (2) block _did_ have >= logs from the last call, but was reorged and no longer has any interesting logs
+		// If (2), then it will removed from tracker, and will no longer appear in mapResults after this call.
+		mapResult, ok := mapResults[number]
+		if !ok {
+			continue
+		}
+
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
-		if wasReorged[number] && p.doReorg {
+		if mapResult.reorged && p.doReorg {
 			trackerBlock, ok := p.tracker.getTrackerBlock(number)
 			if !ok {
 				p.debugger.Debug(
@@ -111,10 +115,11 @@ func (p *poller) Poll(
 			copiedFromTracker := *trackerBlock
 			result.ReorgedBlocks = append(result.ReorgedBlocks, &copiedFromTracker)
 
-			// Save updated recent block info back to tracker (there won't be this block in mapFreshLogs below)
+			// Block used to have interesting logs, but chain reorg occurred
+			// and its logs were moved to somewhere else, or just removed altogether.
 			if trackerBlock.LogsMigrated {
 				p.debugger.Debug(
-					1, "logs missing from block, updating trackerBlock with nil logs and freshHash",
+					1, "logs missing from block, removing from tracker",
 					zap.Uint64("blockNumber", number),
 					zap.String("freshHash", freshHash.String()),
 					zap.String("trackerHash", trackerBlock.String()),
@@ -122,17 +127,13 @@ func (p *poller) Poll(
 
 				// Remove from tracker if there's no logs, to avoid mapLogs getting headers
 				// for empty blocks more than once.
+				// TODO: Consider this: what if a chain reorged again around this block and
+				// we don't know what happened because we removed this information.
+				// Maybe it's better to do more expensive operations at the cost of safety?
 				if err := p.tracker.removeBlock(number); err != nil {
 					return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
 				}
 			}
-		}
-
-		// New blocks will use fresh information. This includes new block after a reorg.
-		// Only block with logs will be appended to |result.GoodBlocks|.
-		mapResult, ok := mapResults[number]
-		if !ok {
-			continue
 		}
 
 		goodBlock := mapResult.Block
@@ -153,10 +154,14 @@ func (p *poller) Poll(
 
 	// If fromBlock reorged, return the result but with non-nil error.
 	// This way, the result still gets emitted, leaving no unseen Block for the managed engine.
-	if wasReorged[fromBlock] && p.doReorg {
-		return result, errors.Wrapf(
-			superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
-		)
+
+	fromBlockResult, ok := mapResults[fromBlock]
+	if ok {
+		if fromBlockResult.reorged && p.doReorg {
+			return result, errors.Wrapf(
+				superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
+			)
+		}
 	}
 
 	return result, nil
