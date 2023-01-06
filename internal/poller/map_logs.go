@@ -2,10 +2,8 @@ package poller
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/artnoi43/gsl/gslutils"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -15,10 +13,8 @@ import (
 // mapLogsResult represents information of fresh blocks mapped by mapLogs.
 // It contains fresh data, i.e. not from tracker.
 type mapLogsResult struct {
-	reorged bool                     // true if the tracker block hash differs from fresh block hash
-	hash    common.Hash              // fresh block hash
-	header  superwatcher.BlockHeader // fresh block header
-	logs    []*types.Log             // fresh block logs
+	reorged bool // true if the tracker block hash differs from fresh block hash
+	superwatcher.Block
 }
 
 // mapLogs compare |logs| and their blockHashes to known blockHashes in |tracker.
@@ -55,50 +51,86 @@ func mapLogs(
 		// Add new hash to mapResults
 		if mapResult, ok := mapResults[number]; !ok {
 			mapResults[number] = &mapLogsResult{
-				hash: log.BlockHash,
+				Block: superwatcher.Block{
+					Number: number,
+					Hash:   log.BlockHash,
+				},
 			}
 		} else if ok {
-			if mapResult.hash != log.BlockHash {
+			if mapResult.Block.Hash != log.BlockHash {
 				return mapResults, errors.Wrapf(
 					errHashesDiffer, "logs in the same block %d has different hash %s vs %s",
-					number, gslutils.StringerToLowerString(mapResult.hash), gslutils.StringerToLowerString(log.BlockHash),
+					number, gslutils.StringerToLowerString(mapResult.Block.Hash), gslutils.StringerToLowerString(log.BlockHash),
 				)
 			}
 		}
 
 		// Add all new logs to mapFreshLogs
-		mapResults[number].logs = append(mapResults[number].logs, log)
+		mapResults[number].Block.Logs = append(mapResults[number].Block.Logs, log)
 	}
 
-	if doHeader {
-		// Get block headers using BatchCallContext
-		var blocksWithLogs []uint64
-		for i := toBlock; i >= fromBlock; i-- {
-			// Only get headers for blocks with log results
-			if _, ok := mapResults[i]; !ok {
+	// Collect blocks with missing logs (we saw them with logs in previous calls to mapLogs)
+	var blocksMissingLogs []uint64
+	if tracker != nil {
+		for n := toBlock; n >= fromBlock; n-- {
+			if _, ok := tracker.getTrackerBlock(n); !ok {
+				continue
+			}
+			if _, ok := mapResults[n]; ok {
 				continue
 			}
 
-			blocksWithLogs = append(blocksWithLogs, i)
+			blocksMissingLogs = append(blocksMissingLogs, n)
+		}
+	}
+
+	var headers map[uint64]superwatcher.BlockHeader
+	var blocksWithResults []uint64
+
+	// Get block headers using BatchCallContext
+	if doHeader {
+		for n := toBlock; n >= fromBlock; n-- {
+			if _, ok := mapResults[n]; !ok {
+				continue
+			}
+
+			blocksWithResults = append(blocksWithResults, n)
 		}
 
-		mapFreshHeaders, err := getHeadersByNumbers(ctx, client, blocksWithLogs)
+		var err error
+		headers, err = getHeadersByNumbers(ctx, client, append(blocksWithResults, blocksMissingLogs...))
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to getHeadersByNumbers")
+			return nil, errors.Wrap(err, "failed to get block headers for new logs filtered")
 		}
 
 		// Collect results of batchCalls into mapResults
-		for number, header := range mapFreshHeaders {
-			mapResult, ok := mapResults[number]
+		for n, header := range headers {
+			mapResult, ok := mapResults[n]
+			// Should be one from blocksMissingLogs
 			if !ok {
-				return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block %d header is missing result", number)
+				if !gslutils.Contains(blocksMissingLogs, n) {
+					return nil, errors.Wrap(superwatcher.ErrProcessReorg, "got headers but no result and not missing logs")
+				}
+
+				continue
 			}
 
-			if headerHash := header.Hash(); headerHash != mapResult.hash {
-				return nil, errors.Wrapf(superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s", headerHash.String(), number, mapResult.hash.String())
+			// If headerHash differs from log blockHash, then the chain is reorging as we run this code
+			if headerHash := header.Hash(); headerHash != mapResult.Block.Hash {
+				return nil, errors.Wrapf(
+					superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s",
+					headerHash.String(), n, mapResult.Block.Hash.String(),
+				)
 			}
 
-			mapResult.header = header
+			mapResult.Block.Header = header
+		}
+	} else {
+		// We get headers for blocksMissingLogs regardless of deHeader values
+		var err error
+		headers, err = getHeadersByNumbers(ctx, client, blocksMissingLogs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get headers for blocks with missing logs")
 		}
 	}
 
@@ -107,44 +139,22 @@ func mapLogs(
 		return mapResults, nil
 	}
 
-	emptyHash := common.Hash{}
-	// Compare all known (tracker) block hashes to new ones
-	for number := toBlock; number >= fromBlock; number-- {
-		// Continue if |number| was never saved to tracker
-		trackerBlock, ok := tracker.getTrackerBlock(number)
+	// Compare all known block hashes in tracker with result blocks.
+	// Blocks with missing logs will be dealt with later in the last for-loop.
+	for n := toBlock; n >= fromBlock; n-- {
+		// Continue if block number |n| was never saved to tracker
+		trackerBlock, ok := tracker.getTrackerBlock(n)
 		if !ok {
 			continue
 		}
 
-		// Logs may be moved from blockNumber, hence there's value in tracker but nil value in mapResults.m[number]
-		mapResult, ok := mapResults[number]
+		mapResult, ok := mapResults[n]
 		if !ok {
-			// Prevent nil pointer dereference
-			mapResult = new(mapLogsResult)
-			mapResults[number] = mapResult
+			continue
 		}
 
-		if mapResult == nil {
-			return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "nil result from block %d after check", number)
-		}
-
-		// If hash is empty, we know for a fact that the logs were entirely moved from this block
-		if mapResult.hash == emptyHash {
-			// Fetch header again for this block (with missing log) in case doHeader is false
-			freshHeader, err := client.HeaderByNumber(ctx, big.NewInt(int64(number)))
-			if err != nil {
-				return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
-			}
-
-			freshHash := freshHeader.Hash()
-
-			mapResult.hash = freshHash
-			mapResult.header = freshHeader
-			trackerBlock.LogsMigrated = true
-		}
-
-		// If we have same blockHash with same logs length we can assume that the block was not reorged.
-		if trackerBlock.Hash == mapResult.hash && len(trackerBlock.Logs) == len(mapResult.logs) {
+		if trackerBlock.Hash == mapResult.Block.Hash && len(trackerBlock.Logs) == len(mapResult.Block.Logs) {
+			// If we have same blockHash with same logs length we can assume that the block was not reorged.
 			continue
 		}
 
@@ -153,6 +163,36 @@ func mapLogs(
 		}
 
 		mapResult.reorged = true
+	}
+
+	// Mark blocks with missing logs as reorged. Do not overwrite tracker data here,
+	// as poller.Poll logic needs the old info in the tracker to return as reorged block.
+	// If you update the tracker data now, downstream users won't get the old info they need to handle chain reorg.
+	for _, n := range blocksMissingLogs {
+		newHeader, ok := headers[n]
+		if !ok {
+			return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block %d (missing logs) header not found", n)
+		}
+
+		trackerBlock, ok := tracker.getTrackerBlock(n)
+		if !ok {
+			return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "block %d (missing logs) not found in tracker", n)
+		}
+
+		newHash := newHeader.Hash()
+		if newHash == trackerBlock.Hash {
+			continue
+		}
+
+		mapResults[n] = &mapLogsResult{
+			reorged: true,
+			Block: superwatcher.Block{
+				Number: n,
+				Header: newHeader,
+				Hash:   newHash,
+				Logs:   nil,
+			},
+		}
 	}
 
 	return mapResults, nil

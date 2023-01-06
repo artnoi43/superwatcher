@@ -83,8 +83,8 @@ func (p *poller) Poll(
 	for number := fromBlock; number <= toBlock; number++ {
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
 		if wasReorged[number] && p.doReorg {
-			trackerBlock, foundInTracker := p.tracker.getTrackerBlock(number)
-			if !foundInTracker {
+			trackerBlock, ok := p.tracker.getTrackerBlock(number)
+			if !ok {
 				p.debugger.Debug(
 					1, "block marked as reorged but was not found in tracker",
 					zap.Uint64("blockNumber", number),
@@ -97,7 +97,7 @@ func (p *poller) Poll(
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
-			freshHash := mapResults[number].hash
+			freshHash := mapResults[number].Block.Hash
 
 			p.debugger.Debug(
 				1, "chain reorg detected",
@@ -133,16 +133,7 @@ func (p *poller) Poll(
 			continue
 		}
 
-		if len(mapResult.logs) == 0 {
-			continue
-		}
-
-		goodBlock := superwatcher.Block{
-			Number: number,
-			Header: mapResult.header,
-			Hash:   mapResult.hash,
-			Logs:   mapResult.logs,
-		}
+		goodBlock := mapResult.Block
 
 		if p.doReorg {
 			p.tracker.addTrackerBlock(&goodBlock)
@@ -153,8 +144,7 @@ func (p *poller) Poll(
 		result.GoodBlocks = append(result.GoodBlocks, &resultBlock)
 	}
 
-	result.FromBlock = fromBlock
-	result.ToBlock = toBlock
+	result.FromBlock, result.ToBlock = fromBlock, toBlock
 	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
 
 	p.lastRecordedBlock = result.LastGoodBlock
