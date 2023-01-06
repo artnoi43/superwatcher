@@ -182,6 +182,8 @@ func mapLogs(
 					Logs:   nil,
 				},
 			}
+
+			mapResults[n] = mapResult
 		}
 
 		if trackerBlock.Hash == mapResult.Block.Hash && len(trackerBlock.Logs) == len(mapResult.Block.Logs) {
