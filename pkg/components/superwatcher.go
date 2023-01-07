@@ -18,25 +18,26 @@ type superWatcher struct {
 }
 
 func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
-	var conf initConfig
+	var conf componentConfig
 	for _, opt := range options {
 		opt(&conf)
 	}
 
-	logLevel := gslutils.Max(conf.logLevel, conf.conf.LogLevel)
+	logLevel := gslutils.Max(conf.logLevel, conf.config.LogLevel)
 
 	poller := NewPoller(
 		conf.addresses,
 		conf.topics,
-		conf.conf.DoReorg || conf.doReorg,
-		conf.conf.DoHeader || conf.doHeader,
+		conf.config.DoReorg || conf.doReorg,
+		conf.config.DoHeader || conf.doHeader,
 		conf.filterRange,
 		conf.ethClient,
 		logLevel,
+		gslutils.Max(conf.pollLevel, conf.config.PollLevel),
 	)
 
 	emitter := NewEmitter(
-		conf.conf,
+		conf.config,
 		conf.ethClient,
 		conf.getStateDataGateway,
 		poller,
@@ -46,7 +47,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 	)
 
 	emitterClient := NewEmitterClient(
-		conf.conf,
+		conf.config,
 		conf.syncChan,
 		conf.pollResultChan,
 		conf.errChan,

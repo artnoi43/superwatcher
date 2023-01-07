@@ -2,6 +2,7 @@ package components
 
 import (
 	"github.com/artnoi43/gsl/gslutils"
+
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/engine"
 )
@@ -47,13 +48,13 @@ func NewEngineWithEmitterClient(
 }
 
 func NewEngineOptions(options ...Option) superwatcher.Engine {
-	var c initConfig
+	var c componentConfig
 	for _, opt := range options {
 		opt(&c)
 	}
 
 	emitterClient := NewEmitterClient(
-		c.conf,
+		c.config,
 		c.syncChan,
 		c.pollResultChan,
 		c.errChan,
@@ -63,6 +64,6 @@ func NewEngineOptions(options ...Option) superwatcher.Engine {
 		emitterClient,
 		c.serviceEngine,
 		c.setStateDataGateway,
-		gslutils.Max(c.logLevel, c.conf.LogLevel),
+		gslutils.Max(c.logLevel, c.config.LogLevel),
 	)
 }

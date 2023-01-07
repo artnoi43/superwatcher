@@ -16,19 +16,46 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
+func TestDeleteUnusable(t *testing.T) {
+	mapResults := make(map[uint64]*mapLogsResult)
+	var lastGood uint64 = 15
+	to := lastGood + 10
+	for i := uint64(0); i < to; i++ {
+		mapResults[i] = &mapLogsResult{
+			Block: superwatcher.Block{},
+		}
+	}
+
+	deleteUnusableResult(mapResults, lastGood)
+	for i := lastGood; i <= to; i++ {
+		v, ok := mapResults[i]
+		if !ok {
+			continue
+		}
+
+		t.Errorf("deleted %d but value still in map %v", i, v)
+	}
+}
+
 func TestMapLogs(t *testing.T) {
-	for i, tc := range emittertest.TestCasesV1 {
-		b, _ := json.Marshal(tc)
-		t.Logf("testCase: %s", b)
-		err := testMapLogsV1(&tc)
-		if err != nil {
-			t.Fatalf("Case %d: %s", i, err.Error())
+	for _, pollLevel := range []superwatcher.PollLevel{
+		superwatcher.PollLevelFast,
+		superwatcher.PollLevelNormal,
+		superwatcher.PollLevelExpensive,
+	} {
+		for i, tc := range emittertest.TestCasesV1 {
+			b, _ := json.Marshal(tc)
+			t.Logf("testCase: %s (pollLevel %d)", b, pollLevel)
+			err := testMapLogsV1(&tc, pollLevel)
+			if err != nil {
+				t.Fatalf("Case %d (pollLevel %d): %s", i, pollLevel, err.Error())
+			}
 		}
 	}
 }
 
 // testMapLogsV1 tests function mapLogs with ReorgSimV1 (1 reorg)
-func testMapLogsV1(tc *emittertest.TestConfig) error {
+func testMapLogsV1(tc *emittertest.TestConfig, pollLevel superwatcher.PollLevel) error {
 	tracker := newTracker("testProcessReorg", 3)
 	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 
@@ -89,6 +116,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 		true,
 		tracker,
 		mockClient,
+		pollLevel,
 	)
 	if err != nil {
 		return errors.Wrap(err, "error in mapLogs")

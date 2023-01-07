@@ -44,7 +44,7 @@ func NewEmitterWithPoller(
 		conf,
 		client,
 		stateDataGateway,
-		NewPoller(addresses, topics, conf.DoReorg, conf.DoHeader, conf.FilterRange, client, conf.LogLevel),
+		NewPoller(addresses, topics, conf.DoReorg, conf.DoHeader, conf.FilterRange, client, conf.LogLevel, conf.PollLevel),
 		syncChan,
 		pollResultChan,
 		errChan,
@@ -52,7 +52,7 @@ func NewEmitterWithPoller(
 }
 
 func NewEmitterOptions(options ...Option) superwatcher.Emitter {
-	var c initConfig
+	var c componentConfig
 	for _, opt := range options {
 		opt(&c)
 	}
@@ -64,11 +64,12 @@ func NewEmitterOptions(options ...Option) superwatcher.Emitter {
 		c.doHeader,
 		c.filterRange,
 		c.ethClient,
-		gslutils.Max(c.logLevel, c.conf.LogLevel),
+		gslutils.Max(c.logLevel, c.config.LogLevel),
+		c.pollLevel,
 	)
 
 	return emitter.New(
-		c.conf,
+		c.config,
 		c.ethClient,
 		c.getStateDataGateway,
 		poller,

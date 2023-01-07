@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
@@ -45,95 +46,102 @@ func TestServiceEngineRouterV1(t *testing.T) {
 	}
 
 	logLevel := uint8(3)
-	for _, testCase := range testCases {
-		dgwENS := datagateway.NewMockDataGatewayENS()
-		dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
-		router := routerengine.NewMockRouter(logLevel, dgwENS, dgwPoolFactory)
+	for _, pollLevel := range []superwatcher.PollLevel{
+		superwatcher.PollLevelFast,
+		superwatcher.PollLevelNormal,
+		superwatcher.PollLevelExpensive,
+	} {
+		for _, testCase := range testCases {
+			testCase.PollLevel = pollLevel
+			dgwENS := datagateway.NewMockDataGatewayENS()
+			dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
+			router := routerengine.NewMockRouter(logLevel, dgwENS, dgwPoolFactory)
 
-		components := servicetest.InitTestComponents(
-			servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4),
-			router,
-			testCase.Param,
-			testCase.Events,
-			testCase.LogsFiles,
-			testCase.DataGatewayFirstRun,
-		)
+			components := servicetest.InitTestComponents(
+				servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.PollLevel),
+				router,
+				testCase.Param,
+				testCase.Events,
+				testCase.LogsFiles,
+				testCase.DataGatewayFirstRun,
+			)
 
-		_, err := servicetest.RunServiceTestComponents(components)
-		if err != nil {
-			t.Error("error in full servicetest (ens):", err.Error())
-		}
-
-		resultsENS, err := dgwENS.GetENSes(nil)
-		if err != nil {
-			t.Errorf("error getting results from dgwENS: %s", err.Error())
-		}
-		if len(resultsENS) == 0 {
-			t.Fatalf("0 results from dgwENS")
-		}
-		resultsPoolFactory, err := dgwPoolFactory.GetPools(nil)
-		if err != nil {
-			t.Errorf("error getting results from dgwPoolFactory: %s", err.Error())
-		}
-		if len(resultsPoolFactory) == 0 {
-			t.Fatalf("0 results from dgwPoolFactory")
-		}
-
-		movedHashes, _, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
-
-		var someENS bool
-		for _, result := range resultsENS {
-			someENS = true
-			if result.DomainString() == "" {
-				t.Errorf("emptyDomain name for resultENS id: %s", result.ID)
+			_, err := servicetest.RunServiceTestComponents(components)
+			if err != nil {
+				t.Error("error in full servicetest (ens):", err.Error())
 			}
 
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
+			resultsENS, err := dgwENS.GetENSes(nil)
+			if err != nil {
+				t.Errorf("error getting results from dgwENS: %s", err.Error())
+			}
+			if len(resultsENS) == 0 {
+				t.Fatalf("0 results from dgwENS")
+			}
+			resultsPoolFactory, err := dgwPoolFactory.GetPools(nil)
+			if err != nil {
+				t.Errorf("error getting results from dgwPoolFactory: %s", err.Error())
+			}
+			if len(resultsPoolFactory) == 0 {
+				t.Fatalf("0 results from dgwPoolFactory")
+			}
 
-			if result.BlockNumber < testCase.Events[0].ReorgBlock {
-				if result.BlockHash == expectedReorgedHash {
-					t.Errorf("good block %d resultENS has reorged blockHash: %s", result.BlockNumber, result.BlockHash)
+			movedHashes, _, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
+
+			var someENS bool
+			for _, result := range resultsENS {
+				someENS = true
+				if result.DomainString() == "" {
+					t.Errorf("emptyDomain name for resultENS id: %s", result.ID)
 				}
 
-				continue
-			}
+				expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
 
-			if result.BlockHash != expectedReorgedHash {
-				t.Errorf("reorged block %d resultENS has unexpected blockHash: %s", result.BlockNumber, result.BlockHash)
-			}
+				if result.BlockNumber < testCase.Events[0].ReorgBlock {
+					if result.BlockHash == expectedReorgedHash {
+						t.Errorf("good block %d resultENS has reorged blockHash: %s", result.BlockNumber, result.BlockHash)
+					}
 
-			if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
-				if expected := logsDst[h]; result.BlockNumber != expected {
-					t.Fatalf("expecting moved blockNumber %d, got %d", expected, result.BlockNumber)
-				}
-			}
-		}
-
-		if !someENS {
-			t.Error("got no ENS result")
-		}
-
-		var somePoolFactory bool
-		for _, result := range resultsPoolFactory {
-			somePoolFactory = true
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
-			resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
-
-			if result.BlockCreated < testCase.Events[0].ReorgBlock {
-				if resultBlockHash == expectedReorgedHash {
-					t.Errorf("resultPoolFactory from good block %d has reorged blockHash: %s", result.BlockCreated, resultBlockHash)
+					continue
 				}
 
-				continue
+				if result.BlockHash != expectedReorgedHash {
+					t.Errorf("reorged block %d resultENS has unexpected blockHash: %s", result.BlockNumber, result.BlockHash)
+				}
+
+				if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+					if expected := logsDst[h]; result.BlockNumber != expected {
+						t.Fatalf("expecting moved blockNumber %d, got %d", expected, result.BlockNumber)
+					}
+				}
 			}
 
-			if resultBlockHash != expectedReorgedHash {
-				t.Errorf("resultPoolFactory from reorged block %d has unexpected blockHash: %s", result.BlockCreated, resultBlockHash)
+			if !someENS {
+				t.Error("got no ENS result")
 			}
-		}
 
-		if !somePoolFactory {
-			t.Error("got no poolFactory result")
+			var somePoolFactory bool
+			for _, result := range resultsPoolFactory {
+				somePoolFactory = true
+				expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
+				resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
+
+				if result.BlockCreated < testCase.Events[0].ReorgBlock {
+					if resultBlockHash == expectedReorgedHash {
+						t.Errorf("resultPoolFactory from good block %d has reorged blockHash: %s", result.BlockCreated, resultBlockHash)
+					}
+
+					continue
+				}
+
+				if resultBlockHash != expectedReorgedHash {
+					t.Errorf("resultPoolFactory from reorged block %d has unexpected blockHash: %s", result.BlockCreated, resultBlockHash)
+				}
+			}
+
+			if !somePoolFactory {
+				t.Error("got no poolFactory result")
+			}
 		}
 	}
 }

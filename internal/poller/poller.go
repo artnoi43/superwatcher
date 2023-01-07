@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
@@ -23,6 +24,7 @@ type poller struct {
 	client            superwatcher.EthClient
 	doReorg           bool
 	doHeader          bool
+	pollLevel         superwatcher.PollLevel
 
 	tracker  *blockTracker
 	debugger *debugger.Debugger
@@ -36,6 +38,7 @@ func New(
 	filterRange uint64,
 	client superwatcher.EthClient,
 	logLevel uint8,
+	pollLevel superwatcher.PollLevel,
 ) superwatcher.EmitterPoller {
 	var tracker *blockTracker
 	if doReorg {
@@ -51,12 +54,14 @@ func New(
 		doHeader:    doHeader,
 		tracker:     tracker,
 		debugger:    debugger.NewDebugger("poller", logLevel),
+		pollLevel:   pollLevel,
 	}
 }
 
 // SetDoReorg changes poller behavior regarding processing chain reorg.
-// If set to false, it clears all tracker data and deletes the tracker with nil value, and change p.deReorg to false.
-// If set to true, it
+// If |doReorg| is false, setDoReorg clears all tracker data and deletes the tracker with nil value,
+// and changes p.doReorg policy to false.
+// If |doReorg| is true, SetDoReorg creates new tracker and update p.doReorg policy if it was false.
 func (p *poller) SetDoReorg(doReorg bool) {
 	p.Lock()
 	defer p.Unlock()
@@ -72,11 +77,13 @@ func (p *poller) SetDoReorg(doReorg bool) {
 		p.tracker = nil
 
 	case false:
+		// p.doReorg = false, doReorg = false
 		if !doReorg {
-			p.debugger.Debug(1, "SetDoReorg(true) called, but p.doReorg is already true - returning")
+			p.debugger.Debug(1, "SetDoReorg(false) called, but p.doReorg is already false - returning")
 			return
 		}
 
+		// p.doReorg = false, doReorg = true
 		if p.tracker == nil {
 			p.debugger.Debug(1, "SetDoReorg(true) called - creating new tracker")
 			p.tracker = newTracker("poller", p.debugger.Level)
@@ -98,6 +105,10 @@ func (p *poller) DoReorg() bool {
 func (p *poller) SetDoHeader(doHeader bool) {
 	p.Lock()
 	defer p.Unlock()
+
+	if doHeader && p.pollLevel >= superwatcher.PollLevelExpensive {
+		p.debugger.Debug(1, "SetDoHeader called, but PollLevelExpensive is set, ignoring doHeader value")
+	}
 
 	p.doHeader = doHeader
 }
@@ -159,4 +170,30 @@ func (p *poller) SetTopics(topics [][]common.Hash) {
 	defer p.Unlock()
 
 	p.topics = topics
+}
+
+func (p *poller) SetPollLevel(level superwatcher.PollLevel) error {
+	p.Lock()
+	defer p.Unlock()
+
+	// Remove all blocks from tracker with 0 logs if not PollLevelExpensive,
+	// because if these blocks are left in tracker, poller with level < PollLevelExpensive
+	// will see that these blocks are ones with missing logs and stamped as reorged = true.
+	if p.pollLevel < level {
+		return errors.Wrapf(
+			errDowngradeLevel,
+			"cannot downgrade from %s (%d) to %s (%d)",
+			p.pollLevel.String(), p.pollLevel, level.String(), level,
+		)
+	}
+
+	p.pollLevel = level
+	return nil
+}
+
+func (p *poller) PollLevel() superwatcher.PollLevel {
+	p.RLock()
+	defer p.RUnlock()
+
+	return p.pollLevel
 }

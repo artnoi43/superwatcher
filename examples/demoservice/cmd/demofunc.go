@@ -49,7 +49,7 @@ func newSuperwatcherAdvanced( //nolint:unused
 	emitter := components.NewEmitter(conf, ethClient, stateDataGateway, nil, syncChan, resultChan, errChan)
 	emitterClient := components.NewEmitterClient(conf, syncChan, resultChan, errChan)
 	engine := components.NewEngine(emitterClient, serviceEngine, stateDataGateway, conf.LogLevel)
-	poller := components.NewPoller(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, ethClient, conf.LogLevel)
+	poller := components.NewPoller(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, ethClient, conf.LogLevel, conf.PollLevel)
 
 	poller.SetAddresses(addresses)
 	poller.SetTopics([][]common.Hash{topics})

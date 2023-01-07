@@ -2,8 +2,9 @@ package servicetest
 
 import (
 	"context"
-	"errors"
 	"sync"
+
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/components"
@@ -19,6 +20,8 @@ type TestCase struct {
 	LogsFiles []string `json:"logFiles"`
 	// If set to true, the emitter will go back due to superwatcher.ErrRecordNotFound
 	DataGatewayFirstRun bool `json:"dataGatewayFirstRun"`
+	// EmitterPoller's poll level
+	PollLevel superwatcher.PollLevel `json:"pollLevel"`
 }
 
 // TestComponents is used by RunServiceTestComponents to instantiate
@@ -31,7 +34,11 @@ type TestComponents struct {
 	dataGatewaySet superwatcher.SetStateDataGateway
 }
 
-func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *superwatcher.Config {
+func DefaultServiceTestConfig(
+	startBlock uint64,
+	logLevel uint8,
+	pollLevel superwatcher.PollLevel,
+) *superwatcher.Config {
 	return &superwatcher.Config{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		StartBlock:       startBlock,
@@ -41,6 +48,7 @@ func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *superwatcher.C
 		MaxGoBackRetries: 2,
 		LoopInterval:     0,
 		LogLevel:         logLevel,
+		PollLevel:        pollLevel,
 	}
 }
 
@@ -91,7 +99,10 @@ func RunServiceTestComponents(tc *TestComponents) (
 }
 
 // RunService executes the most basic emitter and engine logic, and returns an error from these components.
-func RunService(emitter superwatcher.Emitter, engine superwatcher.Engine) error {
+func RunService(
+	emitter superwatcher.Emitter,
+	engine superwatcher.Engine,
+) error {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
@@ -106,8 +117,9 @@ func RunService(emitter superwatcher.Emitter, engine superwatcher.Engine) error 
 
 		if err := emitter.Loop(ctx); err != nil {
 			if errors.Is(err, reorgsim.ErrExitBlockReached) {
-				cancel()
 				emitter.Shutdown()
+				cancel()
+
 				return
 			}
 

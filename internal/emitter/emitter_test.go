@@ -101,167 +101,173 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	conf := serviceConf.SuperWatcherConfig
 	conf.LoopInterval = 0
 
-	fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
+	for _, pollLevel := range []superwatcher.PollLevel{
+		superwatcher.PollLevelFast,
+		superwatcher.PollLevelNormal,
+		superwatcher.PollLevelExpensive,
+	} {
+		fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 
-	param := reorgsim.Param{
-		StartBlock:    tc.FromBlock,
-		BlockProgress: 20,
-		Debug:         true,
-		ExitBlock:     tc.ToBlock + 200,
-	}
-	events := []reorgsim.ReorgEvent{tc.Events[0]}
-
-	sim, err := reorgsim.NewReorgSimFromLogsFiles(param, events, tc.LogsFiles, "EmitterTestV1", 4)
-	if err != nil {
-		t.Fatal("error creating ReorgSim", err.Error())
-	}
-
-	// Collect MovedLogs info
-	var movedFromBlocks []uint64
-	var movedToBlocks []uint64
-	var movedTxHashes []common.Hash
-	for movedFromBlock, moves := range tc.Events[0].MovedLogs {
-		movedFromBlocks = append(movedFromBlocks, movedFromBlock)
-		for _, move := range moves {
-			movedToBlocks = append(movedToBlocks, move.NewBlock)
-			movedTxHashes = append(movedTxHashes, move.TxHashes...)
+		param := reorgsim.Param{
+			StartBlock:    tc.FromBlock,
+			BlockProgress: 20,
+			Debug:         true,
+			ExitBlock:     tc.ToBlock + 200,
 		}
-	}
+		events := []reorgsim.ReorgEvent{tc.Events[0]}
 
-	// testPoller got nil addresses and topics so it will poll logs from all addresses and topics
-	testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel)
+		sim, err := reorgsim.NewReorgSimFromLogsFiles(param, events, tc.LogsFiles, "EmitterTestV1", 4)
+		if err != nil {
+			t.Fatal("error creating ReorgSim", err.Error())
+		}
 
-	// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
-	errChan := make(chan error, 5)
-	syncChan := make(chan struct{})
-	pollResultChan := make(chan *superwatcher.PollResult)
-	testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
+		// Collect MovedLogs info
+		var movedFromBlocks []uint64
+		var movedToBlocks []uint64
+		var movedTxHashes []common.Hash
+		for movedFromBlock, moves := range tc.Events[0].MovedLogs {
+			movedFromBlocks = append(movedFromBlocks, movedFromBlock)
+			for _, move := range moves {
+				movedToBlocks = append(movedToBlocks, move.NewBlock)
+				movedTxHashes = append(movedTxHashes, move.TxHashes...)
+			}
+		}
 
-	// Check if the emitter noticed a reorg
-	var reorgedOnce bool
+		// testPoller got nil addresses and topics so it will poll logs from all addresses and topics
+		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, pollLevel)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		testEmitter.Loop(ctx)
-	}()
+		// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
+		errChan := make(chan error, 5)
+		syncChan := make(chan struct{})
+		pollResultChan := make(chan *superwatcher.PollResult)
+		testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
-	go func() {
-		if err := <-errChan; err != nil {
-			if errors.Is(err, reorgsim.ErrExitBlockReached) {
-				// This triggers shutdown on testEmitter, causing result from channels to be nil
+		// Check if the emitter noticed a reorg
+		var reorgedOnce bool
+
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			testEmitter.Loop(ctx)
+		}()
+
+		go func() {
+			if err := <-errChan; err != nil {
+				if errors.Is(err, reorgsim.ErrExitBlockReached) {
+					// This triggers shutdown on testEmitter, causing result from channels to be nil
+					cancel()
+				}
+			}
+		}()
+
+		var seenLogs []*types.Log
+		latestGoodBlocks := make(map[uint64]*superwatcher.Block)
+		movedToCount := make(map[common.Hash]bool)
+
+		var prevResult *superwatcher.PollResult
+		for {
+			result := <-pollResultChan
+
+			if prevResult != nil && result != nil {
+				if result.LastGoodBlock <= prevResult.ToBlock {
+					reorgedOnce = true
+				}
+			}
+
+			if result == nil {
+				break
+			}
+			if result.LastGoodBlock > tc.ToBlock {
+				t.Logf("finished case %d", caseNumber)
 				cancel()
+				break
 			}
-		}
-	}()
 
-	var seenLogs []*types.Log
-	latestGoodBlocks := make(map[uint64]*superwatcher.Block)
-	movedToCount := make(map[common.Hash]bool)
+			lastGoodBlock := result.LastGoodBlock
 
-	var prevResult *superwatcher.PollResult
-	for {
-		result := <-pollResultChan
-
-		if prevResult != nil {
-			if result.LastGoodBlock <= prevResult.ToBlock {
+			for i, block := range result.ReorgedBlocks {
 				reorgedOnce = true
-			}
-		}
 
-		if result == nil {
-			break
-		}
-		if result.LastGoodBlock > tc.ToBlock {
-			t.Logf("finished case %d", caseNumber)
-			cancel()
-			break
-		}
+				blockNumber := block.Number
 
-		lastGoodBlock := result.LastGoodBlock
-
-		for i, block := range result.ReorgedBlocks {
-			reorgedOnce = true
-
-			blockNumber := block.Number
-
-			// Check LastGoodBlock
-			if lastGoodBlock > blockNumber {
-				t.Fatalf(
-					"invalid LastGoodBlock: ReorgedBlocks[%d] blockNumber=%v, LastGoodBlock=%v",
-					i, blockNumber, lastGoodBlock,
-				)
-			}
-
-			b, ok := latestGoodBlocks[block.Number]
-			if !ok {
-				t.Fatalf("reorged block not in latestGoodBlocks - %d %s", block.Number, block.String())
-			}
-			if block.Hash != b.Hash {
-				t.Fatalf("reorged block hash not seen before - %d %s", block.Number, block.String())
-			}
-
-			// Check that all the reorged logs were seen before in |seenLogs|
-			for _, log := range block.Logs {
-				if !gslutils.Contains(seenLogs, log) {
-					fatalBadLog(t, "reorgedLog not seen before", log)
+				// Check LastGoodBlock
+				if lastGoodBlock > blockNumber {
+					t.Fatalf(
+						"invalid LastGoodBlock: ReorgedBlocks[%d] blockNumber=%v, LastGoodBlock=%v",
+						i, blockNumber, lastGoodBlock,
+					)
 				}
-			}
-		}
 
-		for _, block := range result.GoodBlocks {
-			for _, log := range block.Logs {
-				var ok bool
-
-				// We should only see a good log once
-				seenLogs, ok = appendUnique(seenLogs, log)
+				b, ok := latestGoodBlocks[block.Number]
 				if !ok {
-					fatalBadLog(t, "duplicate good log in seenLogs", log)
+					t.Fatalf("reorged block not in latestGoodBlocks - %d %s", block.Number, block.String())
+				}
+				if block.Hash != b.Hash {
+					t.Fatalf("reorged block hash not seen before - %d %s", block.Number, block.String())
 				}
 
-				// If the block is one of the movedFromBlocks, then it's not supposed to have any logs with movedTxHashes
-				if gslutils.Contains(movedFromBlocks, block.Number) {
-					if gslutils.Contains(movedTxHashes, log.TxHash) {
-						// t.Log("movedBlock from", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
-						fatalBadLog(t, "log was supposed to be removed from this block", log)
+				// Check that all the reorged logs were seen before in |seenLogs|
+				for _, log := range block.Logs {
+					if !gslutils.Contains(seenLogs, log) {
+						fatalBadLog(t, "reorgedLog not seen before", log)
 					}
-				}
-
-				// If the block is NOT one of the movedToBlocks, then it's not supposed to have any logs with movedTxHashes
-				if !gslutils.Contains(movedToBlocks, block.Number) {
-					if gslutils.Contains(movedTxHashes, log.TxHash) {
-						// t.Log("movedBlock to", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
-						fatalBadLog(t, "log was supposed to be moved to this block", log)
-					}
-				} else {
-					movedToCount[log.TxHash] = true
 				}
 			}
 
-			_, ok := latestGoodBlocks[block.Number]
-			if !ok {
-				latestGoodBlocks[block.Number] = block
-				continue
+			for _, block := range result.GoodBlocks {
+				for _, log := range block.Logs {
+					var ok bool
+
+					// We should only see a good log once
+					seenLogs, ok = appendUnique(seenLogs, log)
+					if !ok {
+						fatalBadLog(t, "duplicate good log in seenLogs", log)
+					}
+
+					// If the block is one of the movedFromBlocks, then it's not supposed to have any logs with movedTxHashes
+					if gslutils.Contains(movedFromBlocks, block.Number) {
+						if gslutils.Contains(movedTxHashes, log.TxHash) {
+							// t.Log("movedBlock from", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
+							fatalBadLog(t, "log was supposed to be removed from this block", log)
+						}
+					}
+
+					// If the block is NOT one of the movedToBlocks, then it's not supposed to have any logs with movedTxHashes
+					if !gslutils.Contains(movedToBlocks, block.Number) {
+						if gslutils.Contains(movedTxHashes, log.TxHash) {
+							// t.Log("movedBlock to", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
+							fatalBadLog(t, "log was supposed to be moved to this block", log)
+						}
+					} else {
+						movedToCount[log.TxHash] = true
+					}
+				}
+
+				_, ok := latestGoodBlocks[block.Number]
+				if !ok {
+					latestGoodBlocks[block.Number] = block
+					continue
+				}
+			}
+
+			fakeRedis.SetLastRecordedBlock(ctx, result.LastGoodBlock)
+			prevResult = result
+
+			syncChan <- struct{}{}
+		}
+
+		if len(tc.Events) != 0 {
+			if !reorgedOnce {
+				t.Fatal("not reorgedOnce")
 			}
 		}
 
-		fakeRedis.SetLastRecordedBlock(ctx, result.LastGoodBlock)
-		prevResult = result
+		for _, txHash := range movedTxHashes {
+			if !movedToCount[txHash] {
+				t.Errorf("movedToTxHash %s was not tagged true", txHash.String())
+			}
 
-		syncChan <- struct{}{}
-	}
-
-	if len(tc.Events) != 0 {
-		if !reorgedOnce {
-			t.Fatal("not reorgedOnce")
+			t.Log("movedLog", txHash.String())
 		}
-	}
-
-	for _, txHash := range movedTxHashes {
-		if !movedToCount[txHash] {
-			t.Errorf("movedToTxHash %s was not tagged true", txHash.String())
-		}
-
-		t.Log("movedLog", txHash.String())
 	}
 }
 

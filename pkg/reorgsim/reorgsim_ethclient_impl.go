@@ -2,8 +2,6 @@ package reorgsim
 
 // See README.md for code documentation
 
-// TODO: new exit strategy, and reimplement HeaderByNumber
-
 import (
 	"context"
 	"math/big"
@@ -127,7 +125,11 @@ func (r *ReorgSim) BatchCallContext(ctx context.Context, elems []rpc.BatchElem) 
 		number := bn.Uint64()
 		b, ok := r.chain[number]
 		if !ok {
-			event := r.events[r.currentReorgEvent]
+			eventIndex := r.currentReorgEvent
+			if lenEvents := len(r.events); r.currentReorgEvent >= lenEvents {
+				eventIndex = lenEvents - 1
+			}
+			event := r.events[eventIndex]
 			toBeForked := number >= event.ReorgBlock
 
 			var hash common.Hash

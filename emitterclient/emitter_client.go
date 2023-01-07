@@ -1,5 +1,7 @@
 package emitterclient
 
+// This package maybe removed in favor of centralized pkg/components
+
 import (
 	"github.com/artnoi43/gsl/gslutils"
 

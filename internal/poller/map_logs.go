@@ -39,6 +39,8 @@ func mapLogs(
 	tracker *blockTracker,
 	// getHeaderFunc is used to get block hash for known block with missing logs.
 	client superwatcher.EthClient,
+	// pollLevel changes poller behavior when getting headers.
+	pollLevel superwatcher.PollLevel,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
@@ -61,6 +63,9 @@ func mapLogs(
 			}
 		} else if ok {
 			if mapResult.Block.Hash != log.BlockHash {
+				// Delete all results after block |number|
+				deleteUnusableResult(mapResults, number)
+
 				return mapResults, errors.Wrapf(
 					errHashesDiffer, "logs in the same block %d has different hash %s vs %s",
 					number, gslutils.StringerToLowerString(mapResult.Block.Hash), gslutils.StringerToLowerString(log.BlockHash),
@@ -73,6 +78,8 @@ func mapLogs(
 	}
 
 	// Collect blocks with missing logs (we saw them with logs in previous calls to mapLogs)
+	// so we have them in tracker but not in mapResults. We can know if a block has missing logs
+	// only if we have the tracker.
 	var blocksMissingLogs []uint64
 	if tracker != nil {
 		for n := toBlock; n >= fromBlock; n-- {
@@ -88,48 +95,112 @@ func mapLogs(
 	}
 
 	var headers map[uint64]superwatcher.BlockHeader
-	var blocksWithResults []uint64
+	var targetBlocks []uint64
 
-	// Get block headers using BatchCallContext via getHeadersByNumbers
+	// Get block headers for targetBlocks using BatchCallContext via getHeadersByNumbers
 	if doHeader {
 		for n := toBlock; n >= fromBlock; n-- {
-			if _, ok := mapResults[n]; !ok {
+			// Only add blocks that are not in blocksMissingLogs
+			if gslutils.Contains(blocksMissingLogs, n) {
 				continue
 			}
 
-			blocksWithResults = append(blocksWithResults, n)
+			switch {
+			case pollLevel >= superwatcher.PollLevelExpensive:
+				// If PollLevelExpensive, then we will get all headers in range [fromBlock, toBlock]
+				// so here we append targetBlocks and continue.
+				targetBlocks = append(targetBlocks, n)
+				continue
+
+			default:
+				// Otherwise, only get headers for blocks with interesting logs (i.e. blocks present in mapResults)
+				if _, ok := mapResults[n]; !ok {
+					continue
+				}
+
+				targetBlocks = append(targetBlocks, n)
+			}
 		}
 
 		var err error
-		headers, err = getHeadersByNumbers(ctx, client, append(blocksWithResults, blocksMissingLogs...))
+		headers, err = getHeadersByNumbers(ctx, client, append(targetBlocks, blocksMissingLogs...))
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get block headers for new logs filtered")
 		}
 
-		// Collect results of batchCalls into mapResults
-		for n, header := range headers {
-			mapResult, ok := mapResults[n]
-			// Should be one of the blocksMissingLogs
+		// Check if we got all headers we need
+		var lenTargets int
+		switch {
+		case doHeader:
+			lenTargets = len(targetBlocks) + len(blocksMissingLogs)
+		case !doHeader:
+			lenTargets = len(blocksMissingLogs)
+		}
+		if lenHeaders := len(headers); lenTargets != lenHeaders {
+			return nil, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenTargets, lenHeaders)
+		}
+
+		// Collect headers into mapResults
+		// (1) If Expensive, then collect all headers.
+		// (2) If !Expensive, then only collect headers for blocks already in mapResults.
+		// If header hashes with known hashes in mapResults differs, return errHashesDiffer.
+		for n := fromBlock; n <= toBlock; n++ { // Go from fromBlock -> toBlock to detect the first bad blocks
+			header, ok := headers[n]
 			if !ok {
-				if !gslutils.Contains(blocksMissingLogs, n) {
-					return nil, errors.Wrap(superwatcher.ErrProcessReorg, "got headers but no result and not missing logs")
+				// Expensive pollLevel should have headers for all blocks
+				if pollLevel >= superwatcher.PollLevelExpensive {
+					return nil, errors.Wrapf(
+						superwatcher.ErrFetchError,
+						"pollLevel is EXPENSIVE, but missing header for %d", n,
+					)
 				}
 
 				continue
 			}
 
-			// If headerHash differs from log blockHash, then the chain is reorging as we run this code
+			mapResult, ok := mapResults[n]
+			// If no block n in mapResults (i.e. block n has to interesting logs this time)
+			if !ok {
+				switch {
+				case pollLevel >= superwatcher.PollLevelExpensive:
+					// Create new mapResult with data from header
+					mapResult = &mapLogsResult{
+						Block: superwatcher.Block{
+							Header: header,        // Assign header
+							Hash:   header.Hash(), // Assign hash
+						},
+					}
+
+					mapResults[n] = mapResult
+
+				case pollLevel <= superwatcher.PollLevelNormal:
+					// Check for superwatcher bug and just continue,
+					// as we won't process headers for blocks outside of mapResults
+					if !gslutils.Contains(blocksMissingLogs, n) {
+						return nil, errors.Wrap(superwatcher.ErrProcessReorg, "got headers but no result and not missing logs")
+					}
+
+					continue
+				}
+			}
+
+			// If code reaches here, then we have the header's block in mapResults, and so we'll compare their hashes.
+			// If headerHash differs from log blockHash, then the chain is reorging as we run this code.
 			if headerHash := header.Hash(); headerHash != mapResult.Block.Hash {
-				return nil, errors.Wrapf(
-					superwatcher.ErrFetchError, "header block hash %s on block %d is different than log block hash %s",
+				// Delete all results after block mapResult.Number
+				deleteUnusableResult(mapResults, mapResult.Number)
+
+				return mapResults, errors.Wrapf(
+					errHashesDiffer, "header block hash %s on block %d is different than log block hash %s",
 					headerHash.String(), n, mapResult.Block.Hash.String(),
 				)
 			}
 
+			// Assign header to good block in mapResult
 			mapResult.Block.Header = header
 		}
 	} else {
-		// We get headers for blocksMissingLogs regardless of deHeader values
+		// We get headers for blocksMissingLogs anyway regardless of deHeader or pollLevel values
 		var err error
 		headers, err = getHeadersByNumbers(ctx, client, blocksMissingLogs)
 		if err != nil {
@@ -137,7 +208,8 @@ func mapLogs(
 		}
 	}
 
-	// i.e. if poller.doReorg == false
+	// i.e. if poller.doReorg == false,
+	// return now after collecting headers and don't compare hashes
 	if tracker == nil {
 		return mapResults, nil
 	}
@@ -187,6 +259,7 @@ func mapLogs(
 			continue
 		}
 
+		// Stamp Removed field
 		for _, trackerLog := range trackerBlock.Logs {
 			trackerLog.Removed = true
 		}
@@ -195,4 +268,15 @@ func mapLogs(
 	}
 
 	return mapResults, nil
+}
+
+// deleteUnusableResult removes all map keys that are >= lastGood.
+// It used when poller.mapLogs encounter a situation where fresh chain data
+// on a same block has different block hashes.
+func deleteUnusableResult(mapResults map[uint64]*mapLogsResult, lastGood uint64) {
+	for k := range mapResults {
+		if k >= lastGood {
+			delete(mapResults, k)
+		}
+	}
 }

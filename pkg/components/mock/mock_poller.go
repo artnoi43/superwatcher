@@ -81,13 +81,15 @@ func (p *mockPoller) Poll(
 	return nil, superwatcher.ErrFromBlockReorged
 }
 
-func (p *mockPoller) SetDoReorg(bool)                {}
-func (p *mockPoller) DoReorg() bool                  { return true }
-func (p *mockPoller) SetDoHeader(bool)               {}
-func (p *mockPoller) DoHeader() bool                 { return true }
-func (p *mockPoller) Addresses() []common.Address    { return nil }
-func (p *mockPoller) Topics() [][]common.Hash        { return nil }
-func (p *mockPoller) AddAddresses(...common.Address) {}
-func (p *mockPoller) AddTopics(...[]common.Hash)     {}
-func (p *mockPoller) SetAddresses([]common.Address)  {}
-func (p *mockPoller) SetTopics([][]common.Hash)      {}
+func (p *mockPoller) SetDoReorg(bool)                           {}
+func (p *mockPoller) DoReorg() bool                             { return true }
+func (p *mockPoller) SetDoHeader(bool)                          {}
+func (p *mockPoller) DoHeader() bool                            { return true }
+func (p *mockPoller) Addresses() []common.Address               { return nil }
+func (p *mockPoller) Topics() [][]common.Hash                   { return nil }
+func (p *mockPoller) AddAddresses(...common.Address)            {}
+func (p *mockPoller) AddTopics(...[]common.Hash)                {}
+func (p *mockPoller) SetAddresses([]common.Address)             {}
+func (p *mockPoller) SetTopics([][]common.Hash)                 {}
+func (p *mockPoller) SetPollLevel(superwatcher.PollLevel) error { return nil }
+func (p *mockPoller) PollLevel() superwatcher.PollLevel         { return superwatcher.PollLevelNormal }

@@ -32,34 +32,41 @@ func TestServiceEnginePoolFactoryV1(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
-		stateDataGateway, err := testServiceEnginePoolFactoryV1(testCase, serviceDataGateway)
-		if err != nil {
-			lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
-			t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
-		}
-
-		results, err := serviceDataGateway.GetPools(nil)
-		if err != nil {
-			t.Errorf("GetPools failed after service returned: %s", err.Error())
-		}
-
-		for _, result := range results {
-			expectedReorgedHash := reorgsim.ReorgHash(result.BlockCreated, 0)
-			if result.BlockCreated >= testCase.Events[0].ReorgBlock {
-				if result.BlockHash != expectedReorgedHash {
-					t.Fatalf(
-						"unexpected reorgedBlockHash - expecting %s, got %s",
-						expectedReorgedHash.String(), result.BlockHash.String(),
-					)
-				}
-
-				continue
+	for _, pollLevel := range []superwatcher.PollLevel{
+		superwatcher.PollLevelFast,
+		superwatcher.PollLevelNormal,
+		superwatcher.PollLevelExpensive,
+	} {
+		for _, testCase := range testCases {
+			testCase.PollLevel = pollLevel
+			serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
+			stateDataGateway, err := testServiceEnginePoolFactoryV1(testCase, serviceDataGateway)
+			if err != nil {
+				lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
+				t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
 			}
 
-			if result.BlockHash == expectedReorgedHash {
-				t.Fatal("old block in the old chain has reorged hash")
+			results, err := serviceDataGateway.GetPools(nil)
+			if err != nil {
+				t.Errorf("GetPools failed after service returned: %s", err.Error())
+			}
+
+			for _, result := range results {
+				expectedReorgedHash := reorgsim.ReorgHash(result.BlockCreated, 0)
+				if result.BlockCreated >= testCase.Events[0].ReorgBlock {
+					if result.BlockHash != expectedReorgedHash {
+						t.Fatalf(
+							"unexpected reorgedBlockHash - expecting %s, got %s",
+							expectedReorgedHash.String(), result.BlockHash.String(),
+						)
+					}
+
+					continue
+				}
+
+				if result.BlockHash == expectedReorgedHash {
+					t.Fatal("old block in the old chain has reorged hash")
+				}
 			}
 		}
 	}
@@ -75,7 +82,7 @@ func testServiceEnginePoolFactoryV1(
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
 
 	components := servicetest.InitTestComponents(
-		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3),
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3, testCase.PollLevel),
 		poolFactoryEngine,
 		testCase.Param,
 		testCase.Events,

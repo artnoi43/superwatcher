@@ -22,6 +22,10 @@ func TestWrapErrBlockNumber(t *testing.T) {
 	if !errors.Is(err, ErrFromBlockReorged) {
 		t.Error("err is not errFromBlockReorged")
 	}
+
+	if !errors.Is(ErrFromBlockReorged, ErrChainIsReorging) {
+		t.Error("errFromBlockReorged is not ErrChainIsReorging")
+	}
 }
 
 func wrapErrFetchError(err error) error {
