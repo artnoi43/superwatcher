@@ -21,7 +21,7 @@ type TestCase struct {
 	// If set to true, the emitter will go back due to superwatcher.ErrRecordNotFound
 	DataGatewayFirstRun bool `json:"dataGatewayFirstRun"`
 	// EmitterPoller's poll level
-	PollLevel superwatcher.PollLevel `json:"pollLevel"`
+	Policy superwatcher.Policy `json:"policy"`
 }
 
 // TestComponents is used by RunServiceTestComponents to instantiate
@@ -37,7 +37,7 @@ type TestComponents struct {
 func DefaultServiceTestConfig(
 	startBlock uint64,
 	logLevel uint8,
-	pollLevel superwatcher.PollLevel,
+	policy superwatcher.Policy,
 ) *superwatcher.Config {
 	return &superwatcher.Config{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
@@ -48,7 +48,7 @@ func DefaultServiceTestConfig(
 		MaxGoBackRetries: 2,
 		LoopInterval:     0,
 		LogLevel:         logLevel,
-		PollLevel:        pollLevel,
+		Policy:        policy,
 	}
 }
 

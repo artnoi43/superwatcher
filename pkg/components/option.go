@@ -20,7 +20,7 @@ type componentConfig struct {
 	doReorg             bool
 	doHeader            bool
 	filterRange         uint64
-	pollLevel           superwatcher.PollLevel
+	policy              superwatcher.Policy
 	logLevel            uint8 // redundant in conf, but users may want to set this separately
 	syncChan            chan struct{}
 	pollResultChan      chan *superwatcher.PollResult
@@ -115,9 +115,9 @@ func WithDoHeader(doHeader bool) Option {
 	}
 }
 
-func WithPollLevel(level superwatcher.PollLevel) Option {
+func WithPolicy(level superwatcher.Policy) Option {
 	return func(c *componentConfig) {
-		c.pollLevel = level
+		c.policy = level
 	}
 }
 

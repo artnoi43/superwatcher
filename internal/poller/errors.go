@@ -14,6 +14,6 @@ var (
 	// the emitter will make the poller re-poll the block range (with extra look back blocks)
 	errHashesDiffer = errors.Wrap(superwatcher.ErrChainIsReorging, "blockHashes differ")
 
-	// We cannot change poller.pollLevel on the fly for now - will lead to reorg bug.
-	errDowngradeLevel = errors.Wrap(superwatcher.ErrUserError, "pollLevel cannot be downgraded")
+	// We cannot change poller.policy on the fly for now - will lead to reorg bug.
+	errDowngradeLevel = errors.Wrap(superwatcher.ErrUserError, "policy cannot be downgraded")
 )

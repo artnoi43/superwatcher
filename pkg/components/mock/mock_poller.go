@@ -91,5 +91,5 @@ func (p *mockPoller) AddAddresses(...common.Address)            {}
 func (p *mockPoller) AddTopics(...[]common.Hash)                {}
 func (p *mockPoller) SetAddresses([]common.Address)             {}
 func (p *mockPoller) SetTopics([][]common.Hash)                 {}
-func (p *mockPoller) SetPollLevel(superwatcher.PollLevel) error { return nil }
-func (p *mockPoller) PollLevel() superwatcher.PollLevel         { return superwatcher.PollLevelNormal }
+func (p *mockPoller) SetPolicy(superwatcher.Policy) error { return nil }
+func (p *mockPoller) Policy() superwatcher.Policy         { return superwatcher.PolicyNormal }

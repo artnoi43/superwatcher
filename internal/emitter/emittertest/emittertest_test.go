@@ -80,10 +80,10 @@ func TestEmitterByCase(t *testing.T) {
 }
 
 func emitterTestTemplateV2(t *testing.T, caseNumber int) {
-	for _, pollLevel := range []superwatcher.PollLevel{
-		superwatcher.PollLevelFast,
-		superwatcher.PollLevelNormal,
-		// superwatcher.PollLevelExpensive,
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		// superwatcher.PolicyExpensive,
 	} {
 		tc := TestCasesV2[caseNumber-1]
 		b, _ := json.Marshal(tc)
@@ -124,7 +124,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 		pollResultChan := make(chan *superwatcher.PollResult)
 
 		fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
-		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, pollLevel)
+		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, policy)
 		testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
 		ctx, cancel := context.WithCancel(context.Background())

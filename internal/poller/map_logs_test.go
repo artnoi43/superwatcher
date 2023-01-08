@@ -38,24 +38,24 @@ func TestDeleteUnusable(t *testing.T) {
 }
 
 func TestMapLogs(t *testing.T) {
-	for _, pollLevel := range []superwatcher.PollLevel{
-		superwatcher.PollLevelFast,
-		superwatcher.PollLevelNormal,
-		superwatcher.PollLevelExpensive,
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
 	} {
 		for i, tc := range emittertest.TestCasesV1 {
 			b, _ := json.Marshal(tc)
-			t.Logf("testCase: %s (pollLevel %d)", b, pollLevel)
-			err := testMapLogsV1(&tc, pollLevel)
+			t.Logf("testCase: %s (policy %d)", b, policy)
+			err := testMapLogsV1(&tc, policy)
 			if err != nil {
-				t.Fatalf("Case %d (pollLevel %d): %s", i, pollLevel, err.Error())
+				t.Fatalf("Case %d (policy %d): %s", i, policy, err.Error())
 			}
 		}
 	}
 }
 
 // testMapLogsV1 tests function mapLogs with ReorgSimV1 (1 reorg)
-func testMapLogsV1(tc *emittertest.TestConfig, pollLevel superwatcher.PollLevel) error {
+func testMapLogsV1(tc *emittertest.TestConfig, policy superwatcher.Policy) error {
 	tracker := newTracker("testProcessReorg", 3)
 	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 
@@ -116,7 +116,7 @@ func testMapLogsV1(tc *emittertest.TestConfig, pollLevel superwatcher.PollLevel)
 		true,
 		tracker,
 		mockClient,
-		pollLevel,
+		policy,
 	)
 	if err != nil {
 		return errors.Wrap(err, "error in mapLogs")

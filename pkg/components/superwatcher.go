@@ -33,7 +33,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 		conf.filterRange,
 		conf.ethClient,
 		logLevel,
-		gslutils.Max(conf.pollLevel, conf.config.PollLevel),
+		gslutils.Max(conf.policy, conf.config.Policy),
 	)
 
 	emitter := NewEmitter(

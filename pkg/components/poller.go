@@ -16,7 +16,7 @@ func NewPoller(
 	filterRange uint64,
 	client superwatcher.EthClient,
 	logLevel uint8,
-	pollLevel superwatcher.PollLevel,
+	policy superwatcher.Policy,
 ) superwatcher.EmitterPoller {
 	return poller.New(
 		addresses,
@@ -26,7 +26,7 @@ func NewPoller(
 		filterRange,
 		client,
 		logLevel,
-		pollLevel,
+		policy,
 	)
 }
 
@@ -44,6 +44,6 @@ func NewPollerOptions(options ...Option) superwatcher.EmitterPoller {
 		c.filterRange,
 		c.ethClient,
 		gslutils.Max(c.logLevel, c.config.LogLevel),
-		gslutils.Max(c.pollLevel, c.config.PollLevel),
+		gslutils.Max(c.policy, c.config.Policy),
 	)
 }

@@ -39,8 +39,8 @@ func mapLogs(
 	tracker *blockTracker,
 	// getHeaderFunc is used to get block hash for known block with missing logs.
 	client superwatcher.EthClient,
-	// pollLevel changes poller behavior when getting headers.
-	pollLevel superwatcher.PollLevel,
+	// policy changes poller behavior when getting headers.
+	policy superwatcher.Policy,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
@@ -106,8 +106,8 @@ func mapLogs(
 			}
 
 			switch {
-			case pollLevel >= superwatcher.PollLevelExpensive:
-				// If PollLevelExpensive, then we will get all headers in range [fromBlock, toBlock]
+			case policy >= superwatcher.PolicyExpensive:
+				// If PolicyExpensive, then we will get all headers in range [fromBlock, toBlock]
 				// so here we append targetBlocks and continue.
 				targetBlocks = append(targetBlocks, n)
 				continue
@@ -147,11 +147,11 @@ func mapLogs(
 		for n := fromBlock; n <= toBlock; n++ { // Go from fromBlock -> toBlock to detect the first bad blocks
 			header, ok := headers[n]
 			if !ok {
-				// Expensive pollLevel should have headers for all blocks
-				if pollLevel >= superwatcher.PollLevelExpensive {
+				// Expensive policy should have headers for all blocks
+				if policy >= superwatcher.PolicyExpensive {
 					return nil, errors.Wrapf(
 						superwatcher.ErrFetchError,
-						"pollLevel is EXPENSIVE, but missing header for %d", n,
+						"policy is EXPENSIVE, but missing header for %d", n,
 					)
 				}
 
@@ -162,7 +162,7 @@ func mapLogs(
 			// If no block n in mapResults (i.e. block n has to interesting logs this time)
 			if !ok {
 				switch {
-				case pollLevel >= superwatcher.PollLevelExpensive:
+				case policy >= superwatcher.PolicyExpensive:
 					// Create new mapResult with data from header
 					mapResult = &mapLogsResult{
 						Block: superwatcher.Block{
@@ -173,7 +173,7 @@ func mapLogs(
 
 					mapResults[n] = mapResult
 
-				case pollLevel <= superwatcher.PollLevelNormal:
+				case policy <= superwatcher.PolicyNormal:
 					// Check for superwatcher bug and just continue,
 					// as we won't process headers for blocks outside of mapResults
 					if !gslutils.Contains(blocksMissingLogs, n) {
@@ -200,7 +200,7 @@ func mapLogs(
 			mapResult.Block.Header = header
 		}
 	} else {
-		// We get headers for blocksMissingLogs anyway regardless of deHeader or pollLevel values
+		// We get headers for blocksMissingLogs anyway regardless of deHeader or policy values
 		var err error
 		headers, err = getHeadersByNumbers(ctx, client, blocksMissingLogs)
 		if err != nil {

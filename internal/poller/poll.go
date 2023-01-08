@@ -61,17 +61,17 @@ func (p *poller) Poll(
 	}
 
 	// mapLogs maps logs into a map of superwatcher.Block.
-	// mapLogs also fetches other data, e.g. block headers, based on logs available and p.pollLevel.
+	// mapLogs also fetches other data, e.g. block headers, based on logs available and p.policy.
 	// mapLogs will use tracker information as well as the block headers to detect chain reorg events.
 	mapResults, err := mapLogs(
 		ctx,
 		fromBlock,
 		toBlock,
 		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
-		p.doHeader || p.pollLevel >= superwatcher.PollLevelExpensive, // Force doHeader if pollLevel >= Expensive
+		p.doHeader || p.policy >= superwatcher.PolicyExpensive, // Force doHeader if policy >= Expensive
 		p.tracker,
 		p.client,
-		p.pollLevel,
+		p.policy,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "error in mapLogs")
@@ -130,14 +130,14 @@ func (p *poller) Poll(
 				)
 
 				switch {
-				case p.pollLevel == superwatcher.PollLevelFast:
+				case p.policy == superwatcher.PolicyFast:
 					// Remove from tracker if block has 0 logs, and poller will cease to
 					// get block header for this empty block after this call.
 					if err := p.tracker.removeBlock(number); err != nil {
 						return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
 					}
 
-				case p.pollLevel >= superwatcher.PollLevelNormal:
+				case p.policy >= superwatcher.PolicyNormal:
 					// Save new empty block information back to tracker. This will make poller
 					// continues to get header for this block until it goes out of filter (poll) scope.
 					trackerBlock.Hash = freshHash

@@ -101,10 +101,10 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 	conf := serviceConf.SuperWatcherConfig
 	conf.LoopInterval = 0
 
-	for _, pollLevel := range []superwatcher.PollLevel{
-		superwatcher.PollLevelFast,
-		superwatcher.PollLevelNormal,
-		superwatcher.PollLevelExpensive,
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
 	} {
 		fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 
@@ -134,7 +134,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 		}
 
 		// testPoller got nil addresses and topics so it will poll logs from all addresses and topics
-		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, pollLevel)
+		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, policy)
 
 		// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 		errChan := make(chan error, 5)

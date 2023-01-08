@@ -27,6 +27,6 @@ type Config struct {
 	// LogLevel for debugger.Debugger, the higher the more verbose
 	LogLevel uint8 `mapstructure:"log_level" yaml:"log_level" json:"logLevel"`
 
-	// PollLevel is for configuring EmitterPoller behavior
-	PollLevel PollLevel `mapstructure:"poll_level" yaml:"poll_level" json:"pollLevel"`
+	// Policy is for configuring EmitterPoller behavior
+	Policy Policy `mapstructure:"policy" yaml:"policy" json:"policy"`
 }

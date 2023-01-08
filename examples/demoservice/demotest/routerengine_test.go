@@ -46,19 +46,19 @@ func TestServiceEngineRouterV1(t *testing.T) {
 	}
 
 	logLevel := uint8(3)
-	for _, pollLevel := range []superwatcher.PollLevel{
-		superwatcher.PollLevelFast,
-		superwatcher.PollLevelNormal,
-		superwatcher.PollLevelExpensive,
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
 	} {
 		for _, testCase := range testCases {
-			testCase.PollLevel = pollLevel
+			testCase.Policy = policy
 			dgwENS := datagateway.NewMockDataGatewayENS()
 			dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
 			router := routerengine.NewMockRouter(logLevel, dgwENS, dgwPoolFactory)
 
 			components := servicetest.InitTestComponents(
-				servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.PollLevel),
+				servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.Policy),
 				router,
 				testCase.Param,
 				testCase.Events,

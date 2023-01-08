@@ -80,13 +80,13 @@ func TestServiceEngineENSV1(t *testing.T) {
 		},
 	}
 
-	for _, pollLevel := range []superwatcher.PollLevel{
-		superwatcher.PollLevelFast,
-		superwatcher.PollLevelNormal,
-		superwatcher.PollLevelExpensive,
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
 	} {
 		for _, testCase := range testCases {
-			testCase.PollLevel = pollLevel
+			testCase.Policy = policy
 			t.Logf("testCase for ENS: %+v", testCase)
 			// We'll later use |ensStore| to check for saved results
 			ensStore := datagateway.NewMockDataGatewayENS()
@@ -152,7 +152,7 @@ func runTestServiceEngineENS(
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine
 
 	components := servicetest.InitTestComponents(
-		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.PollLevel),
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.Policy),
 		ensEngine,
 		testCase.Param,
 		testCase.Events,

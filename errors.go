@@ -15,6 +15,6 @@ var (
 	ErrSuperwatcherBug = errors.New("superwatcher bug")
 	ErrProcessReorg    = errors.Wrap(ErrSuperwatcherBug, "error in emitter reorg detection logic") // Bug in reorg detection logic
 
-	// User violates some rules/policies, e.g. downgrading poller PollLevel
+	// User violates some rules/policies, e.g. downgrading poller Policy
 	ErrUserError = errors.New("user error")
 )

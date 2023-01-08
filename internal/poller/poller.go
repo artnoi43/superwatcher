@@ -24,7 +24,7 @@ type poller struct {
 	client            superwatcher.EthClient
 	doReorg           bool
 	doHeader          bool
-	pollLevel         superwatcher.PollLevel
+	policy            superwatcher.Policy
 
 	tracker  *blockTracker
 	debugger *debugger.Debugger
@@ -38,7 +38,7 @@ func New(
 	filterRange uint64,
 	client superwatcher.EthClient,
 	logLevel uint8,
-	pollLevel superwatcher.PollLevel,
+	policy superwatcher.Policy,
 ) superwatcher.EmitterPoller {
 	var tracker *blockTracker
 	if doReorg {
@@ -54,7 +54,7 @@ func New(
 		doHeader:    doHeader,
 		tracker:     tracker,
 		debugger:    debugger.NewDebugger("poller", logLevel),
-		pollLevel:   pollLevel,
+		policy:      policy,
 	}
 }
 
@@ -106,8 +106,8 @@ func (p *poller) SetDoHeader(doHeader bool) {
 	p.Lock()
 	defer p.Unlock()
 
-	if doHeader && p.pollLevel >= superwatcher.PollLevelExpensive {
-		p.debugger.Debug(1, "SetDoHeader called, but PollLevelExpensive is set, ignoring doHeader value")
+	if doHeader && p.policy >= superwatcher.PolicyExpensive {
+		p.debugger.Debug(1, "SetDoHeader called, but PolicyExpensive is set, ignoring doHeader value")
 	}
 
 	p.doHeader = doHeader
@@ -172,28 +172,28 @@ func (p *poller) SetTopics(topics [][]common.Hash) {
 	p.topics = topics
 }
 
-func (p *poller) SetPollLevel(level superwatcher.PollLevel) error {
+func (p *poller) SetPolicy(level superwatcher.Policy) error {
 	p.Lock()
 	defer p.Unlock()
 
-	// Remove all blocks from tracker with 0 logs if not PollLevelExpensive,
-	// because if these blocks are left in tracker, poller with level < PollLevelExpensive
+	// Remove all blocks from tracker with 0 logs if not PolicyExpensive,
+	// because if these blocks are left in tracker, poller with level < PolicyExpensive
 	// will see that these blocks are ones with missing logs and stamped as reorged = true.
-	if p.pollLevel < level {
+	if p.policy < level {
 		return errors.Wrapf(
 			errDowngradeLevel,
 			"cannot downgrade from %s (%d) to %s (%d)",
-			p.pollLevel.String(), p.pollLevel, level.String(), level,
+			p.policy.String(), p.policy, level.String(), level,
 		)
 	}
 
-	p.pollLevel = level
+	p.policy = level
 	return nil
 }
 
-func (p *poller) PollLevel() superwatcher.PollLevel {
+func (p *poller) Policy() superwatcher.Policy {
 	p.RLock()
 	defer p.RUnlock()
 
-	return p.pollLevel
+	return p.policy
 }

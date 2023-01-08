@@ -13,7 +13,7 @@ type config struct {
 	doReorg     bool
 	doHeader    bool
 	logLevel    uint8
-	pollLevel   superwatcher.PollLevel
+	policy      superwatcher.Policy
 	filterRange uint64
 	client      superwatcher.EthClient
 	addresses   []common.Address
@@ -64,9 +64,9 @@ func WithDoHeader(doHeader bool) Option {
 	}
 }
 
-func WithPollLevel(level superwatcher.PollLevel) Option {
+func WithPolicy(level superwatcher.Policy) Option {
 	return func(c *config) {
-		c.pollLevel = level
+		c.policy = level
 	}
 }
 
@@ -84,6 +84,6 @@ func New(options ...Option) superwatcher.EmitterPoller {
 		c.filterRange,
 		c.client,
 		c.logLevel,
-		c.pollLevel,
+		c.policy,
 	)
 }

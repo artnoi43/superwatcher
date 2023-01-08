@@ -32,13 +32,13 @@ func TestServiceEnginePoolFactoryV1(t *testing.T) {
 		},
 	}
 
-	for _, pollLevel := range []superwatcher.PollLevel{
-		superwatcher.PollLevelFast,
-		superwatcher.PollLevelNormal,
-		superwatcher.PollLevelExpensive,
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
 	} {
 		for _, testCase := range testCases {
-			testCase.PollLevel = pollLevel
+			testCase.Policy = policy
 			serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
 			stateDataGateway, err := testServiceEnginePoolFactoryV1(testCase, serviceDataGateway)
 			if err != nil {
@@ -82,7 +82,7 @@ func testServiceEnginePoolFactoryV1(
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
 
 	components := servicetest.InitTestComponents(
-		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3, testCase.PollLevel),
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3, testCase.Policy),
 		poolFactoryEngine,
 		testCase.Param,
 		testCase.Events,
