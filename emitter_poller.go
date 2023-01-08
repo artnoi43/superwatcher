@@ -39,6 +39,10 @@ const (
 	// PolicyExpensive makes poller process and track all blocks' headers,
 	// regardless of whether the blocks have interesting logs or not, or Config.DoHeader value.
 	PolicyExpensive
+
+	// PolicyFastBlock behaves like PolicyExpensive, but instead of fetching event logs + headers,
+	// the poller fetches event logs + blocks.
+	PolicyExpensiveBlock
 )
 
 func (level Policy) String() string {
