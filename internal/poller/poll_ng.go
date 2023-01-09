@@ -31,7 +31,7 @@ func (p *poller) PollNg(
 		return nil, err
 	}
 
-	mapResults, err := mapLogsNg(ctx, fromBlock, toBlock, p.policy, pollResults, p.client, p.tracker)
+	mapResults, err := findMissing(ctx, fromBlock, toBlock, p.policy, pollResults, p.client, p.tracker)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (p *poller) PollNg(
 	return result, nil
 }
 
-func poll( // nolint:unused
+func poll(
 	ctx context.Context,
 	addresses []common.Address,
 	topics [][]common.Hash,
@@ -64,10 +64,10 @@ func poll( // nolint:unused
 	policy superwatcher.Policy,
 	client superwatcher.EthClient,
 ) (
-	map[uint64]superwatcher.Block,
+	map[uint64]*mapLogsResult,
 	error,
 ) {
-	pollResults := make(map[uint64]superwatcher.Block)
+	pollResults := make(map[uint64]*mapLogsResult)
 
 	q := ethereum.FilterQuery{ //nolint:wrapcheck
 		FromBlock: big.NewInt(int64(fromBlock)),
@@ -123,16 +123,16 @@ func poll( // nolint:unused
 		}
 
 		// Collect logs into map
-		mappedLogs := make(map[uint64][]*types.Log)
+		resultLogs := make(map[uint64][]*types.Log)
 		for i, log := range logs {
-			blockLogs, ok := mappedLogs[log.BlockNumber]
+			blockLogs, ok := resultLogs[log.BlockNumber]
 			if !ok {
-				mappedLogs[log.BlockNumber] = []*types.Log{&logs[i]}
+				resultLogs[log.BlockNumber] = []*types.Log{&logs[i]}
 				continue
 			}
 
 			blockLogs = append(blockLogs, &logs[i])
-			mappedLogs[log.BlockNumber] = blockLogs
+			resultLogs[log.BlockNumber] = blockLogs
 		}
 
 		// Collect pollResults
@@ -148,7 +148,7 @@ func poll( // nolint:unused
 			}
 
 			headerHash := header.Hash()
-			logs, ok := mappedLogs[n]
+			logs, ok := resultLogs[n]
 			if ok {
 				// If this block has logs, see if their blockHash matches headerHash
 				for _, log := range logs {
@@ -178,26 +178,27 @@ func poll( // nolint:unused
 
 		// Collect pollResults
 		for i, log := range logs {
-			b, ok := pollResults[log.BlockNumber]
+			result, ok := pollResults[log.BlockNumber]
 			if !ok {
-				b = superwatcher.Block{
+				b := superwatcher.Block{
 					Number: log.BlockNumber,
 					Hash:   log.BlockHash,
 					Header: nil,
 					Logs:   []*types.Log{&logs[i]},
 				}
 
-				pollResults[log.BlockNumber] = b
+				pollResults[log.BlockNumber] = &mapLogsResult{Block: b}
 				continue
+
 			} else if ok {
-				if b.Hash != log.BlockHash {
+				if result.Hash != log.BlockHash {
 					return nil, errors.Wrapf(
 						errHashesDiffer, "logs block hashes on block %d differ: %s vs %s",
-						log.BlockNumber, b.Hash.String(), log.BlockHash.String(),
+						log.BlockNumber, result.Hash.String(), log.BlockHash.String(),
 					)
 				}
 
-				b.Logs = append(b.Logs, &logs[i])
+				result.Logs = append(result.Logs, &logs[i])
 			}
 		}
 	}
@@ -205,19 +206,19 @@ func poll( // nolint:unused
 	return pollResults, nil
 }
 
-func mapLogsNg(
+func findMissing(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
 	policy superwatcher.Policy,
-	pollResults map[uint64]superwatcher.Block,
+	pollResults map[uint64]*mapLogsResult,
 	client superwatcher.EthClient,
-	tracker *blockTracker,
+	tracker *blockTracker, // tracker is used as read-only in here. Don't write.
 ) (
 	map[uint64]*mapLogsResult,
 	error,
 ) {
-	var missingLogs []uint64
+	var blocksMissing []uint64
 	if tracker != nil {
 		for n := fromBlock; n <= toBlock; n++ {
 			_, ok := tracker.getTrackerBlock(n)
@@ -227,29 +228,22 @@ func mapLogsNg(
 
 			_, ok = pollResults[n]
 			if !ok {
-				missingLogs = append(missingLogs, n)
+				blocksMissing = append(blocksMissing, n)
 			}
 		}
 	}
 
-	mapResults := make(map[uint64]*mapLogsResult)
-
 	var blocksWithResults []uint64
 	if policy < superwatcher.PolicyExpensive {
-		// PolicyExpensive already fetched block headers fpr pollResults in poller.poll
+		// PolicyExpensive already fetched block headers for pollResults in poller.poll
 		for n := fromBlock; n <= toBlock; n++ {
-			pollResult, ok := pollResults[n]
+			_, ok := pollResults[n]
 			if !ok {
 				continue
 			}
 
-			// Collect pollResult into mapResults
-			mapResults[n] = &mapLogsResult{
-				Block: pollResult,
-			}
-
 			// We will get headers for missingLogs anyway, so don't append if n's also there
-			if gslutils.Contains(missingLogs, n) {
+			if gslutils.Contains(blocksMissing, n) {
 				continue
 			}
 
@@ -257,18 +251,18 @@ func mapLogsNg(
 		}
 	}
 
-	headers, err := getHeadersByNumbers(ctx, client, append(blocksWithResults, missingLogs...))
+	headers, err := getHeadersByNumbers(ctx, client, append(blocksWithResults, blocksMissing...))
 	if err != nil {
 		return nil, errors.Wrap(superwatcher.ErrFetchError, "failed to get block headers in mapLogsNg")
 	}
 
-	lenHeads, lenBlocks := len(headers), len(blocksWithResults)+len(missingLogs)
+	lenHeads, lenBlocks := len(headers), len(blocksWithResults)+len(blocksMissing)
 	if lenHeads != lenBlocks {
 		return nil, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads)
 	}
 
 	if tracker == nil {
-		return mapResults, nil
+		return pollResults, nil
 	}
 
 	// Detect chain reorg using tracker
@@ -280,66 +274,74 @@ func mapLogsNg(
 			}
 
 			pollResult, ok := pollResults[n]
-			if !ok {
-				// If !ok and PolicyNormal, then n is one of the missing logs
-				if policy <= superwatcher.PolicyNormal {
-					continue
-				}
 
-				return nil, errors.Wrapf(superwatcher.ErrSuperwatcherBug, "missing pollResult for block %d with PolicyExpensive", n)
-			}
-
+			// !ok is when we had this block in tracker but not in pollResults
 			var header superwatcher.BlockHeader
-			switch {
-			case policy == superwatcher.PolicyExpensive:
-
-				if gslutils.Contains(missingLogs, n) {
-					header = headers[n]
-					if pollResult.Header.Hash() != header.Hash() {
-						// Our 2 most recent hashes for block |n| are unusable because they differ.
-						deleteMapResults(mapResults, n)
-						return mapResults, nil
-					}
-				} else {
-					header = pollResult.Header
+			var headerHash common.Hash
+			if !ok {
+				// It should have been tagged as missing
+				if !gslutils.Contains(blocksMissing, n) {
+					return nil, errors.Wrapf(superwatcher.ErrSuperwatcherBug, "missing pollResult for trackerBlock %d", n)
 				}
 
-			case policy < superwatcher.PolicyExpensive:
-				header = headers[n]
+				// We should ALWAYS have headers for blocksMissing
+				header, ok = headers[n]
+				if !ok {
+					return nil, errors.Wrapf(superwatcher.ErrSuperwatcherBug, "missing headers for blocksMissing in tracker block %d", n)
+				}
+
+				headerHash = header.Hash()
+				pollResult = &mapLogsResult{
+					Block: superwatcher.Block{
+						Number:       n,
+						Header:       header,
+						Hash:         headerHash,
+						LogsMigrated: true,
+					},
+
+					forked: true,
+				}
+
+				pollResults[n] = pollResult
+				continue
 			}
 
-			if header == nil {
-				return nil, errors.Wrapf(superwatcher.ErrSuperwatcherBug, "missing header for block %d with policy %s", n, policy.String())
+			// ok means we have this block in tracker, and in pollResult. So here we check if
+			// pollResult.Hash differs from header.Hash
+			header, ok = headers[n]
+			if !ok {
+				return nil, errors.Wrapf(superwatcher.ErrSuperwatcherBug, "missing header for pollResult")
 			}
 
-			headerHash := header.Hash()
+			headerHash = header.Hash()
+			if pollHash := pollResult.Hash; headerHash != pollHash {
+				deleteMapResults(pollResults, n)
+				return pollResults, errors.Wrapf(
+					errHashesDiffer, "block %d headerHash %s differs from pollResultHash %s",
+					n, headerHash.String(), pollHash.String(),
+				)
+			}
+
+			pollResult.Header = header
+			pollResults[n] = pollResult
+
 			if header.Hash() != pollResult.Hash {
-				deleteMapResults(mapResults, n)
-
-				return mapResults, errors.Wrapf(
+				deleteMapResults(pollResults, n)
+				return pollResults, errors.Wrapf(
 					errHashesDiffer, "block %d header hash differs from log block hash: %s vs %s",
 					n, hashStr(headerHash), hashStr(pollResult.Hash),
 				)
 			}
 
-			mapResult, ok := mapResults[n]
-			if !ok || mapResult == nil {
-				mapResult = new(mapLogsResult)
-				mapResults[n] = mapResult
-			}
-
-			mapResult.Header = header
-			mapResult.Hash = headerHash
-
 			if trackerBlock.Hash == pollResult.Hash && len(trackerBlock.Logs) == len(pollResult.Logs) {
 				continue
 			}
 
-			mapResult.forked = true
+			pollResult.forked = true
 		}
 	}
 
-	return mapResults, nil
+	return pollResults, nil
 }
 
 func findReorg(

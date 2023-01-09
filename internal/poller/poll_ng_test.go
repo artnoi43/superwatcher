@@ -66,7 +66,7 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 			tracker.addTrackerBlock(b)
 		}
 
-		pollResults := make(map[uint64]superwatcher.Block)
+		pollResults := make(map[uint64]*mapLogsResult)
 		// Collect reorgedLogs for checking
 		for blockNumber, block := range reorgedChain {
 			if logs := block.Logs(); len(logs) != 0 {
@@ -80,7 +80,7 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 					b.Header = block
 				}
 
-				pollResults[blockNumber] = b
+				pollResults[blockNumber] = &mapLogsResult{Block: b}
 				concatLogs[blockNumber] = append(concatLogs[blockNumber], gslutils.CollectPointers(logs)...)
 			}
 		}
@@ -96,7 +96,7 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 		}
 
 		// Call mapFreshLogs with reorgedLogs
-		mapResults, err := mapLogsNg(
+		mapResults, err := findMissing(
 			nil,
 			tc.FromBlock,
 			tc.ToBlock,
