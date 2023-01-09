@@ -26,7 +26,10 @@ func (p *poller) PollNg(
 	*superwatcher.PollerResult,
 	error,
 ) {
-	pollResults, err := poll(ctx, p.addresses, p.topics, fromBlock, toBlock, p.policy, p.client)
+	p.Lock()
+	defer p.Unlock()
+
+	pollResults, err := poll(ctx, fromBlock, toBlock, p.addresses, p.topics, p.policy, p.client)
 	if err != nil {
 		return nil, err
 	}
@@ -57,10 +60,10 @@ func (p *poller) PollNg(
 
 func poll(
 	ctx context.Context,
-	addresses []common.Address,
-	topics [][]common.Hash,
 	fromBlock uint64,
 	toBlock uint64,
+	addresses []common.Address,
+	topics [][]common.Hash,
 	policy superwatcher.Policy,
 	client superwatcher.EthClient,
 ) (

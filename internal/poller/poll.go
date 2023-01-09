@@ -63,7 +63,7 @@ func (p *poller) Poll(
 	// mapLogs maps logs into a map of superwatcher.Block.
 	// mapLogs also fetches other data, e.g. block headers, based on logs available and p.policy.
 	// mapLogs will use tracker information as well as the block headers to detect chain reorg events.
-	mapResults, err := mapLogs(
+	pollResults, err := mapLogs(
 		ctx,
 		fromBlock,
 		toBlock,
@@ -84,7 +84,7 @@ func (p *poller) Poll(
 		// (1) block has >=1 interesting log
 		// (2) block _did_ have >= logs from the last call, but was reorged and no longer has any interesting logs
 		// If (2), then it will removed from tracker, and will no longer appear in mapResults after this call.
-		mapResult, ok := mapResults[number]
+		mapResult, ok := pollResults[number]
 		if !ok {
 			continue
 		}
@@ -105,7 +105,7 @@ func (p *poller) Poll(
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
-			freshHash := mapResults[number].Block.Hash
+			freshHash := pollResults[number].Block.Hash
 
 			p.debugger.Debug(
 				1, "chain reorg detected",
@@ -165,7 +165,7 @@ func (p *poller) Poll(
 
 	// If fromBlock reorged, return the result but with non-nil error.
 	// This way, the result still gets emitted, leaving no unseen Block for the managed engine.
-	fromBlockResult, ok := mapResults[fromBlock]
+	fromBlockResult, ok := pollResults[fromBlock]
 	if ok {
 		if fromBlockResult.forked && p.doReorg {
 			return result, errors.Wrapf(
