@@ -13,6 +13,6 @@ Configuration field `FilterRange` determines how many _new blocks_ the emitter
 would want to filter each loop.
 
 If a known block's hash changes, `poller` assumes that the block was reorged,
-and it emits the old (reorged) logs along with good logs (if there are any) in `PollResult`.
+and it emits the old (reorged) logs along with good logs (if there are any) in `PollerResult`.
 
 ## How emitter [determines block numbers for poller](./FILTERING.md)

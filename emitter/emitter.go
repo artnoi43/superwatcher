@@ -13,7 +13,7 @@ type config struct {
 	ethClient           superwatcher.EthClient
 	getStateDataGateway superwatcher.GetStateDataGateway
 	syncChan            <-chan struct{}
-	pollResultChan      chan<- *superwatcher.PollResult
+	pollResultChan      chan<- *superwatcher.PollerResult
 	errChan             chan<- error
 }
 
@@ -49,7 +49,7 @@ func WithSyncChan(syncChan <-chan struct{}) Option {
 	}
 }
 
-func WithFilterResultChan(resultChan chan<- *superwatcher.PollResult) Option {
+func WithFilterResultChan(resultChan chan<- *superwatcher.PollerResult) Option {
 	return func(c *config) {
 		c.pollResultChan = resultChan
 	}

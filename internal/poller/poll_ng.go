@@ -12,9 +12,48 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
+
+func (p *poller) PollNg(
+	ctx context.Context,
+	fromBlock uint64,
+	toBlock uint64,
+) (
+	*superwatcher.PollerResult,
+	error,
+) {
+	pollResults, err := poll(ctx, p.addresses, p.topics, fromBlock, toBlock, p.policy, p.client)
+	if err != nil {
+		return nil, err
+	}
+
+	mapResults, err := mapLogsNg(ctx, fromBlock, toBlock, p.policy, pollResults, p.client, p.tracker)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := findReorg(fromBlock, toBlock, p.policy, mapResults, p.tracker, p.debugger)
+	if err != nil {
+		return result, err
+	}
+
+	p.lastRecordedBlock = result.LastGoodBlock
+
+	fromBlockResult, ok := mapResults[fromBlock]
+	if ok {
+		if fromBlockResult.forked && p.doReorg {
+			return result, errors.Wrapf(
+				superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
+			)
+		}
+	}
+
+	return result, nil
+}
 
 func poll( // nolint:unused
 	ctx context.Context,
@@ -22,8 +61,8 @@ func poll( // nolint:unused
 	topics [][]common.Hash,
 	fromBlock uint64,
 	toBlock uint64,
-	client superwatcher.EthClient,
 	policy superwatcher.Policy,
+	client superwatcher.EthClient,
 ) (
 	map[uint64]superwatcher.Block,
 	error,
@@ -174,7 +213,6 @@ func mapLogsNg(
 	pollResults map[uint64]superwatcher.Block,
 	client superwatcher.EthClient,
 	tracker *blockTracker,
-	doReorg bool,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
@@ -284,16 +322,127 @@ func mapLogsNg(
 				)
 			}
 
-			mapResults[n].Header = header
-			mapResults[n].Hash = headerHash
+			mapResult, ok := mapResults[n]
+			if !ok || mapResult == nil {
+				mapResult = new(mapLogsResult)
+				mapResults[n] = mapResult
+			}
+
+			mapResult.Header = header
+			mapResult.Hash = headerHash
 
 			if trackerBlock.Hash == pollResult.Hash && len(trackerBlock.Logs) == len(pollResult.Logs) {
 				continue
 			}
 
-			mapResults[n].reorged = true
+			mapResult.forked = true
 		}
 	}
 
 	return mapResults, nil
+}
+
+func findReorg(
+	fromBlock uint64,
+	toBlock uint64,
+	policy superwatcher.Policy,
+	mapResults map[uint64]*mapLogsResult,
+	tracker *blockTracker,
+	debugger *debugger.Debugger,
+) (*superwatcher.PollerResult, error) {
+	// Fills |result| and saves current data back to tracker first.
+	result := new(superwatcher.PollerResult)
+	for number := fromBlock; number <= toBlock; number++ {
+		// Only blocks in mapResults are worth processing. There are 3 reasons a block is in mapResults:
+		// (1) block has >=1 interesting log
+		// (2) block _did_ have >= logs from the last call, but was reorged and no longer has any interesting logs
+		// If (2), then it will removed from tracker, and will no longer appear in mapResults after this call.
+		mapResult, ok := mapResults[number]
+		if !ok {
+			continue
+		}
+
+		// Reorged blocks (the ones that were removed) will be published with data from tracker
+		if mapResult.forked && tracker != nil {
+			trackerBlock, ok := tracker.getTrackerBlock(number)
+			if !ok {
+				debugger.Debug(
+					1, "block marked as reorged but was not found in tracker",
+					zap.Uint64("blockNumber", number),
+					zap.String("freshHash", trackerBlock.String()),
+				)
+
+				return nil, errors.Wrapf(
+					superwatcher.ErrProcessReorg, "reorgedBlock %d not found in trackfromBlocker", number,
+				)
+			}
+
+			// Logs may be moved from blockNumber, hence there's no value in map
+			freshHash := mapResult.Hash
+
+			debugger.Debug(
+				1, "chain reorg detected",
+				zap.Uint64("blockNumber", number),
+				zap.String("freshHash", freshHash.String()),
+				zap.String("trackerHash", trackerBlock.String()),
+			)
+
+			// Copy to avoid mutated trackerBlock which might break poller logic.
+			// After the copy, result.ReorgedBlocks consumer may freely mutate their *Block.
+			copiedFromTracker := *trackerBlock
+			result.ReorgedBlocks = append(result.ReorgedBlocks, &copiedFromTracker)
+
+			// Block used to have interesting logs, but chain reorg occurred
+			// and its logs were moved to somewhere else, or just removed altogether.
+			if trackerBlock.LogsMigrated {
+				debugger.Debug(
+					1, "logs missing from block, removing from tracker",
+					zap.Uint64("blockNumber", number),
+					zap.String("freshHash", freshHash.String()),
+					zap.String("trackerHash", trackerBlock.String()),
+				)
+
+				switch {
+				case policy == superwatcher.PolicyFast:
+					// Remove from tracker if block has 0 logs, and poller will cease to
+					// get block header for this empty block after this call.
+					if err := tracker.removeBlock(number); err != nil {
+						return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
+					}
+
+				default:
+					// Save new empty block information back to tracker. This will make poller
+					// continues to get header for this block until it goes out of filter (poll) scope.
+					trackerBlock.Hash = freshHash
+					trackerBlock.Logs = nil
+				}
+			}
+		}
+
+		goodBlock := mapResult.Block
+
+		if tracker != nil {
+			tracker.addTrackerBlock(&goodBlock)
+		}
+
+		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.
+		resultBlock := goodBlock
+		result.GoodBlocks = append(result.GoodBlocks, &resultBlock)
+	}
+
+	result.FromBlock, result.ToBlock = fromBlock, toBlock
+	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
+
+	// If fromBlock reorged, return the result but with non-nil error.
+	// This way, the result still gets emitted, leaving no unseen Block for the managed engine.
+	fromBlockResult, ok := mapResults[fromBlock]
+	if ok {
+		if fromBlockResult.forked && tracker != nil {
+			return result, errors.Wrapf(
+				superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
+			)
+		}
+	}
+
+	return result, nil
 }

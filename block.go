@@ -13,7 +13,7 @@ type Block struct {
 	// LogsMigrated indicates whether all interesting logs were moved/migrated
 	// _from_ this block after a chain reorg or not. The field is primarily used
 	// by EmitterPoller to trigger the poller to get new, fresh block hash for a block.
-	// The field should always be false if the Block is in PollResult.GoodBlocks.
+	// The field should always be false if the Block is in PollerResult.GoodBlocks.
 	LogsMigrated bool `json:"logsMigrated"`
 
 	Number uint64       `json:"number"`

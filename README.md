@@ -19,7 +19,7 @@ The code in this project is organized into the following packages:
    or offers other convenient functions and examples.
 
    Some development facility code like a fullly integrated test suite for application code
-   [`servicetest`](./pkg/servicetest/), or the chain reorg simulation code [`reorgsim`](./pkg/reorgsim/),
+   [`testutils`](./pkg/testutils/), or the chain reorg simulation code [`reorgsim`](./pkg/reorgsim/),
    or the mocked [`StateDataGateway`](./pkg/datagateway/) types, are provided here.
 
    One package, [`pkg/components`](./pkg/components), is especially important for users, because it provides
@@ -59,7 +59,7 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
                       Emitter+Poller
                             │
                             │
-                            │  PollResult {
+                            │  PollerResult {
                             │     GoodBlocks
                             │     ReorgedBlocks
                             │  }
@@ -84,7 +84,7 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
    The poller polls event logs from blockchain, and compares a log's block hash with
    the one it once saw. If the hash of this poll differs from the the previous poll,
    it assumes that the block's log has been reorged. The result of this polling is
-   `PollResult`.
+   `PollerResult`.
 
 2. [`Emitter`](./internal/emitter/)
 
@@ -99,12 +99,12 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
 
 3. [`EmiiterClient`](./internal/emitterclient/)
 
-   The emitter client is embedded into `Engine`. The emitter client linearly receives `PollResult`
+   The emitter client is embedded into `Engine`. The emitter client linearly receives `PollerResult`
    from emitter, and then returning it to `Engine`. It also syncs with the emittter.
    If it fails to sync, the emitter will not proceed to the next loop.
 
 4. [`Engine`](./internal/engine/)
-   The engine receives `PollResult` from the emitter client, and passes the result to appropriate
+   The engine receives `PollerResult` from the emitter client, and passes the result to appropriate
    methods of `ServiceEngine`. It calls `ServiceEngine.HandleReorgedLogs` first, before `ServiceEngine.HandleGoodLogs`,
    so that the service can undo or fix any actions it had performed on the now bad logs before
    it processes the new, reorged logs.
@@ -157,16 +157,16 @@ engine implementation injected).
 
 After you have successfully init both components, start both _concurrently_ with `Loop`.
 
-## Understanding [`PollResult`](./poll_result.go)
+## Understanding [`PollerResult`](./poll_result.go)
 
-The data structure emitted by the emitter is `PollResult`, which represents the result
+The data structure emitted by the emitter is `PollerResult`, which represents the result
 of each `emitter.FilterLogs` call. The important structure fields are:
 
-`PollResult.GoodBlocks` is any new blocks filtered. Duplicate good blocks will reappear
+`PollerResult.GoodBlocks` is any new blocks filtered. Duplicate good blocks will reappear
 if they are still in range, but the engine should be able to skip all such duplicate blocks,
 and thus the `ServiceEngine` code only sees new, good blocks it never saw.
 
-`PollResult.ReorgedBlocks` is any `GoodBlocks` from previous loops that the emitter saw with
+`PollerResult.ReorgedBlocks` is any `GoodBlocks` from previous loops that the emitter saw with
 different block hashes. This means that any `ReorgedBlocks` was once a `GoodBlocks`.
 `ServiceEngine` is expected to revert or fix any actions performed when the removed blocks were still
 considered canonical.
@@ -189,22 +189,22 @@ Now let's say the emitter filters with a range of 2 blocks, with no look back bl
 the engine will see the results as the following:
 
 ```text
-Loop 0 PollResult: {GoodBlocks: [{10:0x10},{11:0x11}], ReorgedBlocks:[]}
+Loop 0 PollerResult: {GoodBlocks: [{10:0x10},{11:0x11}], ReorgedBlocks:[]}
 
 
                              a GoodBlock reappears
                                       ▼
-Loop 1 PollResult: {GoodBlocks: [{11:0x11},{12:0x12}], ReorgedBlocks:[]}
+Loop 1 PollerResult: {GoodBlocks: [{11:0x11},{12:0x12}], ReorgedBlocks:[]}
 
 
                                    we have not seen 13:0x13     was once a GoodBlock
                                                 ▼                          ▼
-Loop 2 PollResult: {GoodBlocks: [12:0x1212},13:0x1313], ReorgedBlocks:[12:0x12]}
+Loop 2 PollerResult: {GoodBlocks: [12:0x1212},13:0x1313], ReorgedBlocks:[12:0x12]}
 
 
                             a GoodBlock reappears
                                       ▼
-Loop 3 PollResult: {GoodBlocks: [{13:0x1313},{14:0x14}], ReorgedBlocks:[]}
+Loop 3 PollerResult: {GoodBlocks: [{13:0x1313},{14:0x14}], ReorgedBlocks:[]}
 ```
 
 You can see that the once good `12:0x12` comes back in ReorgedBlocks even after its hash changed

@@ -7,7 +7,7 @@ import (
 )
 
 func TestLastGoodBlock(t *testing.T) {
-	tests := map[*superwatcher.PollResult]uint64{
+	tests := map[*superwatcher.PollerResult]uint64{
 		{
 			FromBlock: 101,
 			ToBlock:   120,
@@ -69,8 +69,8 @@ func TestLastGoodBlock(t *testing.T) {
 		}: 103,
 	}
 
-	for PollResult, expected := range tests {
-		actual := superwatcher.LastGoodBlock(PollResult)
+	for PollerResult, expected := range tests {
+		actual := superwatcher.LastGoodBlock(PollerResult)
 		if actual != expected {
 			t.Errorf("expecting lastGoodBlock %d, got %d", expected, actual)
 		}

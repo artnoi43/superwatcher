@@ -124,7 +124,7 @@ func testMapLogsV1(tc *emittertest.TestConfig, policy superwatcher.Policy) error
 
 	wasReorged := make(map[uint64]bool)
 	for k, v := range mapResults {
-		wasReorged[k] = v.reorged
+		wasReorged[k] = v.forked
 	}
 
 	for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
@@ -138,7 +138,7 @@ func testMapLogsV1(tc *emittertest.TestConfig, policy superwatcher.Policy) error
 			mapResult = new(mapLogsResult)
 		}
 
-		reorged := mapResult.reorged
+		reorged := mapResult.forked
 		// Any blocks after c.reorgedAt should be reorged.
 		if blockNumber >= reorgEvent.ReorgBlock {
 			if reorged {

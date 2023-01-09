@@ -15,13 +15,13 @@ import (
 )
 
 // Poll filters Ethereum event logs from |fromBlock| to |toBlock|,
-// then gathers the result as `superwatcher.PollResult`, and returns the result.
+// then gathers the result as `superwatcher.PollerResult`, and returns the result.
 func (p *poller) Poll(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
 ) (
-	*superwatcher.PollResult,
+	*superwatcher.PollerResult,
 	error,
 ) {
 	p.Lock()
@@ -78,7 +78,7 @@ func (p *poller) Poll(
 	}
 
 	// Fills |result| and saves current data back to tracker first.
-	result := new(superwatcher.PollResult)
+	result := new(superwatcher.PollerResult)
 	for number := fromBlock; number <= toBlock; number++ {
 		// Only blocks in mapResults are worth processing. There are 3 reasons a block is in mapResults:
 		// (1) block has >=1 interesting log
@@ -90,7 +90,7 @@ func (p *poller) Poll(
 		}
 
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
-		if mapResult.reorged && p.doReorg {
+		if mapResult.forked && p.doReorg {
 			trackerBlock, ok := p.tracker.getTrackerBlock(number)
 			if !ok {
 				p.debugger.Debug(
@@ -167,7 +167,7 @@ func (p *poller) Poll(
 	// This way, the result still gets emitted, leaving no unseen Block for the managed engine.
 	fromBlockResult, ok := mapResults[fromBlock]
 	if ok {
-		if fromBlockResult.reorged && p.doReorg {
+		if fromBlockResult.forked && p.doReorg {
 			return result, errors.Wrapf(
 				superwatcher.ErrFromBlockReorged, "fromBlock %d was removed/reorged", fromBlock,
 			)

@@ -13,7 +13,7 @@ import (
 // mapLogsResult represents information of fresh blocks mapped by mapLogs.
 // It contains fresh data, i.e. not from tracker.
 type mapLogsResult struct {
-	reorged bool // true if the tracker block hash differs from fresh block hash
+	forked bool // true if the tracker block hash differs from fresh block hash
 	superwatcher.Block
 }
 
@@ -166,6 +166,7 @@ func mapLogs(
 					// Create new mapResult with data from header
 					mapResult = &mapLogsResult{
 						Block: superwatcher.Block{
+							Number: n,
 							Header: header,        // Assign header
 							Hash:   header.Hash(), // Assign hash
 						},
@@ -242,7 +243,7 @@ func mapLogs(
 			}
 
 			mapResult = &mapLogsResult{
-				reorged: true,
+				forked: true,
 				Block: superwatcher.Block{
 					Number: n,
 					Header: newHeader,
@@ -264,7 +265,7 @@ func mapLogs(
 			trackerLog.Removed = true
 		}
 
-		mapResult.reorged = true
+		mapResult.forked = true
 	}
 
 	return mapResults, nil

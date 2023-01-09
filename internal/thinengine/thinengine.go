@@ -10,7 +10,7 @@ import (
 )
 
 // thinEngine is a thin implementation of superwatcher.Engine.
-// It does not manage states for the service, and all handling of PollResult is
+// It does not manage states for the service, and all handling of PollerResult is
 // managed directly by serviceEngine.
 type thinEngine struct { //nolint:unused
 	emitterClient    superwatcher.EmitterClient

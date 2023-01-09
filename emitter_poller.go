@@ -5,13 +5,15 @@ import (
 	"fmt"
 )
 
-// EmitterPoller filters event logs from the blockchain and maps []types.Log into *PollResult.
+// EmitterPoller filters event logs from the blockchain and maps []types.Log into *PollerResult.
 // The result of EmitterPoller.poll is later used by Emitter to emit to Engine.
 // superwatcher users can ignore this type if they have no need to update log addresses and topics on-the-fly,
 // as EmitterPoller is already wrapped by Emitter.
 type EmitterPoller interface {
-	// Poll polls event logs from fromBlock to toBlock, and process the logs into *PollResult for Emitter
-	Poll(ctx context.Context, fromBlock, toBlock uint64) (*PollResult, error)
+	// Poll polls event logs from fromBlock to toBlock, and process the logs into *PollerResult for Emitter
+	Poll(ctx context.Context, fromBlock, toBlock uint64) (*PollerResult, error)
+	// PollNg is the new Poll with Policy handling at the center
+	PollNg(ctx context.Context, fromBlock, toBlock uint64) (*PollerResult, error)
 	// Policy gets current Policy
 	Policy() Policy
 	// SetPolicy sets new Policy (NOTE: changing Policy mid-run not tested)

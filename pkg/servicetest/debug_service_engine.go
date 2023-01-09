@@ -24,7 +24,7 @@ type DebugServiceEngine struct {
 }
 
 // Implements superwatcher.ThinServiceEngine
-func (e *DebugServiceEngine) HandleResult(result *superwatcher.PollResult) error {
+func (e *DebugServiceEngine) HandleResult(result *superwatcher.PollerResult) error {
 	e.debugger.Debug(2, fmt.Sprintf("Got result: %d GoodBlocks, %d ReorgedBlocks", len(result.GoodBlocks), len(result.ReorgedBlocks)))
 
 	for _, block := range result.ReorgedBlocks {

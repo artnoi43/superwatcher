@@ -50,6 +50,7 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 			zap.Uint64("currentBlock", r.currentBlock),
 			zap.Bool("toBeForked", b.toBeForked),
 			zap.Bool("reorgedHere", b.reorgedHere),
+			zap.Int("lenLogs", len(b.Logs())),
 		)
 
 		appendFilterLogs(&b.logs, &logs, query.Addresses, query.Topics)

@@ -2,7 +2,7 @@
 
 # Package `demotest`
 
-demotest is a test package using [`servicetest`](../../pkg/servicetest/) for `demoservice`.
+demotest is a test package using [`testutils`](../../pkg/testutils/) for `demoservice`.
 
 It is used to test `examples/demoservice` functionality, and also to test superwatcher
 behavior during chain reorg.

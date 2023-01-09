@@ -23,7 +23,7 @@ type componentConfig struct {
 	policy              superwatcher.Policy
 	logLevel            uint8 // redundant in conf, but users may want to set this separately
 	syncChan            chan struct{}
-	pollResultChan      chan *superwatcher.PollResult
+	pollResultChan      chan *superwatcher.PollerResult
 	errChan             chan error
 	getStateDataGateway superwatcher.GetStateDataGateway
 	setStateDataGateway superwatcher.SetStateDataGateway
@@ -49,7 +49,7 @@ func WithSyncChan(syncChan chan struct{}) Option {
 	}
 }
 
-func WithFilterResultChan(resultChan chan *superwatcher.PollResult) Option {
+func WithFilterResultChan(resultChan chan *superwatcher.PollerResult) Option {
 	return func(c *componentConfig) {
 		c.pollResultChan = resultChan
 	}

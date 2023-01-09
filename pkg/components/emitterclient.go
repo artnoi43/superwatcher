@@ -10,7 +10,7 @@ import (
 func NewEmitterClient(
 	conf *superwatcher.Config,
 	syncChan chan<- struct{},
-	pollResultChan <-chan *superwatcher.PollResult,
+	pollResultChan <-chan *superwatcher.PollerResult,
 	errChan <-chan error,
 ) superwatcher.EmitterClient {
 	return emitterclient.New(

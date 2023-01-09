@@ -3,83 +3,32 @@ package emittertest
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"flag"
-	"fmt"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/emitter"
 	"github.com/artnoi43/superwatcher/internal/poller"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 )
 
 var (
-	serviceConfigPath  = "../../../examples/demoservice/config/config.yaml"
-	allCasesAlreadyRun = false
-
-	flagCase    = flag.Int("case", -1, "Emitter test case")
-	verboseFlag = flag.Bool("v", false, "Verbose emitter output")
+	serviceConfigPath = "../../../examples/demoservice/config/config.yaml"
 )
 
-// TODO: verbose does not work
-func getFlagValues() (caseNumber int, verbose bool) {
-	caseNumber = 1 // default case 1
-	if flagCase != nil {
-		caseNumber = *flagCase
-	}
-	if verboseFlag != nil {
-		verbose = *verboseFlag
-	}
-
-	return caseNumber, verbose
-}
-
-// TestEmitterV2 uses TestCasesV2 to call emitterTestTemplateV2.
+// TestEmitterV2 uses TestCasesV2 to call testEmitterV2.
 // V2 means that there are > 1 ReorgEvent for the test case.
 func TestEmitterV2(t *testing.T) {
-	for i := range TestCasesV2 {
-		t.Run("TestEmitterV2", func(t *testing.T) {
-			emitterTestTemplateV2(t, i+1)
-		})
-	}
-
-	allCasesAlreadyRun = true
+	testutils.RunTestCase(t, "testEmitterV2", TestCasesV2, testEmitterV2)
 }
 
-// Run this from the root of the repo with:
-// go test -v ./internal/emitter -run TestEmitterByCase -case 69
-// Go test binary already called `flag.Parse`, so we just simply
-// need to name our flag so that the flag package knows to parse it too.
-func TestEmitterByCase(t *testing.T) {
-	if allCasesAlreadyRun {
-		t.Skip("all cases were tested before -- skipping")
-	}
-
-	caseNumber, _ := getFlagValues()
-	if caseNumber < 0 {
-		TestEmitterV2(t)
-		return
-	}
-
-	if len(TestCasesV2)+1 > caseNumber {
-		testName := fmt.Sprintf("Case:%d", caseNumber)
-		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplateV2(t, caseNumber)
-		})
-
-		return
-	}
-
-	t.Skipf("no such test case: %d", caseNumber)
-}
-
-func emitterTestTemplateV2(t *testing.T, caseNumber int) {
+func testEmitterV2(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
@@ -87,7 +36,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 	} {
 		tc := TestCasesV2[caseNumber-1]
 		b, _ := json.Marshal(tc)
-		t.Logf("testConfig for case %d: %s", caseNumber, b)
+		t.Logf("testConfig for case %d: %s (policy %s)", caseNumber, b, policy.String())
 
 		type serviceConfig struct {
 			SuperWatcherConfig *superwatcher.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
@@ -95,7 +44,7 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 
 		serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
 		if err != nil {
-			t.Fatal("bad config", err.Error())
+			return errors.Wrap(err, "bad YAML config")
 		}
 		// Override LoopInterval
 		conf := serviceConf.SuperWatcherConfig
@@ -116,12 +65,12 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 
 		sim, err := reorgsim.NewReorgSimFromLogsFiles(param, tc.Events, logsFiles, "EmitterTestV2", 4)
 		if err != nil {
-			t.Fatal("error creating ReorgSim", err.Error())
+			return errors.Wrap(err, "error creating ReorgSim")
 		}
 
 		errChan := make(chan error, 5)
 		syncChan := make(chan struct{})
-		pollResultChan := make(chan *superwatcher.PollResult)
+		pollResultChan := make(chan *superwatcher.PollerResult)
 
 		fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, policy)
@@ -183,4 +132,6 @@ func emitterTestTemplateV2(t *testing.T, caseNumber int) {
 			}
 		}
 	}
+
+	return nil
 }

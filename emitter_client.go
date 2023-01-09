@@ -5,7 +5,7 @@ package superwatcher
 // It can be ignored by superwatcher users if they are not implementing their own Engine.
 type EmitterClient interface {
 	// WatcherResult returns result from Emitter to caller
-	WatcherResult() *PollResult
+	WatcherResult() *PollerResult
 	// WatcherError returns error sent by Emitter
 	WatcherError() error
 	// WatcherConfig returns config used to create its Emitter

@@ -11,7 +11,7 @@ import (
 )
 
 // engineBlocks are used to aggregate multiple blocks' information
-// from superwatcher.PollResult to pass to ServiceEngine methods.
+// from superwatcher.PollerResult to pass to ServiceEngine methods.
 type engineBlocks struct {
 	blocks []*superwatcher.Block
 

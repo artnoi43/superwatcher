@@ -48,7 +48,7 @@ func DefaultServiceTestConfig(
 		MaxGoBackRetries: 2,
 		LoopInterval:     0,
 		LogLevel:         logLevel,
-		Policy:        policy,
+		Policy:           policy,
 	}
 }
 

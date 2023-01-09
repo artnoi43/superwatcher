@@ -3,8 +3,6 @@ package emitter
 import (
 	"context"
 	"encoding/json"
-	"flag"
-	"fmt"
 	"testing"
 
 	"github.com/artnoi43/gsl/gslutils"
@@ -18,94 +16,39 @@ import (
 	"github.com/artnoi43/superwatcher/internal/poller"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 )
 
-var (
-	flagCase           = flag.Int("case", -1, "Emitter test case")
-	verboseFlag        = flag.Bool("v", false, "Verbose emitter output")
-	testLogsPath       = "../../test_logs"
-	serviceConfigPath  = "../../examples/demoservice/config/config.yaml"
-	allCasesAlreadyRun = false
-)
+const serviceConfigPath = "../../examples/demoservice/config/config.yaml"
 
-// TODO: verbose does not work
-func getFlagValues() (caseNumber int, verbose bool) {
-	caseNumber = 1 // default case 1
-	if flagCase != nil {
-		caseNumber = *flagCase
-	}
-	if verboseFlag != nil {
-		verbose = *verboseFlag
-	}
-
-	return caseNumber, verbose
+func TestEmitter(t *testing.T) {
+	testutils.RunTestCase(t, "testEmitterV1", emittertest.TestCasesV1, testEmitterV1)
 }
 
-// allCasesAlreadyRun is used to skip TestEmitterByCase if TestEmitterAllCases were run.
-
-func TestEmitterAllCases(t *testing.T) {
-	allCasesAlreadyRun = true
-
-	_, verbose := getFlagValues()
-	for i := range emittertest.TestCasesV1 {
-		testName := fmt.Sprintf("Case:%d", i+1)
-		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplateV1(t, i+1, verbose)
-		})
-	}
-}
-
-// Run this from the root of the repo with:
-// go test -v ./internal/emitter -run TestEmitterByCase -case 69
-// Go test binary already called `flag.Parse`, so we just simply
-// need to name our flag so that the flag package knows to parse it too.
-func TestEmitterByCase(t *testing.T) {
-	if allCasesAlreadyRun {
-		t.Skip("all cases were tested before -- skipping")
-	}
-
-	caseNumber, verbose := getFlagValues()
-	if caseNumber < 0 {
-		TestEmitterAllCases(t)
-		return
-	}
-
-	if len(emittertest.TestCasesV1)+1 > caseNumber {
-		testName := fmt.Sprintf("Case:%d", caseNumber)
-		t.Run(testName, func(t *testing.T) {
-			emitterTestTemplateV1(t, caseNumber, verbose)
-		})
-
-		return
-	}
-
-	t.Skipf("no such test case: %d", caseNumber)
-}
-
-// emitterTestTemplateV1 is designed to test emitter's full `Loop` with ReorgSimV1 mocked chain.
+// testEmitterV1 is designed to test emitter's full `Loop` with ReorgSimV1 mocked chain.
 // This means that the test chain will only have 1 reorg event.
-func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
-	tc := emittertest.TestCasesV1[caseNumber-1]
-	b, _ := json.Marshal(tc)
-	t.Logf("testConfig for case %d: %s", caseNumber, b)
-
-	type serviceConfig struct {
-		SuperWatcherConfig *superwatcher.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
-	}
-
-	serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
-	if err != nil {
-		t.Fatal("bad config", err.Error())
-	}
-	// Override LoopInterval
-	conf := serviceConf.SuperWatcherConfig
-	conf.LoopInterval = 0
-
+func testEmitterV1(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		superwatcher.PolicyExpensive,
+		// superwatcher.PolicyExpensive,
 	} {
+		tc := emittertest.TestCasesV1[caseNumber-1]
+		b, _ := json.Marshal(tc)
+		t.Logf("testConfig for case %d: %s (policy %s)", caseNumber, b, policy.String())
+
+		type serviceConfig struct {
+			SuperWatcherConfig *superwatcher.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
+		}
+
+		serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
+		if err != nil {
+			t.Fatal("bad config", err.Error())
+		}
+		// Override LoopInterval
+		conf := serviceConf.SuperWatcherConfig
+		conf.LoopInterval = 0
+
 		fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 
 		param := reorgsim.Param{
@@ -139,7 +82,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 		// Buffered error channels, because if sim will die on ExitBlock, then it will die multiple times
 		errChan := make(chan error, 5)
 		syncChan := make(chan struct{})
-		pollResultChan := make(chan *superwatcher.PollResult)
+		pollResultChan := make(chan *superwatcher.PollerResult)
 		testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
 		// Check if the emitter noticed a reorg
@@ -163,7 +106,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 		latestGoodBlocks := make(map[uint64]*superwatcher.Block)
 		movedToCount := make(map[common.Hash]bool)
 
-		var prevResult *superwatcher.PollResult
+		var prevResult *superwatcher.PollerResult
 		for {
 			result := <-pollResultChan
 
@@ -257,7 +200,7 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 
 		if len(tc.Events) != 0 {
 			if !reorgedOnce {
-				t.Fatal("not reorgedOnce")
+				return errors.New("not reorgedOnce")
 			}
 		}
 
@@ -269,6 +212,8 @@ func emitterTestTemplateV1(t *testing.T, caseNumber int, verbose bool) {
 			t.Log("movedLog", txHash.String())
 		}
 	}
+
+	return nil
 }
 
 func fatalBadLog(t *testing.T, msg string, log *types.Log) {

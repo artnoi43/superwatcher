@@ -11,7 +11,7 @@ import (
 )
 
 // poller implements superwatcher.WatcherPoller.
-// It filters event logs and detecting chain reorg, i.e. it produces superwatcher.PollResult for the emitter.
+// It filters event logs and detecting chain reorg, i.e. it produces superwatcher.PollerResult for the emitter.
 // poller behavior can be changed on-the-fly using methods defined in this file.
 type poller struct {
 	sync.RWMutex

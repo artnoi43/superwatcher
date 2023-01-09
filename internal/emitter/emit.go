@@ -7,7 +7,7 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger"
 )
 
-func (e *emitter) emitFilterResult(result *superwatcher.PollResult) {
+func (e *emitter) emitFilterResult(result *superwatcher.PollerResult) {
 	if result != nil {
 		// Only log if there's some logs
 		nilChan := e.pollResultChan == nil
@@ -40,7 +40,7 @@ func (e *emitter) emitFilterResult(result *superwatcher.PollResult) {
 		return
 	}
 
-	logger.Panic("nil PollResult got sent to emitFilterREsult")
+	logger.Panic("nil PollerResult got sent to emitFilterREsult")
 }
 
 func (e *emitter) emitError(err error) {

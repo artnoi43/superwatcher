@@ -163,7 +163,7 @@ func (e *emitter) computeFromBlockToBlock(
 	error,
 ) {
 	// lastRecordedBlock was saved externally by engine.
-	// The value to be saved should be superwatcher.PollResult.LastGoodBlock
+	// The value to be saved should be superwatcher.PollerResult.LastGoodBlock
 	lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 	if err != nil {
 		// Return error if not superwatcher.ErrRecordNotFound

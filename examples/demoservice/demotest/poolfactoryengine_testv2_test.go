@@ -1,24 +1,28 @@
 package demotest
 
 import (
+	"encoding/json"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 )
 
-func TestServiceEnginePoolFactoryV2(t *testing.T) {
-	logsPath := testLogsPath + "/poolfactory"
-	testCases := []servicetest.TestCase{
+var (
+	testCasesPoolFactoryV2 = []servicetest.TestCase{
 		// 16054014
 		// 16054066
 		// 16054117
 		{
 			LogsFiles: []string{
-				logsPath + "/logs_reorg_test.json",
+				logsPathPoolFactory + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false,
 			Param: reorgsim.Param{
@@ -59,13 +63,32 @@ func TestServiceEnginePoolFactoryV2(t *testing.T) {
 			},
 		},
 	}
+)
 
-	for _, testCase := range testCases {
+func TestServiceEnginePoolFactoryV2(t *testing.T) {
+	err := testutils.RunTestCase(t, "TestServiceEnginePoolFactoryV2", testCasesPoolFactoryV2, testServiceEnginePoolFactoryV2)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func testServiceEnginePoolFactoryV2(t *testing.T, caseNumber int) error {
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
+	} {
+		testCase := testCasesPoolFactoryV2[caseNumber-1]
+		testCase.Policy = policy
+
+		b, _ := json.Marshal(testCase)
+		t.Logf("testServiceEnginePoolFactoryV1 case %d, policy %s, testCase %s", caseNumber, policy.String(), b)
+
 		serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
-		stateDataGateway, err := testServiceEnginePoolFactoryV1(testCase, serviceDataGateway)
+		stateDataGateway, err := runPoolFactory(testCase, serviceDataGateway)
 		if err != nil {
 			lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
-			t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
+			return errors.Wrapf(err, "error in full servicetest (poolfactory), lastRecordedBlock %d", lastRecordedBlock)
 		}
 		// Test if moved logs were properly removed from their parking blocks
 		movedHashes, logsPark, logsDst := reorgsim.LogsReorgPaths(testCase.Events)
@@ -123,4 +146,6 @@ func TestServiceEnginePoolFactoryV2(t *testing.T) {
 			}
 		}
 	}
+
+	return nil
 }

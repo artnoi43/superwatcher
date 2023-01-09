@@ -11,7 +11,7 @@ type Config struct {
 	// FilterRange is the forward range (number of new blocks) each call to emitter.poller.poll will perform
 	FilterRange uint64 `mapstructure:"filter_range" yaml:"filter_range" json:"filterRange"`
 
-	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for superwatcher.PollResult
+	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for PollerResult
 	DoReorg bool `mapstructure:"do_reorg" yaml:"do_reorg" json:"doReorg"`
 
 	// DoHeader specifies whether superwatcher.EmitterPoller should fetch block headers too

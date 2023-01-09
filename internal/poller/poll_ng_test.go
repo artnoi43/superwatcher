@@ -14,9 +14,10 @@ import (
 )
 
 func TestMapLogsNg(t *testing.T) {
-	tc := emittertest.TestCasesV1[0]
-	if err := testMapLogsNg(tc); err != nil {
-		t.Error(err.Error())
+	for _, tc := range emittertest.TestCasesV1 {
+		if err := testMapLogsNg(tc); err != nil {
+			t.Error(err.Error())
+		}
 	}
 }
 
@@ -24,7 +25,7 @@ func testMapLogsNg(tc emittertest.TestConfig) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		// superwatcher.PolicyExpensive,
+		superwatcher.PolicyExpensive,
 	} {
 
 		tracker := newTracker("testProcessReorg", 3)
@@ -52,23 +53,34 @@ func testMapLogsNg(tc emittertest.TestConfig) error {
 			logs := gslutils.CollectPointers(blockLogs)
 			concatLogs[blockNumber] = append(concatLogs[blockNumber], logs...)
 
-			tracker.addTrackerBlock(&superwatcher.Block{
-				Logs:   logs,
-				Hash:   block.Hash(),
+			b := &superwatcher.Block{
 				Number: blockNumber,
-			})
+				Hash:   block.Hash(),
+				Logs:   logs,
+			}
+
+			if policy >= superwatcher.PolicyExpensive {
+				b.Header = block
+			}
+
+			tracker.addTrackerBlock(b)
 		}
 
 		pollResults := make(map[uint64]superwatcher.Block)
 		// Collect reorgedLogs for checking
 		for blockNumber, block := range reorgedChain {
 			if logs := block.Logs(); len(logs) != 0 {
-				pollResults[blockNumber] = superwatcher.Block{
+				b := superwatcher.Block{
 					Number: blockNumber,
 					Hash:   logs[0].BlockHash,
 					Logs:   gslutils.CollectPointers(logs),
 				}
 
+				if policy >= superwatcher.PolicyExpensive {
+					b.Header = block
+				}
+
+				pollResults[blockNumber] = b
 				concatLogs[blockNumber] = append(concatLogs[blockNumber], gslutils.CollectPointers(logs)...)
 			}
 		}
@@ -92,7 +104,6 @@ func testMapLogsNg(tc emittertest.TestConfig) error {
 			pollResults,
 			mockClient,
 			tracker,
-			true,
 		)
 		if err != nil {
 			return errors.Wrap(err, "error in mapLogs")
@@ -100,7 +111,7 @@ func testMapLogsNg(tc emittertest.TestConfig) error {
 
 		wasReorged := make(map[uint64]bool)
 		for k, v := range mapResults {
-			wasReorged[k] = v.reorged
+			wasReorged[k] = v.forked
 		}
 
 		for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
@@ -114,7 +125,7 @@ func testMapLogsNg(tc emittertest.TestConfig) error {
 				mapResult = new(mapLogsResult)
 			}
 
-			reorged := mapResult.reorged
+			reorged := mapResult.forked
 			// Any blocks after c.reorgedAt should be reorged.
 			if blockNumber >= reorgEvent.ReorgBlock {
 				if reorged {

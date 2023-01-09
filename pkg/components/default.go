@@ -23,7 +23,7 @@ func NewDefault(
 	superwatcher.Engine,
 ) {
 	syncChan := make(chan struct{})
-	pollResultChan := make(chan *superwatcher.PollResult)
+	pollResultChan := make(chan *superwatcher.PollerResult)
 	errChan := make(chan error)
 
 	watcherEmitter := NewEmitterWithPoller(

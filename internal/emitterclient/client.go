@@ -10,7 +10,7 @@ import (
 type emitterClient struct {
 	emitterConfig   *superwatcher.Config
 	emitterSyncChan chan<- struct{}
-	pollResultChan  <-chan *superwatcher.PollResult
+	pollResultChan  <-chan *superwatcher.PollerResult
 	errChan         <-chan error
 
 	debugger *debugger.Debugger
@@ -19,7 +19,7 @@ type emitterClient struct {
 func New(
 	emitterConfig *superwatcher.Config,
 	emitterSyncChan chan<- struct{},
-	pollResultChan <-chan *superwatcher.PollResult,
+	pollResultChan <-chan *superwatcher.PollerResult,
 	errChan <-chan error,
 	logLevel uint8,
 ) superwatcher.EmitterClient {
@@ -51,7 +51,7 @@ func (c *emitterClient) WatcherConfig() *superwatcher.Config {
 	return c.emitterConfig
 }
 
-func (c *emitterClient) WatcherResult() *superwatcher.PollResult {
+func (c *emitterClient) WatcherResult() *superwatcher.PollerResult {
 	result, ok := <-c.pollResultChan
 	if ok {
 		return result

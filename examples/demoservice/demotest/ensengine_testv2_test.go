@@ -1,22 +1,26 @@
 package demotest
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 )
 
-func TestServiceEngineENSV2(t *testing.T) {
-	logsPath := testLogsPath + "/ens"
-	testCases := []servicetest.TestCase{
+var (
+	logsPathENSV2  = testLogsPath + "/ens"
+	testCasesENSV2 = []servicetest.TestCase{
 		{
 			LogsFiles: []string{
-				logsPath + "/logs_servicetest_16054000_16054100.json",
+				logsPathENSV2 + "/logs_servicetest_16054000_16054100.json",
 			},
 			DataGatewayFirstRun: false, // Normal run
 			Param: reorgsim.Param{
@@ -69,12 +73,28 @@ func TestServiceEngineENSV2(t *testing.T) {
 			},
 		},
 	}
+)
 
-	for _, testCase := range testCases {
+func TestServiceEngineENSV2(t *testing.T) {
+	err := testutils.RunTestCase(t, "TestServiceEngineENSV2", testCasesENSV2, testServiceEngineENSV2)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func testServiceEngineENSV2(t *testing.T, caseNumber int) error {
+	for _, policy := range []superwatcher.Policy{} {
+		testCase := testCasesENSV1[caseNumber-1]
+		testCase.Policy = policy
+		b, _ := json.Marshal(testCase)
+		t.Logf("testServiceEngineENSV1 case %d, testCase %s", caseNumber, b)
+
 		ensStore := datagateway.NewMockDataGatewayENS()
-		_, err := runTestServiceEngineENS(testCase, ensStore)
+
+		stateDgw, err := runENS(testCase, ensStore)
 		if err != nil {
-			t.Error("error in servicetest test", err.Error())
+			lastRecordedBlock, _ := stateDgw.GetLastRecordedBlock(nil)
+			return errors.Wrapf(err, "error in servicetest test, lastRecordedBlock %d", lastRecordedBlock)
 		}
 
 		// Test if moved logs were properly removed from their parking blocks
@@ -90,7 +110,7 @@ func TestServiceEngineENSV2(t *testing.T) {
 
 		results, err := ensStore.GetENSes(nil)
 		if err != nil {
-			t.Error("ensStore.GetENSes returned error", err.Error())
+			return errors.Wrap(err, "ensStore.GetENSes failed after servicetest")
 		}
 
 		// Test if final results are correct
@@ -139,4 +159,6 @@ func TestServiceEngineENSV2(t *testing.T) {
 			}
 		}
 	}
+
+	return nil
 }

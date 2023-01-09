@@ -28,5 +28,5 @@ type ServiceEngine interface {
 // It is recommended for niche use cases and advanced users
 type ThinServiceEngine interface {
 	BaseServiceEngine
-	HandleFilterResult(*PollResult) error
+	HandleFilterResult(*PollerResult) error
 }

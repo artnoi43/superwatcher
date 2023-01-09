@@ -14,7 +14,7 @@ func NewEmitter(
 	stateDataGateway superwatcher.GetStateDataGateway,
 	poller superwatcher.EmitterPoller,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
-	pollResultChan chan<- *superwatcher.PollResult,
+	pollResultChan chan<- *superwatcher.PollerResult,
 	errChan chan<- error,
 ) superwatcher.Emitter {
 	return emitter.New(
@@ -37,7 +37,7 @@ func NewEmitterWithPoller(
 	addresses []common.Address,
 	topics [][]common.Hash,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
-	pollResultChan chan<- *superwatcher.PollResult,
+	pollResultChan chan<- *superwatcher.PollerResult,
 	errChan chan<- error,
 ) superwatcher.Emitter {
 	return emitter.New(
