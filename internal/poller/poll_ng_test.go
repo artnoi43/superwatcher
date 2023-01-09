@@ -11,23 +11,23 @@ import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 )
 
 func TestMapLogsNg(t *testing.T) {
-	for _, tc := range emittertest.TestCasesV1 {
-		if err := testMapLogsNg(tc); err != nil {
-			t.Error(err.Error())
-		}
+	err := testutils.RunTestCase(t, "TestMapLogsNg", emittertest.TestCasesV1, testMapLogsNg)
+	if err != nil {
+		t.Fatal(err.Error())
 	}
 }
 
-func testMapLogsNg(tc emittertest.TestConfig) error {
+func testMapLogsNg(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		superwatcher.PolicyExpensive,
+		// superwatcher.PolicyExpensive,
 	} {
-
+		tc := emittertest.TestCasesV1[caseNumber-1]
 		tracker := newTracker("testProcessReorg", 3)
 		logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 

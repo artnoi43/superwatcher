@@ -58,7 +58,7 @@ func GetFlagValues() (caseNumber int, verbose bool) {
 }
 
 func CheckTestCase[T any](t *testing.T, caseNumber int, cases []T) {
-	if l := len(cases); caseNumber >= l {
+	if l := len(cases); caseNumber > l {
 		t.Skipf("no such test case %d", caseNumber)
 	}
 }
@@ -74,26 +74,19 @@ func RunTestCase[T any](
 
 	testName += " case %d"
 
-	var err error
 	if caseNumber > 0 {
-		testName = fmt.Sprintf(testName, caseNumber)
-		t.Run(testName, func(t *testing.T) {
-			err = testFunc(t, caseNumber)
-		})
-
-		if err != nil {
+		testName := fmt.Sprintf(testName, caseNumber)
+		if err := testFunc(t, caseNumber); err != nil {
 			return errors.Wrapf(err, "%s returned an error", testName)
 		}
+
+		return nil
 	}
 
 	for i := range testCases {
 		caseNumber = i + 1
-		testName = fmt.Sprintf(testName, caseNumber)
-		t.Run(testName, func(t *testing.T) {
-			err = testFunc(t, caseNumber)
-		})
-
-		if err != nil {
+		testName := fmt.Sprintf(testName, caseNumber)
+		if err := testFunc(t, caseNumber); err != nil {
 			return errors.Wrapf(err, "%s returned an error", testName)
 		}
 	}
