@@ -229,7 +229,7 @@ func mapLogsNg(
 		return nil, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads)
 	}
 
-	if tracker != nil {
+	if tracker == nil {
 		return mapResults, nil
 	}
 
