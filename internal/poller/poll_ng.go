@@ -31,19 +31,19 @@ func (p *poller) PollNg(
 		return nil, err
 	}
 
-	mapResults, err := findMissing(ctx, fromBlock, toBlock, p.policy, pollResults, p.client, p.tracker)
+	pollResults, err = findMissing(ctx, fromBlock, toBlock, p.policy, pollResults, p.client, p.tracker)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err := findReorg(fromBlock, toBlock, p.policy, mapResults, p.tracker, p.debugger)
+	result, err := collect(fromBlock, toBlock, p.policy, pollResults, p.tracker, p.debugger)
 	if err != nil {
 		return result, err
 	}
 
 	p.lastRecordedBlock = result.LastGoodBlock
 
-	fromBlockResult, ok := mapResults[fromBlock]
+	fromBlockResult, ok := pollResults[fromBlock]
 	if ok {
 		if fromBlockResult.forked && p.doReorg {
 			return result, errors.Wrapf(
@@ -189,7 +189,6 @@ func poll(
 
 				pollResults[log.BlockNumber] = &mapLogsResult{Block: b}
 				continue
-
 			} else if ok {
 				if result.Hash != log.BlockHash {
 					return nil, errors.Wrapf(
@@ -344,28 +343,28 @@ func findMissing(
 	return pollResults, nil
 }
 
-func findReorg(
+func collect(
 	fromBlock uint64,
 	toBlock uint64,
 	policy superwatcher.Policy,
-	mapResults map[uint64]*mapLogsResult,
+	pollResults map[uint64]*mapLogsResult,
 	tracker *blockTracker,
 	debugger *debugger.Debugger,
 ) (*superwatcher.PollerResult, error) {
 	// Fills |result| and saves current data back to tracker first.
 	result := new(superwatcher.PollerResult)
 	for number := fromBlock; number <= toBlock; number++ {
-		// Only blocks in mapResults are worth processing. There are 3 reasons a block is in mapResults:
+		// Only blocks in pollResults are worth processing. There are 3 reasons a block is in pollResults:
 		// (1) block has >=1 interesting log
 		// (2) block _did_ have >= logs from the last call, but was reorged and no longer has any interesting logs
-		// If (2), then it will removed from tracker, and will no longer appear in mapResults after this call.
-		mapResult, ok := mapResults[number]
+		// If (2), then it will removed from tracker, and will no longer appear in pollResults after this call.
+		pollResult, ok := pollResults[number]
 		if !ok {
 			continue
 		}
 
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
-		if mapResult.forked && tracker != nil {
+		if pollResult.forked && tracker != nil {
 			trackerBlock, ok := tracker.getTrackerBlock(number)
 			if !ok {
 				debugger.Debug(
@@ -380,7 +379,7 @@ func findReorg(
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
-			freshHash := mapResult.Hash
+			freshHash := pollResult.Hash
 
 			debugger.Debug(
 				1, "chain reorg detected",
@@ -421,15 +420,15 @@ func findReorg(
 			}
 		}
 
-		goodBlock := mapResult.Block
+		freshBlock := pollResult.Block
 
 		if tracker != nil {
-			tracker.addTrackerBlock(&goodBlock)
+			tracker.addTrackerBlock(&freshBlock)
 		}
 
 		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.
-		resultBlock := goodBlock
-		result.GoodBlocks = append(result.GoodBlocks, &resultBlock)
+		goodBlock := freshBlock
+		result.GoodBlocks = append(result.GoodBlocks, &goodBlock)
 	}
 
 	result.FromBlock, result.ToBlock = fromBlock, toBlock
@@ -437,7 +436,7 @@ func findReorg(
 
 	// If fromBlock reorged, return the result but with non-nil error.
 	// This way, the result still gets emitted, leaving no unseen Block for the managed engine.
-	fromBlockResult, ok := mapResults[fromBlock]
+	fromBlockResult, ok := pollResults[fromBlock]
 	if ok {
 		if fromBlockResult.forked && tracker != nil {
 			return result, errors.Wrapf(

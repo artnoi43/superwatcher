@@ -146,15 +146,15 @@ func (p *poller) Poll(
 			}
 		}
 
-		goodBlock := mapResult.Block
+		freshBlock := mapResult.Block
 
 		if p.doReorg {
-			p.tracker.addTrackerBlock(&goodBlock)
+			p.tracker.addTrackerBlock(&freshBlock)
 		}
 
 		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.
-		resultBlock := goodBlock
-		result.GoodBlocks = append(result.GoodBlocks, &resultBlock)
+		goodBlock := freshBlock
+		result.GoodBlocks = append(result.GoodBlocks, &goodBlock)
 	}
 
 	result.FromBlock, result.ToBlock = fromBlock, toBlock
