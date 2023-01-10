@@ -83,7 +83,11 @@ func TestServiceEngineENSV2(t *testing.T) {
 }
 
 func testServiceEngineENSV2(t *testing.T, caseNumber int) error {
-	for _, policy := range []superwatcher.Policy{} {
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		// superwatcher.PolicyExpensive,
+	} {
 		testCase := testCasesENSV1[caseNumber-1]
 		testCase.Policy = policy
 		b, _ := json.Marshal(testCase)

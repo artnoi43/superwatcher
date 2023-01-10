@@ -44,44 +44,36 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 			return errors.Wrap(err, "cannot init ReorgSim for testMapLogsV1")
 		}
 
-		// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
-		concatLogs := make(map[uint64][]*types.Log)
+		// allLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
+		allLogs := make(map[uint64][]*types.Log)
 
 		// Add oldChain's blocks to tracker
 		for blockNumber, block := range oldChain {
 			blockLogs := block.Logs()
 			logs := gslutils.CollectPointers(blockLogs)
-			concatLogs[blockNumber] = append(concatLogs[blockNumber], logs...)
+			allLogs[blockNumber] = append(allLogs[blockNumber], logs...)
 
-			b := &superwatcher.Block{
+			tracker.addTrackerBlock(&superwatcher.Block{
 				Number: blockNumber,
+				Header: block,
 				Hash:   block.Hash(),
 				Logs:   logs,
-			}
-
-			if policy >= superwatcher.PolicyExpensive {
-				b.Header = block
-			}
-
-			tracker.addTrackerBlock(b)
+			})
 		}
 
 		pollResults := make(map[uint64]*mapLogsResult)
-		// Collect reorgedLogs for checking
+		// Collect reorgedLogs as in pollExpensive/pollCheap
 		for blockNumber, block := range reorgedChain {
 			if logs := block.Logs(); len(logs) != 0 {
 				b := superwatcher.Block{
 					Number: blockNumber,
-					Hash:   logs[0].BlockHash,
+					Header: block,
+					Hash:   block.Hash(),
 					Logs:   gslutils.CollectPointers(logs),
 				}
 
-				if policy >= superwatcher.PolicyExpensive {
-					b.Header = block
-				}
-
 				pollResults[blockNumber] = &mapLogsResult{Block: b}
-				concatLogs[blockNumber] = append(concatLogs[blockNumber], gslutils.CollectPointers(logs)...)
+				allLogs[blockNumber] = append(allLogs[blockNumber], gslutils.CollectPointers(logs)...)
 			}
 		}
 
@@ -95,32 +87,31 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 			}
 		}
 
-		// Call mapFreshLogs with reorgedLogs
-		mapResults, err := findMissing(
-			nil,
-			tc.FromBlock,
-			tc.ToBlock,
-			policy,
-			pollResults,
-			mockClient,
-			tracker,
-		)
+		results, err := pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults)
 		if err != nil {
-			return errors.Wrap(err, "error in mapLogs")
+			t.Fatal("pollCheap error", err.Error())
+		}
+		results, err = pollMissing(nil, tc.FromBlock, tc.ToBlock, policy, mockClient, tracker, pollResults)
+		if err != nil {
+			t.Fatal("pollMissing error", err.Error())
 		}
 
 		wasReorged := make(map[uint64]bool)
-		for k, v := range mapResults {
+		for k := range results {
+			v, ok := results[k]
+			if !ok {
+				continue
+			}
 			wasReorged[k] = v.forked
 		}
 
 		for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
 			// Skip blocks without logs
-			if len(concatLogs[blockNumber]) == 0 {
+			if len(allLogs[blockNumber]) == 0 {
 				continue
 			}
 
-			mapResult, ok := mapResults[blockNumber]
+			mapResult, ok := results[blockNumber]
 			if !ok {
 				mapResult = new(mapLogsResult)
 			}

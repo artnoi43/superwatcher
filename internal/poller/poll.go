@@ -84,13 +84,13 @@ func (p *poller) Poll(
 		// (1) block has >=1 interesting log
 		// (2) block _did_ have >= logs from the last call, but was reorged and no longer has any interesting logs
 		// If (2), then it will removed from tracker, and will no longer appear in mapResults after this call.
-		mapResult, ok := pollResults[number]
+		pollResult, ok := pollResults[number]
 		if !ok {
 			continue
 		}
 
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
-		if mapResult.forked && p.doReorg {
+		if pollResult.forked && p.doReorg {
 			trackerBlock, ok := p.tracker.getTrackerBlock(number)
 			if !ok {
 				p.debugger.Debug(
@@ -105,7 +105,7 @@ func (p *poller) Poll(
 			}
 
 			// Logs may be moved from blockNumber, hence there's no value in map
-			freshHash := pollResults[number].Block.Hash
+			freshHash := pollResult.Hash
 
 			p.debugger.Debug(
 				1, "chain reorg detected",
@@ -146,8 +146,7 @@ func (p *poller) Poll(
 			}
 		}
 
-		freshBlock := mapResult.Block
-
+		freshBlock := pollResult.Block
 		if p.doReorg {
 			p.tracker.addTrackerBlock(&freshBlock)
 		}

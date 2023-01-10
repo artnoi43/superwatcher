@@ -2,17 +2,86 @@ package poller
 
 import (
 	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/pkg/errors"
 )
 
-//
-// import "github.com/ethereum/go-ethereum/core/types"
-//
-// func collectLogs(logs []types.Log) map[uint64][]*types.Log {
-// 	m := make(map[uint64][]*types.Log)
-//     for i, log := range logs {
-//     }
-// }
+func collectLogs(
+	m map[uint64]*mapLogsResult,
+	logs []types.Log,
+) (
+	uint64,
+	error,
+) {
+	var last uint64
+
+	for i, log := range logs {
+		last = log.BlockNumber
+
+		result, ok := m[log.BlockNumber]
+		if ok {
+			if h0, h1 := result.Hash, log.BlockHash; h0 != h1 {
+				return log.BlockNumber, errors.Wrapf(
+					errHashesDiffer, "logs in block %d has different hashes: %s vs %s",
+					log.BlockNumber, hashStr(h0), hashStr(h1),
+				)
+			}
+
+			result.Logs = append(result.Logs, &logs[i])
+		} else if !ok {
+			m[log.BlockNumber] = &mapLogsResult{
+				Block: superwatcher.Block{
+					Number: log.BlockNumber,
+					Hash:   log.BlockHash,
+					Logs:   []*types.Log{&logs[i]},
+				},
+			}
+		}
+	}
+
+	return last, nil
+}
+
+func collectHeaders(
+	m map[uint64]*mapLogsResult,
+	fromBlock uint64,
+	toBlock uint64,
+	headers map[uint64]superwatcher.BlockHeader,
+) (
+	uint64,
+	error,
+) {
+	last := fromBlock
+	for n := fromBlock; n <= toBlock; n++ {
+		header, ok := headers[n]
+		if !ok {
+			continue
+		}
+
+		result, ok := m[n]
+		last = n
+
+		if ok {
+			if rHash, hHash := result.Hash, header.Hash(); rHash != hHash {
+				return last, errors.Wrapf(errHashesDiffer, "block %d resultHash differs from headerHash: %s vs %s",
+					n, hashStr(rHash), hashStr(hHash),
+				)
+			}
+		} else if !ok {
+			m[n] = &mapLogsResult{
+				Block: superwatcher.Block{
+					Number: n,
+					Header: header,
+					Hash:   header.Hash(),
+				},
+			}
+		}
+	}
+
+	return last, nil
+}
 
 func hashStr(h common.Hash) string {
 	return gslutils.StringerToLowerString(h)
@@ -21,10 +90,10 @@ func hashStr(h common.Hash) string {
 // deleteUnusableResult removes all map keys that are >= lastGood.
 // It used when poller.mapLogs encounter a situation where fresh chain data
 // on a same block has different block hashes.
-func deleteMapResults[T any](pollResult map[uint64]T, lastGood uint64) {
-	for k := range pollResult {
-		if k >= lastGood {
-			delete(pollResult, k)
-		}
-	}
-}
+// func deleteMapResults[T any](pollResult map[uint64]T, lastGood uint64) {
+// 	for k := range pollResult {
+// 		if k >= lastGood {
+// 			delete(pollResult, k)
+// 		}
+// 	}
+// }

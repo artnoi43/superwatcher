@@ -1,4 +1,4 @@
-# Package `testutils`
+# Package `servicetest`
 
 This package provides basic building blocks for testing your superwatcher-based services.
 

@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	"github.com/artnoi43/gsl/gslutils"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/batch"
 )
@@ -43,6 +44,10 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 			continue
 		}
 
+		txHashes := gslutils.Map(b.logs, func(l types.Log) (string, bool) {
+			return gslutils.StringerToLowerString(l.TxHash), true
+		})
+
 		r.debugger.Debug(
 			3, "FilterLogs block",
 			zap.Uint64("blockNumber", b.blockNumber),
@@ -51,6 +56,7 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 			zap.Bool("toBeForked", b.toBeForked),
 			zap.Bool("reorgedHere", b.reorgedHere),
 			zap.Int("lenLogs", len(b.Logs())),
+			zap.Strings("txHashes", txHashes),
 		)
 
 		appendFilterLogs(&b.logs, &logs, query.Addresses, query.Topics)

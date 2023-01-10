@@ -50,4 +50,13 @@ func TestUpdateTrackerValues(t *testing.T) {
 	if copied.Hash == trackerBlock.Hash || len(copied.Logs) == len(trackerBlock.Logs) {
 		t.Error("unexpected copied value")
 	}
+
+	if err := tracker.removeBlock(69); err != nil {
+		t.Error("cannot removed block 69")
+	}
+
+	_, ok := tracker.getTrackerBlock(69)
+	if ok {
+		t.Error("removed but found")
+	}
 }

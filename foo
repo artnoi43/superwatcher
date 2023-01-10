@@ -1,0 +1,379 @@
+{"level":"debug","msg":"emitter: emitter: first run, going back","lastRecordedBlock":15966499,"goBack":0,"fromBlock":15966500}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966500,"blockHash":"0x6f147a005ff7551fdc0955fc55337ee00a9648e0132ee542e3c6388447e38251","currentBlock":15966500,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824","0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966505,"blockHash":"0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804","currentBlock":15966500,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86","0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966508,"blockHash":"0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354","currentBlock":15966500,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce","0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce"]}
+pollCheap result
+block 15966500 hash 0x6f147a005ff7551fdc0955fc55337ee00a9648e0132ee542e3c6388447e38251 txHashes [0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824]
+block 15966505 hash 0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804 txHashes [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+block 15966508 hash 0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354 txHashes [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+
+blocksMissing []
+pollerResult: freshBlock 15966500 [0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824]
+pollerResult: freshBlock 15966505 [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+pollerResult: freshBlock 15966508 [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":3,"reorgedBlocks":0,"lastGoodBlock":15966509}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966500,"toBlock":15966509,"currentBlock":15966500,"lastRecordedBlock":15966499,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966500,"blockHash":"0x6f147a005ff7551fdc0955fc55337ee00a9648e0132ee542e3c6388447e38251","currentBlock":15966510,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824","0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824"]}
+pollCheap result
+block 15966500 hash 0x6f147a005ff7551fdc0955fc55337ee00a9648e0132ee542e3c6388447e38251 txHashes [0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824]
+
+blocksMissing []
+pollerResult: freshBlock 15966500 [0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":1,"reorgedBlocks":0,"lastGoodBlock":15966500}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966490,"toBlock":15966500,"currentBlock":15966500,"lastRecordedBlock":15966509,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966500,"blockHash":"0x6f147a005ff7551fdc0955fc55337ee00a9648e0132ee542e3c6388447e38251","currentBlock":15966520,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824","0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966505,"blockHash":"0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804","currentBlock":15966520,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86","0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966508,"blockHash":"0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354","currentBlock":15966520,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce","0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966510,"blockHash":"0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209","currentBlock":15966520,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55","0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55"]}
+pollCheap result
+block 15966505 hash 0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804 txHashes [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+block 15966508 hash 0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354 txHashes [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+block 15966510 hash 0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209 txHashes [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+block 15966500 hash 0x6f147a005ff7551fdc0955fc55337ee00a9648e0132ee542e3c6388447e38251 txHashes [0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824]
+
+blocksMissing []
+pollerResult: freshBlock 15966500 [0x35ca6e6bc2a3dd24654dfcc3c5324af03ee419b4225e2173da02d3a131b12824]
+pollerResult: freshBlock 15966505 [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+pollerResult: freshBlock 15966508 [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+pollerResult: freshBlock 15966510 [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":4,"reorgedBlocks":0,"lastGoodBlock":15966510}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966491,"toBlock":15966510,"currentBlock":15966510,"lastRecordedBlock":15966500,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggering event","rangeStart":15966501,"rangeEnd":15966520,"triggerBlock":15966515,"reorgBlock":15966512,"currentBlock":15966530,"currentReorgEvent":0,"triggered":-1,"forked":-1}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggered, will NOT call forkChain now","rangeStart":15966501,"rangeEnd":15966520,"triggerBlock":15966515,"reorgBlock":15966512,"currentBlock":15966530,"currentReorgEvent":0,"triggered":0,"forked":-1}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966505,"blockHash":"0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804","currentBlock":15966530,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86","0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966508,"blockHash":"0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354","currentBlock":15966530,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce","0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966510,"blockHash":"0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209","currentBlock":15966530,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55","0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966512,"blockHash":"0xd84ad9827ff3d39513dafadda7beb3fe36e3053a3b820c361b99c7ce1daeff87","currentBlock":15966530,"toBeForked":true,"reorgedHere":true,"lenLogs":2,"txHashes":["0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af","0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966517,"blockHash":"0x84584a3ca2aa9a9fa650cb3c4c4f322e7b26e808da27188c91d2709b628e66ba","currentBlock":15966530,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9","0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9"]}
+pollCheap result
+block 15966505 hash 0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804 txHashes [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+block 15966508 hash 0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354 txHashes [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+block 15966510 hash 0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209 txHashes [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+block 15966512 hash 0xd84ad9827ff3d39513dafadda7beb3fe36e3053a3b820c361b99c7ce1daeff87 txHashes [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+block 15966517 hash 0x84584a3ca2aa9a9fa650cb3c4c4f322e7b26e808da27188c91d2709b628e66ba txHashes [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+
+blocksMissing []
+pollerResult: freshBlock 15966505 [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+pollerResult: freshBlock 15966508 [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+pollerResult: freshBlock 15966510 [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+pollerResult: freshBlock 15966512 [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+pollerResult: freshBlock 15966517 [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":5,"reorgedBlocks":0,"lastGoodBlock":15966520}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966501,"toBlock":15966520,"currentBlock":15966520,"lastRecordedBlock":15966510,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggering event","rangeStart":15966511,"rangeEnd":15966530,"triggerBlock":15966515,"reorgBlock":15966512,"currentBlock":15966540,"currentReorgEvent":0,"triggered":0,"forked":-1}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggered, will call forkChain now","rangeStart":15966511,"rangeEnd":15966530,"triggerBlock":15966515,"reorgBlock":15966512,"currentBlock":15966540,"currentReorgEvent":0,"triggered":0,"forked":-1}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: REORGED! fork done","currentBlock":15966512,"reorgTrigger":15966515,"reorgBlock":15966512,"currentReorgEvent":1,"triggered":0,"forked":0}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966512,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13531","currentBlock":15966512,"toBeForked":true,"reorgedHere":true,"lenLogs":2,"txHashes":["0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af","0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966517,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13536","currentBlock":15966512,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9","0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966525,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e","currentBlock":15966512,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966527,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13540","currentBlock":15966512,"toBeForked":true,"reorgedHere":false,"lenLogs":4,"txHashes":["0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966530,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13543","currentBlock":15966512,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e","0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e"]}
+pollCheap result
+block 15966512 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13531 txHashes [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+block 15966517 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13536 txHashes [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+block 15966525 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e txHashes [0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211]
+block 15966527 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13540 txHashes [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+block 15966530 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13543 txHashes [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+
+blocksMissing []
+{"level":"debug","msg":"poller: chain reorg detected","blockNumber":15966512,"freshHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13531","trackerHash":"0xd84ad9827ff3d39513dafadda7beb3fe36e3053a3b820c361b99c7ce1daeff87","freshLogs":1,"trackerLogs":1}
+pollerResult: freshBlock 15966512 [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+{"level":"debug","msg":"poller: chain reorg detected","blockNumber":15966517,"freshHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13536","trackerHash":"0x84584a3ca2aa9a9fa650cb3c4c4f322e7b26e808da27188c91d2709b628e66ba","freshLogs":1,"trackerLogs":1}
+pollerResult: freshBlock 15966517 [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+pollerResult: freshBlock 15966525 [0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211]
+pollerResult: freshBlock 15966527 [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+pollerResult: freshBlock 15966530 [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":5,"reorgedBlocks":2,"lastGoodBlock":15966511}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966511,"toBlock":15966530,"currentBlock":15966530,"lastRecordedBlock":15966520,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966505,"blockHash":"0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804","currentBlock":15966522,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86","0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966508,"blockHash":"0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354","currentBlock":15966522,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce","0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966510,"blockHash":"0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209","currentBlock":15966522,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55","0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966512,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13531","currentBlock":15966522,"toBeForked":true,"reorgedHere":true,"lenLogs":2,"txHashes":["0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af","0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af"]}
+pollCheap result
+block 15966505 hash 0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804 txHashes [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+block 15966508 hash 0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354 txHashes [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+block 15966510 hash 0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209 txHashes [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+block 15966512 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13531 txHashes [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+
+blocksMissing []
+pollerResult: freshBlock 15966505 [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+pollerResult: freshBlock 15966508 [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+pollerResult: freshBlock 15966510 [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+pollerResult: freshBlock 15966512 [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":4,"reorgedBlocks":0,"lastGoodBlock":15966512}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966502,"toBlock":15966512,"currentBlock":15966512,"lastRecordedBlock":15966511,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966505,"blockHash":"0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804","currentBlock":15966532,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86","0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966508,"blockHash":"0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354","currentBlock":15966532,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce","0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966510,"blockHash":"0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209","currentBlock":15966532,"toBeForked":false,"reorgedHere":false,"lenLogs":2,"txHashes":["0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55","0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966512,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13531","currentBlock":15966532,"toBeForked":true,"reorgedHere":true,"lenLogs":2,"txHashes":["0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af","0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966517,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13536","currentBlock":15966532,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9","0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9"]}
+pollCheap result
+block 15966508 hash 0x5d1c5f9daa925c852f9e68147b024b15158f5d07d0d7b7d091eb8d0bbb3d2354 txHashes [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+block 15966510 hash 0x8ffc12ccc5eb4405dd086de7176aa2fe348df41c90eb26cd653bb14008a8c209 txHashes [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+block 15966512 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13531 txHashes [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+block 15966517 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13536 txHashes [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+block 15966505 hash 0x5b555575c725dcafc4841b457fe9288e5ea9e8a590ad021c9846dfc3d9cf8804 txHashes [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+
+blocksMissing []
+pollerResult: freshBlock 15966505 [0xc2d9e891071b13a89cc04a97c36236e18a931e39b3eb4725876386891c4f5a86]
+pollerResult: freshBlock 15966508 [0xce4d791976b1d4bad1de36c36912a47137e22976633d5201ef2db665eecef0ce]
+pollerResult: freshBlock 15966510 [0x183ae59a3f9683b052727804e99674d7fb2c4fef80d3bb216f68d9332662ac55]
+pollerResult: freshBlock 15966512 [0x5c8d178b38d56dfc4447d1fc2c1191036b0bc9c6bf3cb726862d4c7a0d4551af]
+pollerResult: freshBlock 15966517 [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":5,"reorgedBlocks":0,"lastGoodBlock":15966522}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966503,"toBlock":15966522,"currentBlock":15966522,"lastRecordedBlock":15966512,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggering event","rangeStart":15966513,"rangeEnd":15966532,"triggerBlock":15966525,"reorgBlock":15966524,"currentBlock":15966542,"currentReorgEvent":1,"triggered":0,"forked":0}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggered, will NOT call forkChain now","rangeStart":15966513,"rangeEnd":15966532,"triggerBlock":15966525,"reorgBlock":15966524,"currentBlock":15966542,"currentReorgEvent":1,"triggered":1,"forked":0}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966517,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13536","currentBlock":15966542,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9","0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966525,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e","currentBlock":15966542,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966527,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13540","currentBlock":15966542,"toBeForked":true,"reorgedHere":false,"lenLogs":4,"txHashes":["0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966530,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13543","currentBlock":15966542,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e","0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966532,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13545","currentBlock":15966542,"toBeForked":true,"reorgedHere":false,"lenLogs":4,"txHashes":["0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d"]}
+pollCheap result
+block 15966532 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13545 txHashes [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+block 15966517 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13536 txHashes [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+block 15966525 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e txHashes [0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211]
+block 15966527 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13540 txHashes [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+block 15966530 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13543 txHashes [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+
+blocksMissing []
+pollerResult: freshBlock 15966517 [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+pollerResult: freshBlock 15966525 [0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211]
+pollerResult: freshBlock 15966527 [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+pollerResult: freshBlock 15966530 [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+pollerResult: freshBlock 15966532 [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":5,"reorgedBlocks":0,"lastGoodBlock":15966532}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966513,"toBlock":15966532,"currentBlock":15966532,"lastRecordedBlock":15966522,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggering event","rangeStart":15966523,"rangeEnd":15966542,"triggerBlock":15966525,"reorgBlock":15966524,"currentBlock":15966552,"currentReorgEvent":1,"triggered":1,"forked":0}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: triggered, will call forkChain now","rangeStart":15966523,"rangeEnd":15966542,"triggerBlock":15966525,"reorgBlock":15966524,"currentBlock":15966552,"currentReorgEvent":1,"triggered":1,"forked":0}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: REORGED! fork done","currentBlock":15966524,"reorgTrigger":15966525,"reorgBlock":15966524,"currentReorgEvent":2,"triggered":1,"forked":1}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966527,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e91","currentBlock":15966524,"toBeForked":true,"reorgedHere":false,"lenLogs":6,"txHashes":["0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966530,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e94","currentBlock":15966524,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e","0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966532,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e96","currentBlock":15966524,"toBeForked":true,"reorgedHere":false,"lenLogs":4,"txHashes":["0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966536,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e9a","currentBlock":15966524,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994","0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994"]}
+pollCheap result
+block 15966527 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e91 txHashes [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+block 15966530 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e94 txHashes [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+block 15966532 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e96 txHashes [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+block 15966536 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e9a txHashes [0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994]
+
+blocksMissing [15966525]
+{"level":"debug","msg":"poller: chain reorg detected","blockNumber":15966525,"freshHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e8f","trackerHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e","freshLogs":0,"trackerLogs":1}
+{"level":"debug","msg":"poller: logs missing from block","blockNumber":15966525,"freshHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e8f","trackerHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e","old logs":1}
+removing block 15966525 0x00000000000000000000000000000000000000000000000078fc2ffac3f1353e 1
+pollerResult: freshBlock 15966525 []
+{"level":"debug","msg":"poller: chain reorg detected","blockNumber":15966527,"freshHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e91","trackerHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13540","freshLogs":1,"trackerLogs":1}
+pollerResult: freshBlock 15966527 [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+{"level":"debug","msg":"poller: chain reorg detected","blockNumber":15966530,"freshHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e94","trackerHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13543","freshLogs":1,"trackerLogs":1}
+pollerResult: freshBlock 15966530 [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+{"level":"debug","msg":"poller: chain reorg detected","blockNumber":15966532,"freshHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e96","trackerHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13545","freshLogs":1,"trackerLogs":1}
+pollerResult: freshBlock 15966532 [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+pollerResult: freshBlock 15966536 [0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":5,"reorgedBlocks":4,"lastGoodBlock":15966524}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966523,"toBlock":15966542,"currentBlock":15966542,"lastRecordedBlock":15966532,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"emitter: skipping","reason":"block 15966524: no new block","currentBlock":15966542,"lastRecordedBlock":15966532}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966523,"toBlock":15966542,"currentBlock":15966542,"lastRecordedBlock":15966532,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966517,"blockHash":"0x00000000000000000000000000000000000000000000000078fc2ffac3f13536","currentBlock":15966544,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9","0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966527,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e91","currentBlock":15966544,"toBeForked":true,"reorgedHere":false,"lenLogs":6,"txHashes":["0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966530,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e94","currentBlock":15966544,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e","0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966532,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e96","currentBlock":15966544,"toBeForked":true,"reorgedHere":false,"lenLogs":4,"txHashes":["0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d"]}
+pollCheap result
+block 15966530 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e94 txHashes [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+block 15966532 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e96 txHashes [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+block 15966517 hash 0x00000000000000000000000000000000000000000000000078fc2ffac3f13536 txHashes [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+block 15966527 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e91 txHashes [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+
+blocksMissing []
+pollerResult: freshBlock 15966517 [0xbe35d32c05d5da7dcae3daa5b5606eed66e2313ee9cebe1a7aa9a275f82410d9]
+pollerResult: freshBlock 15966527 [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+pollerResult: freshBlock 15966530 [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+pollerResult: freshBlock 15966532 [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":4,"reorgedBlocks":0,"lastGoodBlock":15966534}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966515,"toBlock":15966534,"currentBlock":15966534,"lastRecordedBlock":15966524,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966527,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e91","currentBlock":15966554,"toBeForked":true,"reorgedHere":false,"lenLogs":6,"txHashes":["0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211","0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966530,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e94","currentBlock":15966554,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e","0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966532,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e96","currentBlock":15966554,"toBeForked":true,"reorgedHere":false,"lenLogs":4,"txHashes":["0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d","0x41f48d4614c1e7333e545d3824b1ca6b19ef640fd335be990d50e4cf36b3a95d"]}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966536,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e9a","currentBlock":15966554,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994","0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994"]}
+pollCheap result
+block 15966527 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e91 txHashes [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+block 15966530 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e94 txHashes [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+block 15966532 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e96 txHashes [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+block 15966536 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e9a txHashes [0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994]
+
+blocksMissing []
+pollerResult: freshBlock 15966527 [0x2f7b9f5a459b28433003090153e300c5f2793e65f60448b73b93c5bfaef693e8]
+pollerResult: freshBlock 15966530 [0x7bb7f576889cd33e92bace45433116e21b26bdbd99bc8e12d1378073cef2704e]
+pollerResult: freshBlock 15966532 [0xf1ead2d704cd903038dfd75afd252b9b7928f5070e35550c8daa1a8c5c5941a7]
+pollerResult: freshBlock 15966536 [0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":4,"reorgedBlocks":0,"lastGoodBlock":15966544}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966525,"toBlock":15966544,"currentBlock":15966544,"lastRecordedBlock":15966534,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"ReorgSim EmitterTestV2: FilterLogs block","blockNumber":15966536,"blockHash":"0x0000000000000000000000000000000000000000000000004d65822108f09e9a","currentBlock":15966564,"toBeForked":true,"reorgedHere":false,"lenLogs":2,"txHashes":["0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994","0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994"]}
+pollCheap result
+block 15966536 hash 0x0000000000000000000000000000000000000000000000004d65822108f09e9a txHashes [0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994]
+
+blocksMissing []
+pollerResult: freshBlock 15966536 [0xeef91b36ec663beac5649f61b87b6fa67bbfddd64d9dcf2992e7e6a04c31c994]
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":1,"reorgedBlocks":0,"lastGoodBlock":15966554}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966535,"toBlock":15966554,"currentBlock":15966554,"lastRecordedBlock":15966544,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966564}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966545,"toBlock":15966564,"currentBlock":15966564,"lastRecordedBlock":15966554,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966574}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966555,"toBlock":15966574,"currentBlock":15966574,"lastRecordedBlock":15966564,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966584}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966565,"toBlock":15966584,"currentBlock":15966584,"lastRecordedBlock":15966574,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966594}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966575,"toBlock":15966594,"currentBlock":15966594,"lastRecordedBlock":15966584,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966604}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966585,"toBlock":15966604,"currentBlock":15966604,"lastRecordedBlock":15966594,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966614}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966595,"toBlock":15966614,"currentBlock":15966614,"lastRecordedBlock":15966604,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966624}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966605,"toBlock":15966624,"currentBlock":15966624,"lastRecordedBlock":15966614,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966634}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966615,"toBlock":15966634,"currentBlock":15966634,"lastRecordedBlock":15966624,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966644}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966625,"toBlock":15966644,"currentBlock":15966644,"lastRecordedBlock":15966634,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966654}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966635,"toBlock":15966654,"currentBlock":15966654,"lastRecordedBlock":15966644,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966664}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966645,"toBlock":15966664,"currentBlock":15966664,"lastRecordedBlock":15966654,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966674}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966655,"toBlock":15966674,"currentBlock":15966674,"lastRecordedBlock":15966664,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966684}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966665,"toBlock":15966684,"currentBlock":15966684,"lastRecordedBlock":15966674,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966694}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966675,"toBlock":15966694,"currentBlock":15966694,"lastRecordedBlock":15966684,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966704}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966685,"toBlock":15966704,"currentBlock":15966704,"lastRecordedBlock":15966694,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966714}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966695,"toBlock":15966714,"currentBlock":15966714,"lastRecordedBlock":15966704,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966724}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966705,"toBlock":15966724,"currentBlock":15966724,"lastRecordedBlock":15966714,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+pollCheap result
+
+blocksMissing []
+{"level":"debug","msg":"emitter: poller.Poll returned successfully","goodBlocks":0,"reorgedBlocks":0,"lastGoodBlock":15966734}
+{"level":"debug","msg":"emitter: waiting for engine sync"}
+{"level":"debug","msg":"emitter: synced with engine"}
+{"level":"debug","msg":"emitter: new loopEmit loop","current status":{"fromBlock":15966715,"toBlock":15966734,"currentBlock":15966734,"lastRecordedBlock":15966724,"goBackFirstStart":false,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"emitter: loopEmit returned","status":{"fromBlock":15966500,"toBlock":15966509,"currentBlock":15966500,"lastRecordedBlock":15966499,"goBackFirstStart":false,"isReorging":false,"retriesCount":0},"error":"emitter failed to compute fromBlock and toBlock: failed to get current block number from node: exit block 15966740 reached: exitBlock reached for reorgsim","errorVerbose":"exitBlock reached for reorgsim\nexit block 15966740 reached\ngithub.com/artnoi43/superwatcher/pkg/reorgsim.(*ReorgSim).BlockNumber\n\t/rd/superwatcher/pkg/reorgsim/reorgsim_ethclient_impl.go:78\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).computeFromBlockToBlock\n\t/rd/superwatcher/internal/emitter/loop_emit.go:182\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:52\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594\nfailed to get current block number from node\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).computeFromBlockToBlock\n\t/rd/superwatcher/internal/emitter/loop_emit.go:184\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:52\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594\nemitter failed to compute fromBlock and toBlock\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:75\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594"}
+{"level":"debug","msg":"emitter: loopEmit returned","status":{"fromBlock":15966500,"toBlock":15966509,"currentBlock":15966500,"lastRecordedBlock":15966499,"goBackFirstStart":true,"isReorging":false,"retriesCount":0},"error":"emitter failed to compute fromBlock and toBlock: failed to get current block number from node: exit block 15966740 reached: exitBlock reached for reorgsim","errorVerbose":"exitBlock reached for reorgsim\nexit block 15966740 reached\ngithub.com/artnoi43/superwatcher/pkg/reorgsim.(*ReorgSim).BlockNumber\n\t/rd/superwatcher/pkg/reorgsim/reorgsim_ethclient_impl.go:78\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).computeFromBlockToBlock\n\t/rd/superwatcher/internal/emitter/loop_emit.go:182\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:52\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594\nfailed to get current block number from node\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).computeFromBlockToBlock\n\t/rd/superwatcher/internal/emitter/loop_emit.go:184\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:52\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594\nemitter failed to compute fromBlock and toBlock\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:75\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594"}
+{"level":"debug","msg":"emitter: loopEmit returned","status":{"fromBlock":15966500,"toBlock":15966509,"currentBlock":15966500,"lastRecordedBlock":15966499,"goBackFirstStart":true,"isReorging":false,"retriesCount":0},"error":"emitter failed to compute fromBlock and toBlock: failed to get current block number from node: exit block 15966740 reached: exitBlock reached for reorgsim","errorVerbose":"exitBlock reached for reorgsim\nexit block 15966740 reached\ngithub.com/artnoi43/superwatcher/pkg/reorgsim.(*ReorgSim).BlockNumber\n\t/rd/superwatcher/pkg/reorgsim/reorgsim_ethclient_impl.go:78\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).computeFromBlockToBlock\n\t/rd/superwatcher/internal/emitter/loop_emit.go:182\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:52\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594\nfailed to get current block number from node\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).computeFromBlockToBlock\n\t/rd/superwatcher/internal/emitter/loop_emit.go:184\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:52\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594\nemitter failed to compute fromBlock and toBlock\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).loopEmit\n\t/rd/superwatcher/internal/emitter/loop_emit.go:75\ngithub.com/artnoi43/superwatcher/internal/emitter.(*emitter).Loop\n\t/rd/superwatcher/internal/emitter/emitter.go:92\ngithub.com/artnoi43/superwatcher/internal/emitter/emittertest.testEmitterV2.func1\n\t/rd/superwatcher/internal/emitter/emittertest/emittertest_test.go:82\nruntime.goexit\n\t/usr/lib/go/src/runtime/asm_amd64.s:1594"}
+{"level":"debug","msg":"emitter: shutting down emitter","emitterStatus":{"fromBlock":15966500,"toBlock":15966509,"currentBlock":15966500,"lastRecordedBlock":15966499,"goBackFirstStart":true,"isReorging":false,"retriesCount":0}}
+{"level":"debug","msg":"emitter: shutting down emitter - closing channels"}
+--- FAIL: TestEmitterV2 (0.00s)
+    emittertest_test.go:39: testConfig for case 2: {"param":{"startBlock":15966490,"blockProgress":0,"exitBlock":0},"reorgEvents":[{"reorgTrigger":15966515,"reorgBlock":15966512,"movedLogs":{"15966522":[{"NewBlock":15966527,"TxHashes":["0x53f6b4200c700208fe7bb8cb806b0ce962a75e7a31d8a523fbc4affdc22ffc44"]}]}},{"reorgTrigger":15966525,"reorgBlock":15966524,"movedLogs":{"15966525":[{"NewBlock":15966527,"TxHashes":["0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211"]}]}}],"fromBlock":15966500,"toBlock":15966540,"logs":["../../test_logs/logs_lp_5.json"]} (policy FAST)
+    emittertest_test.go:123: reached map[0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211:false]
+    emittertest_test.go:131: log hash 0xa46b7e3264f2c32789c4af8f58cb11293ac9a608fb335e9eb6f0fb08be370211 was not moved to 15966527
+FAIL
+FAIL	github.com/artnoi43/superwatcher/internal/emitter/emittertest	0.018s
+FAIL

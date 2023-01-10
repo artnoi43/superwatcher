@@ -1,7 +1,6 @@
 package poller
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -69,7 +68,7 @@ func (t *blockTracker) removeBlock(blockNumber uint64) error {
 	k := strconv.FormatUint(blockNumber, 10)
 	del := t.sortedSet.Remove(k)
 	if del == nil {
-		return errors.New("node was not in set")
+		return fmt.Errorf("node key %s was not in set", k)
 	}
 
 	return nil

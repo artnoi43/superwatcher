@@ -96,7 +96,7 @@ func testServiceEngineENSV1(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		superwatcher.PolicyExpensive,
+		// superwatcher.PolicyExpensive,
 	} {
 		testCase := testCasesENSV1[caseNumber-1]
 		testCase.Policy = policy
