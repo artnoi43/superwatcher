@@ -9,14 +9,18 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/testutils"
+	"github.com/artnoi43/superwatcher/testlogs"
 )
 
+func init() {
+	testlogs.SetLogsPath("../../testlogs")
+}
+
 func TestPollNg(t *testing.T) {
-	err := testutils.RunTestCase(t, "TestPollNg", emittertest.TestCasesV1, testPollNg)
+	err := testutils.RunTestCase(t, "TestPollNg", testlogs.TestCasesV1, testPollNg)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -28,7 +32,7 @@ func testPollNg(t *testing.T, caseNumber int) error {
 		superwatcher.PolicyNormal,
 		// superwatcher.PolicyExpensive,
 	} {
-		tc := emittertest.TestCasesV1[caseNumber-1]
+		tc := testlogs.TestCasesV1[caseNumber-1]
 		tracker := newTracker("testPollNg", 3)
 		logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 

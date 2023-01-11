@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	logsPath            = "../../../test_logs/"
+	logsPath            = "../../../testlogs/"
 	logsPathENS         = logsPath + "/ens"
 	logsPathPoolFactory = logsPath + "/poolfactory"
 )

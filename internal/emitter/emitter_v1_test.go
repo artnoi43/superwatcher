@@ -12,17 +12,23 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/internal/poller"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/testutils"
+	"github.com/artnoi43/superwatcher/testlogs"
 )
 
-const serviceConfigPath = "../../examples/demoservice/config/config.yaml"
+var (
+	serviceConfigFile = "../../examples/demoservice/config/config.yaml"
+)
 
-func TestEmitter(t *testing.T) {
-	testutils.RunTestCase(t, "testEmitterV1", emittertest.TestCasesV1, testEmitterV1)
+func init() {
+	testlogs.SetLogsPath("../../testlogs")
+}
+
+func TestEmitterV1(t *testing.T) {
+	testutils.RunTestCase(t, "testEmitterV1", testlogs.TestCasesV1, testEmitterV1)
 }
 
 // testEmitterV1 is designed to test emitter's full `Loop` with ReorgSimV1 mocked chain.
@@ -33,7 +39,7 @@ func testEmitterV1(t *testing.T, caseNumber int) error {
 		superwatcher.PolicyNormal,
 		// superwatcher.PolicyExpensive,
 	} {
-		tc := emittertest.TestCasesV1[caseNumber-1]
+		tc := testlogs.TestCasesV1[caseNumber-1]
 		b, _ := json.Marshal(tc)
 		t.Logf("testConfig for case %d: %s (policy %s)", caseNumber, b, policy.String())
 
@@ -41,7 +47,7 @@ func testEmitterV1(t *testing.T, caseNumber int) error {
 			SuperWatcherConfig *superwatcher.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
 		}
 
-		serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
+		serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigFile)
 		if err != nil {
 			t.Fatal("bad config", err.Error())
 		}

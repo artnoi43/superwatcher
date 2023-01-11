@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	logsPath                 = "../../test_logs"
+	logsPath                 = "../../testlogs"
 	defaultStartBlock uint64 = 15900000
 	defaultReorgedAt  uint64 = 15944444
 	defaultLogsFiles         = []string{

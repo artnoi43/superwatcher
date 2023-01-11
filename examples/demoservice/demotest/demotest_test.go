@@ -6,11 +6,16 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/artnoi43/superwatcher/testlogs"
 )
 
 var (
-	testLogsPath = "../../../test_logs"
+	testLogsPath = "../../../testlogs"
 )
+
+func init() {
+	testlogs.SetLogsPath(testLogsPath)
+}
 
 // findDeletionFromParks ensure that there's at least a DEL operation from DebugDataGateway on |parks|.
 // |parks| are blocks which the log appeared on during reorg events, but were not it final, canonical blocks

@@ -1,4 +1,4 @@
-package emittertest
+package emitter
 
 import (
 	"context"
@@ -11,21 +11,17 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/emitter"
 	"github.com/artnoi43/superwatcher/internal/poller"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/testutils"
-)
-
-var (
-	serviceConfigPath = "../../../examples/demoservice/config/config.yaml"
+	"github.com/artnoi43/superwatcher/testlogs"
 )
 
 // TestEmitterV2 uses TestCasesV2 to call testEmitterV2.
 // V2 means that there are > 1 ReorgEvent for the test case.
 func TestEmitterV2(t *testing.T) {
-	testutils.RunTestCase(t, "testEmitterV2", TestCasesV2, testEmitterV2)
+	testutils.RunTestCase(t, "testEmitterV2", testlogs.TestCasesV2, testEmitterV2)
 }
 
 func testEmitterV2(t *testing.T, caseNumber int) error {
@@ -34,7 +30,7 @@ func testEmitterV2(t *testing.T, caseNumber int) error {
 		superwatcher.PolicyNormal,
 		// superwatcher.PolicyExpensive,
 	} {
-		tc := TestCasesV2[caseNumber-1]
+		tc := testlogs.TestCasesV2[caseNumber-1]
 		b, _ := json.Marshal(tc)
 		t.Logf("testConfig for case %d: %s (policy %s)", caseNumber, b, policy.String())
 
@@ -42,7 +38,7 @@ func testEmitterV2(t *testing.T, caseNumber int) error {
 			SuperWatcherConfig *superwatcher.Config `yaml:"superwatcher_config" json:"superwatcherConfig"`
 		}
 
-		serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigPath)
+		serviceConf, err := soyutils.ReadFileYAMLPointer[serviceConfig](serviceConfigFile)
 		if err != nil {
 			return errors.Wrap(err, "bad YAML config")
 		}
@@ -60,7 +56,7 @@ func testEmitterV2(t *testing.T, caseNumber int) error {
 
 		logsFiles := make([]string, len(tc.LogsFiles))
 		for i, logsFile := range tc.LogsFiles {
-			logsFiles[i] = "../" + logsFile
+			logsFiles[i] = logsFile
 		}
 
 		sim, err := reorgsim.NewReorgSimFromLogsFiles(param, tc.Events, logsFiles, "EmitterTestV2", 4)
@@ -74,7 +70,7 @@ func testEmitterV2(t *testing.T, caseNumber int) error {
 
 		fakeRedis := mock.NewDataGatewayMem(tc.FromBlock-1, true)
 		testPoller := poller.New(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, sim, conf.LogLevel, policy)
-		testEmitter := emitter.New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
+		testEmitter := New(conf, sim, fakeRedis, testPoller, syncChan, pollResultChan, errChan)
 
 		ctx, cancel := context.WithCancel(context.Background())
 

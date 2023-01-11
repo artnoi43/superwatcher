@@ -1,4 +1,4 @@
-package emittertest
+package testlogs
 
 import (
 	"github.com/ethereum/go-ethereum/common"
@@ -6,13 +6,13 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
-var TestCasesV1 = []TestConfig{
+var TestCasesV1 = []*TestConfig{
 	{
 		FromBlock: 15944400,
 		ToBlock:   15944500,
 		LogsFiles: []string{
-			logsPath + "/logs_poolfactory.json",
-			logsPath + "/logs_lp.json",
+			"/logs_poolfactory.json",
+			"/logs_lp.json",
 		},
 		Param: reorgsim.Param{
 			StartBlock: 15944390,
@@ -28,8 +28,8 @@ var TestCasesV1 = []TestConfig{
 		FromBlock: 15965717,
 		ToBlock:   15965748,
 		LogsFiles: []string{
-			logsPath + "/logs_lp_2_1.json",
-			logsPath + "/logs_lp_2_2.json",
+			"/logs_lp_2_1.json",
+			"/logs_lp_2_2.json",
 		},
 		Param: reorgsim.Param{
 			StartBlock: 15965710,
@@ -45,8 +45,8 @@ var TestCasesV1 = []TestConfig{
 		FromBlock: 15965802,
 		ToBlock:   15965835,
 		LogsFiles: []string{
-			logsPath + "/logs_lp_3_1.json",
-			logsPath + "/logs_lp_3_2.json",
+			"/logs_lp_3_1.json",
+			"/logs_lp_3_2.json",
 		},
 		Param: reorgsim.Param{
 			StartBlock: 15965800,
@@ -62,7 +62,7 @@ var TestCasesV1 = []TestConfig{
 		FromBlock: 15966460,
 		ToBlock:   15966479,
 		LogsFiles: []string{
-			logsPath + "/logs_lp_4.json",
+			"/logs_lp_4.json",
 		},
 		Param: reorgsim.Param{
 			StartBlock: 15966455,
@@ -78,7 +78,7 @@ var TestCasesV1 = []TestConfig{
 		FromBlock: 15966500,
 		ToBlock:   15966536,
 		LogsFiles: []string{
-			logsPath + "/logs_lp_5.json",
+			"/logs_lp_5.json",
 		},
 		Param: reorgsim.Param{
 			StartBlock: 15966490,
@@ -94,7 +94,7 @@ var TestCasesV1 = []TestConfig{
 		FromBlock: 15966500,
 		ToBlock:   15966540,
 		LogsFiles: []string{
-			logsPath + "/logs_lp_5.json",
+			"/logs_lp_5.json",
 		},
 		Param: reorgsim.Param{
 			StartBlock: 15966490,
