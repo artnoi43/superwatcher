@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -78,7 +78,7 @@ func testMapLogsV1(tc *emittertest.TestConfig, policy superwatcher.Policy) error
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
 		blockLogs := block.Logs()
-		logs := gslutils.CollectPointers(blockLogs)
+		logs := gsl.CollectPointers(blockLogs)
 		concatLogs[blockNumber] = append(concatLogs[blockNumber], logs...)
 
 		tracker.addTrackerBlock(&superwatcher.Block{
@@ -93,7 +93,7 @@ func testMapLogsV1(tc *emittertest.TestConfig, policy superwatcher.Policy) error
 	for blockNumber, block := range reorgedChain {
 		if logs := block.Logs(); len(logs) != 0 {
 			reorgedLogs = append(reorgedLogs, logs...)
-			concatLogs[blockNumber] = append(concatLogs[blockNumber], gslutils.CollectPointers(logs)...)
+			concatLogs[blockNumber] = append(concatLogs[blockNumber], gsl.CollectPointers(logs)...)
 		}
 	}
 
@@ -112,7 +112,7 @@ func testMapLogsV1(tc *emittertest.TestConfig, policy superwatcher.Policy) error
 		nil,
 		tc.FromBlock,
 		tc.ToBlock,
-		gslutils.CollectPointers(reorgedLogs),
+		gsl.CollectPointers(reorgedLogs),
 		true,
 		tracker,
 		mockClient,

@@ -3,7 +3,7 @@ package poller
 import (
 	"context"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -68,7 +68,7 @@ func mapLogs(
 
 				return mapResults, errors.Wrapf(
 					errHashesDiffer, "logs in the same block %d has different hash %s vs %s",
-					number, gslutils.StringerToLowerString(mapResult.Block.Hash), gslutils.StringerToLowerString(log.BlockHash),
+					number, gsl.StringerToLowerString(mapResult.Block.Hash), gsl.StringerToLowerString(log.BlockHash),
 				)
 			}
 		}
@@ -101,7 +101,7 @@ func mapLogs(
 	if doHeader {
 		for n := toBlock; n >= fromBlock; n-- {
 			// Only add blocks that are not in blocksMissingLogs
-			if gslutils.Contains(blocksMissingLogs, n) {
+			if gsl.Contains(blocksMissingLogs, n) {
 				continue
 			}
 
@@ -177,7 +177,7 @@ func mapLogs(
 				case policy <= superwatcher.PolicyNormal:
 					// Check for superwatcher bug and just continue,
 					// as we won't process headers for blocks outside of mapResults
-					if !gslutils.Contains(blocksMissingLogs, n) {
+					if !gsl.Contains(blocksMissingLogs, n) {
 						return nil, errors.Wrap(superwatcher.ErrProcessReorg, "got headers but no result and not missing logs")
 					}
 

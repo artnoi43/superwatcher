@@ -3,7 +3,7 @@ package ensengine
 import (
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -84,12 +84,12 @@ func filterRegistrarArtifact(log *types.Log, artifacts []ENSArtifact) ENSArtifac
 	}
 
 	for _, artifact := range artifacts {
-		ensID := gslutils.StringerToLowerString(log.Topics[1])
+		ensID := gsl.StringerToLowerString(log.Topics[1])
 		if artifact.ENS.ID == ensID {
 			return artifact
 		}
 
-		txHash := gslutils.StringerToLowerString(log.TxHash)
+		txHash := gsl.StringerToLowerString(log.TxHash)
 		if artifact.ENS.TxHash == txHash {
 			return artifact
 		}

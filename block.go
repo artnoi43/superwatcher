@@ -1,8 +1,7 @@
 package superwatcher
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
-
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -24,7 +23,7 @@ type Block struct {
 
 // String returns the block hash with 0x prepended in all lowercase string.
 func (b *Block) String() string {
-	return gslutils.StringerToLowerString(b.Hash)
+	return gsl.StringerToLowerString(b.Hash)
 }
 
 // BlockHeader is implemented by `blockHeaderWrapper` and `*reorgsim.Block`.

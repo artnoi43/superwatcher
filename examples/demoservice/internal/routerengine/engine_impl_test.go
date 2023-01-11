@@ -8,17 +8,18 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/gsl/soyutils"
+	"github.com/artnoi43/w3utils"
+
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/hardcode"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 )
 
 const (
@@ -41,12 +42,12 @@ func TestHandleGoodLogs(t *testing.T) {
 
 	demoContracts := hardcode.DemoContracts(hardcode.Uniswapv3Factory, hardcode.ENSRegistrar, hardcode.ENSController)
 	poolFactoryContract := demoContracts[hardcode.Uniswapv3Factory]
-	poolFactoryHashes := contracts.CollectEventHashes(poolFactoryContract.ContractEvents)
+	poolFactoryHashes := w3utils.CollectEventHashes(poolFactoryContract.ContractEvents)
 	poolFactoryEngine := uniswapv3factoryengine.New(poolFactoryContract, datagateway.NewMockDataGatewayPoolFactory(), logLevel)
 	ensRegistrarContract := demoContracts[hardcode.ENSRegistrar]
-	ensRegistrarHashes := contracts.CollectEventHashes(ensRegistrarContract.ContractEvents)
+	ensRegistrarHashes := w3utils.CollectEventHashes(ensRegistrarContract.ContractEvents)
 	ensControllerContract := demoContracts[hardcode.ENSController]
-	ensControllerHashes := contracts.CollectEventHashes(ensControllerContract.ContractEvents)
+	ensControllerHashes := w3utils.CollectEventHashes(ensControllerContract.ContractEvents)
 	ensEngine := ensengine.New(ensRegistrarContract, ensControllerContract, datagateway.NewMockDataGatewayENS(), logLevel)
 
 	routes := map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
@@ -78,7 +79,7 @@ func TestHandleGoodLogs(t *testing.T) {
 		blocks = append(blocks, &superwatcher.Block{
 			Number: number,
 			Hash:   blockLogs[0].BlockHash,
-			Logs:   gslutils.CollectPointers(blockLogs),
+			Logs:   gsl.CollectPointers(blockLogs),
 		})
 	}
 

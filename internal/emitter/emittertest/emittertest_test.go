@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
@@ -100,7 +100,7 @@ func testEmitterV2(t *testing.T, caseNumber int) error {
 
 			for _, b := range result.GoodBlocks {
 				for _, log := range b.Logs {
-					if !gslutils.Contains(movedHashes, log.TxHash) {
+					if !gsl.Contains(movedHashes, log.TxHash) {
 						continue
 					}
 

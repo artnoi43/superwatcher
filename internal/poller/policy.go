@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/artnoi43/gsl/concurrent"
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -159,8 +159,8 @@ func pollCheap(
 
 	fmt.Printf("pollCheap result\n")
 	for _, result := range pollResults {
-		txHashes := gslutils.Map(result.Logs, func(l *types.Log) (string, bool) {
-			return gslutils.StringerToLowerString(l.TxHash), true
+		txHashes := gsl.Map(result.Logs, func(l *types.Log) (string, bool) {
+			return gsl.StringerToLowerString(l.TxHash), true
 		})
 		fmt.Printf("block %d hash %s txHashes %v\n", result.Number, hashStr(result.Hash), txHashes)
 	}

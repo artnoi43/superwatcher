@@ -3,7 +3,7 @@ package servicetest
 import (
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
@@ -52,7 +52,7 @@ func (e *DebugServiceEngine) HandleGoodLogs(
 		e.debugger.Debug(
 			1, "good log info",
 			zap.Uint64("blockNumber", log.BlockNumber),
-			zap.String("blockHash", gslutils.StringerToLowerString(log.BlockHash)),
+			zap.String("blockHash", gsl.StringerToLowerString(log.BlockHash)),
 		)
 
 		// Calling injected func
@@ -82,7 +82,7 @@ func (e *DebugServiceEngine) HandleReorgedLogs(
 		e.debugger.Debug(
 			1, "reorged log info",
 			zap.Uint64("blockNumber", log.BlockNumber),
-			zap.String("blockHash", gslutils.StringerToLowerString(log.BlockHash)),
+			zap.String("blockHash", gsl.StringerToLowerString(log.BlockHash)),
 		)
 
 		if e.HandleFuncReorgedLog != nil {

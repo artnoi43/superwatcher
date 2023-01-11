@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
@@ -50,7 +50,7 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 		// Add oldChain's blocks to tracker
 		for blockNumber, block := range oldChain {
 			blockLogs := block.Logs()
-			logs := gslutils.CollectPointers(blockLogs)
+			logs := gsl.CollectPointers(blockLogs)
 			allLogs[blockNumber] = append(allLogs[blockNumber], logs...)
 
 			tracker.addTrackerBlock(&superwatcher.Block{
@@ -69,11 +69,11 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 					Number: blockNumber,
 					Header: block,
 					Hash:   block.Hash(),
-					Logs:   gslutils.CollectPointers(logs),
+					Logs:   gsl.CollectPointers(logs),
 				}
 
 				pollResults[blockNumber] = &mapLogsResult{Block: b}
-				allLogs[blockNumber] = append(allLogs[blockNumber], gslutils.CollectPointers(logs)...)
+				allLogs[blockNumber] = append(allLogs[blockNumber], gsl.CollectPointers(logs)...)
 			}
 		}
 

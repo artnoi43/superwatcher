@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/emitterclient"
@@ -33,6 +33,6 @@ func NewEmitterClientOptions(options ...Option) superwatcher.EmitterClient {
 		c.syncChan,
 		c.pollResultChan,
 		c.errChan,
-		gslutils.Max(c.logLevel, c.config.LogLevel),
+		gsl.Max(c.logLevel, c.config.LogLevel),
 	)
 }

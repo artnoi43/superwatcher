@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -28,7 +28,7 @@ func (p *poller) Poll(
 	defer p.Unlock()
 
 	// Filter event logs with retries
-	eventLogs, err := gslutils.RetryWithReturn(
+	eventLogs, err := gsl.RetryWithReturn(
 		fmt.Sprintf("getLogs from %d to %d", fromBlock, toBlock),
 
 		func() ([]types.Log, error) {
@@ -41,9 +41,9 @@ func (p *poller) Poll(
 			})
 		},
 
-		gslutils.Attempts(10),
-		gslutils.Delay(4),
-		gslutils.LastErrorOnly(true),
+		gsl.Attempts(10),
+		gsl.Delay(4),
+		gsl.LastErrorOnly(true),
 	)
 	if err != nil {
 		return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
@@ -67,7 +67,7 @@ func (p *poller) Poll(
 		ctx,
 		fromBlock,
 		toBlock,
-		gslutils.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
+		gsl.CollectPointers(eventLogs), // Use pointers here, to avoid expensive copy
 		p.doHeader || p.policy >= superwatcher.PolicyExpensive, // Force doHeader if policy >= Expensive
 		p.tracker,
 		p.client,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
@@ -40,7 +40,7 @@ func (s *repositoryPoolFactory) SetPool(
 		return errors.Wrapf(err, "failed to unmarshal pool %s", pool.Address.String())
 	}
 
-	addr := gslutils.StringerToLowerString(pool.Address)
+	addr := gsl.StringerToLowerString(pool.Address)
 	if err := s.redisCli.HSet(ctx, PoolFactoryRedisKey, addr, poolJSON).Err(); err != nil {
 		return handleRedisErr(err, "HSet pool", addr)
 	}
@@ -55,7 +55,7 @@ func (s *repositoryPoolFactory) GetPool(
 	*entity.Uniswapv3PoolCreated,
 	error,
 ) {
-	addr := gslutils.StringerToLowerString(lpAddress)
+	addr := gsl.StringerToLowerString(lpAddress)
 	poolJSON, err := s.redisCli.HGet(ctx, PoolFactoryRedisKey, addr).Result()
 	if err != nil {
 		return nil, handleRedisErr(err, "HGET pool", addr)
@@ -97,7 +97,7 @@ func (s *repositoryPoolFactory) DelPool(
 	ctx context.Context,
 	pool *entity.Uniswapv3PoolCreated,
 ) error {
-	addr := gslutils.StringerToLowerString(pool.Address)
+	addr := gsl.StringerToLowerString(pool.Address)
 	if err := s.redisCli.HDel(ctx, PoolFactoryRedisKey, addr).Err(); err != nil {
 		return handleRedisErr(err, "HDEL pool", addr)
 	}

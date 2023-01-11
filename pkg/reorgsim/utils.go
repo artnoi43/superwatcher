@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -74,7 +74,7 @@ func LogsReorgPaths(events []ReorgEvent) ([]common.Hash, map[common.Hash][]uint6
 			logsPark[txHash] = append(logsPark[txHash], move.from)
 			logsDest[txHash] = move.to
 
-			if gslutils.Contains(logsHashes, txHash) {
+			if gsl.Contains(logsHashes, txHash) {
 				continue
 			}
 
@@ -127,13 +127,13 @@ func appendFilterLogs(src, dst *[]types.Log, addresses []common.Address, topics 
 
 		if addresses != nil {
 			if topics != nil {
-				if gslutils.Contains(topics[0], log.Topics[0]) {
+				if gsl.Contains(topics[0], log.Topics[0]) {
 					*dst = append(*dst, log)
 					continue
 				}
 			}
 
-			if gslutils.Contains(addresses, log.Address) {
+			if gsl.Contains(addresses, log.Address) {
 				*dst = append(*dst, log)
 				continue
 			}

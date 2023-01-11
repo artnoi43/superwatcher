@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
@@ -26,7 +26,7 @@ func TestRouterArtifacts(t *testing.T) {
 
 		blocks = append(blocks, &superwatcher.Block{
 			Number: number,
-			Logs:   gslutils.CollectPointers(blockLogs),
+			Logs:   gsl.CollectPointers(blockLogs),
 		})
 	}
 

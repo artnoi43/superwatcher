@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 )
@@ -181,7 +181,7 @@ func testReorgSimMultiReorg(testConf multiReorgConfig) error {
 
 				// movedFromBlock should not have any logs with TxHash in move.TxHashes
 				for _, log := range movedFromBlock.logs {
-					if gslutils.Contains(move.TxHashes, log.TxHash) {
+					if gsl.Contains(move.TxHashes, log.TxHash) {
 						return fmt.Errorf("moveFromBlock still has log %s", log.TxHash.String())
 					}
 				}
@@ -196,7 +196,7 @@ func testReorgSimMultiReorg(testConf multiReorgConfig) error {
 
 					seen[log.TxHash] = true
 
-					if gslutils.Contains(move.TxHashes, log.TxHash) {
+					if gsl.Contains(move.TxHashes, log.TxHash) {
 						count++
 					}
 				}

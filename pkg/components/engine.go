@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/engine"
@@ -64,6 +64,6 @@ func NewEngineOptions(options ...Option) superwatcher.Engine {
 		emitterClient,
 		c.serviceEngine,
 		c.setStateDataGateway,
-		gslutils.Max(c.logLevel, c.config.LogLevel),
+		gsl.Max(c.logLevel, c.config.LogLevel),
 	)
 }

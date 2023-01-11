@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/artnoi43/gsl/soyutils"
+	"github.com/artnoi43/w3utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
@@ -19,7 +20,6 @@ import (
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway/watcherstate"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/hardcode"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/routerengine"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
@@ -172,7 +172,7 @@ func main() {
 }
 
 func contractsToServices(
-	demoContracts map[string]contracts.BasicContract,
+	demoContracts map[string]w3utils.Contract,
 	rdb *redis.Client,
 	logLevel uint8,
 ) (
@@ -190,7 +190,7 @@ func contractsToServices(
 
 	// ENS sub-engine has 2 contracts
 	// so we can't init the engine in the for loop below
-	var ensRegistrar, ensController contracts.BasicContract
+	var ensRegistrar, ensController w3utils.Contract
 	// Topics and addresses to be used by watcher emitter
 	var emitterTopics []common.Hash
 	var emitterAddresses []common.Address //nolint:prealloc

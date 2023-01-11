@@ -3,11 +3,11 @@ package demotest
 import (
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
 	"github.com/artnoi43/superwatcher/pkg/testutils"
@@ -107,7 +107,7 @@ func testServiceEngineRouterV1(t *testing.T, caseNumber int) error {
 				t.Errorf("emptyDomain name for resultENS id: %s", result.ID)
 			}
 
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
+			expectedReorgedHash := gsl.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
 
 			if result.BlockNumber < testCase.Events[0].ReorgBlock {
 				if result.BlockHash == expectedReorgedHash {
@@ -121,7 +121,7 @@ func testServiceEngineRouterV1(t *testing.T, caseNumber int) error {
 				t.Errorf("reorged block %d resultENS has unexpected blockHash: %s", result.BlockNumber, result.BlockHash)
 			}
 
-			if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+			if h := common.HexToHash(result.TxHash); gsl.Contains(movedHashes, h) {
 				if expected := logsDst[h]; result.BlockNumber != expected {
 					t.Fatalf("expecting moved blockNumber %d, got %d", expected, result.BlockNumber)
 				}
@@ -135,8 +135,8 @@ func testServiceEngineRouterV1(t *testing.T, caseNumber int) error {
 		var somePoolFactory bool
 		for _, result := range resultsPoolFactory {
 			somePoolFactory = true
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
-			resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
+			expectedReorgedHash := gsl.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
+			resultBlockHash := gsl.StringerToLowerString(result.BlockHash)
 
 			if result.BlockCreated < testCase.Events[0].ReorgBlock {
 				if resultBlockHash == expectedReorgedHash {

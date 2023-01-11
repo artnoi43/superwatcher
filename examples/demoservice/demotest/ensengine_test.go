@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
@@ -132,7 +132,7 @@ func testServiceEngineENSV1(t *testing.T, caseNumber int) error {
 
 				t.Log("checking block", result.BlockNumber)
 
-				expectedHash := gslutils.StringerToLowerString(
+				expectedHash := gsl.StringerToLowerString(
 					reorgsim.ReorgHash(result.BlockNumber, 0),
 				)
 
@@ -144,7 +144,7 @@ func testServiceEngineENSV1(t *testing.T, caseNumber int) error {
 					t.Error("result has invalid ENS values", err.Error())
 				}
 
-				if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+				if h := common.HexToHash(result.TxHash); gsl.Contains(movedHashes, h) {
 					expectedFinalBlock := logsDst[h]
 					if expectedFinalBlock != result.BlockNumber {
 						t.Fatalf("expecting moved blockNumber %d, got %d", expectedFinalBlock, result.BlockNumber)

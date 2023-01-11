@@ -1,7 +1,7 @@
 package emitter
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/pkg/errors"
 )
 
@@ -22,10 +22,10 @@ func fromBlockToBlockNormal(
 	// 91  - 110  [normalCase] -> lastRecordedBlock = 110, lookBack = 10, fwdRange = 110 - 100  = 10
 	// 101 - 120  [normalCase] -> lastRecordedBlock = 120, lookBack = 10, fwdRange = 120 - 110  = 10
 
-	toBlock = gslutils.Min(currentBlock, lastRecordedBlock+filterRange)
+	toBlock = gsl.Min(currentBlock, lastRecordedBlock+filterRange)
 
 	firstNewBlock := lastRecordedBlock + 1
-	firstNewBlock = gslutils.Min(currentBlock, firstNewBlock)
+	firstNewBlock = gsl.Min(currentBlock, firstNewBlock)
 
 	if filterRange > firstNewBlock {
 		fromBlock = emitterStartBlock
@@ -84,7 +84,7 @@ func fromBlockToBlockIsReorging(
 
 	// toBlock does not go back, so we don't update it,
 	// unless currentBlock was shrunk during reorg too.
-	toBlock = gslutils.Min(prevStatus.ToBlock, currentBlock)
+	toBlock = gsl.Min(prevStatus.ToBlock, currentBlock)
 
 	return fromBlock, toBlock, nil
 }

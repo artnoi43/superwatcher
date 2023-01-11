@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
@@ -158,7 +158,7 @@ func pollMissing(
 			continue
 		}
 
-		if gslutils.Contains(blocksMissing, n) {
+		if gsl.Contains(blocksMissing, n) {
 			pollResult.LogsMigrated = true
 		}
 
@@ -238,8 +238,8 @@ func pollerResult(
 		}
 
 		freshBlock := pollResult.Block
-		freshBlockTxHashes := gslutils.Map(freshBlock.Logs, func(l *types.Log) (string, bool) {
-			return gslutils.StringerToLowerString(l.TxHash), true
+		freshBlockTxHashes := gsl.Map(freshBlock.Logs, func(l *types.Log) (string, bool) {
+			return gsl.StringerToLowerString(l.TxHash), true
 		})
 
 		fmt.Println("pollerResult: freshBlock", freshBlock.Number, freshBlockTxHashes)

@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
 )
@@ -27,8 +28,8 @@ func TestMockDataGatewayENS(t *testing.T) {
 		ens := &entity.ENS{
 			ID:        id,
 			Name:      name,
-			TxHash:    gslutils.StringerToLowerString(common.HexToHash("0x" + id)),
-			BlockHash: gslutils.StringerToLowerString(common.HexToHash("0x" + s100)),
+			TxHash:    gsl.StringerToLowerString(common.HexToHash("0x" + id)),
+			BlockHash: gsl.StringerToLowerString(common.HexToHash("0x" + s100)),
 		}
 
 		enses = append(enses, ens)

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -150,7 +150,7 @@ func testEmitterV1(t *testing.T, caseNumber int) error {
 
 				// Check that all the reorged logs were seen before in |seenLogs|
 				for _, log := range block.Logs {
-					if !gslutils.Contains(seenLogs, log) {
+					if !gsl.Contains(seenLogs, log) {
 						fatalBadLog(t, "reorgedLog not seen before", log)
 					}
 				}
@@ -167,16 +167,16 @@ func testEmitterV1(t *testing.T, caseNumber int) error {
 					}
 
 					// If the block is one of the movedFromBlocks, then it's not supposed to have any logs with movedTxHashes
-					if gslutils.Contains(movedFromBlocks, block.Number) {
-						if gslutils.Contains(movedTxHashes, log.TxHash) {
+					if gsl.Contains(movedFromBlocks, block.Number) {
+						if gsl.Contains(movedTxHashes, log.TxHash) {
 							// t.Log("movedBlock from", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
 							fatalBadLog(t, "log was supposed to be removed from this block", log)
 						}
 					}
 
 					// If the block is NOT one of the movedToBlocks, then it's not supposed to have any logs with movedTxHashes
-					if !gslutils.Contains(movedToBlocks, block.Number) {
-						if gslutils.Contains(movedTxHashes, log.TxHash) {
+					if !gsl.Contains(movedToBlocks, block.Number) {
+						if gsl.Contains(movedTxHashes, log.TxHash) {
 							// t.Log("movedBlock to", log.BlockNumber, log.BlockHash.String(), log.TxHash.String())
 							fatalBadLog(t, "log was supposed to be moved to this block", log)
 						}
@@ -225,7 +225,7 @@ func fatalBadLog(t *testing.T, msg string, log *types.Log) {
 
 // appendUnique appends item to arr if arr does not contain item.
 func appendUnique[T comparable](arr []T, item T) ([]T, bool) {
-	if !gslutils.Contains(arr, item) {
+	if !gsl.Contains(arr, item) {
 		return append(arr, item), true
 	}
 

@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
@@ -23,7 +23,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 		opt(&conf)
 	}
 
-	logLevel := gslutils.Max(conf.logLevel, conf.config.LogLevel)
+	logLevel := gsl.Max(conf.logLevel, conf.config.LogLevel)
 
 	poller := NewPoller(
 		conf.addresses,
@@ -33,7 +33,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 		conf.filterRange,
 		conf.ethClient,
 		logLevel,
-		gslutils.Max(conf.policy, conf.config.Policy),
+		gsl.Max(conf.policy, conf.config.Policy),
 	)
 
 	emitter := NewEmitter(

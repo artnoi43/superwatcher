@@ -3,7 +3,7 @@ package emitterclient
 // This package maybe removed in favor of centralized pkg/components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/emitterclient"
@@ -74,6 +74,6 @@ func New(options ...Option) superwatcher.EmitterClient {
 		c.syncChan,
 		c.pollResultChan,
 		c.errChan,
-		gslutils.Max(c.logLevel, c.conf.LogLevel),
+		gsl.Max(c.logLevel, c.conf.LogLevel),
 	)
 }

@@ -1,7 +1,7 @@
 package routerengine
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
@@ -49,7 +49,7 @@ func (e *routerEngine) logToSubEngine(log *types.Log) (subengines.SubEngineEnum,
 	for subEngine, addrTopics := range e.Routes {
 		for address, topics := range addrTopics {
 			if address == log.Address {
-				if gslutils.Contains(topics, log.Topics[0]) {
+				if gsl.Contains(topics, log.Topics[0]) {
 					return subEngine, true
 				}
 			}

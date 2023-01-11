@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -74,7 +74,7 @@ func testFilterLogsReorg(t *testing.T, caseNumber int, testConf multiReorgConfig
 		for _, moves := range event.MovedLogs {
 			for _, move := range moves {
 				for _, moveHash := range move.TxHashes {
-					if gslutils.Contains(movedTo[move.NewBlock], moveHash) {
+					if gsl.Contains(movedTo[move.NewBlock], moveHash) {
 						continue
 					}
 
@@ -113,7 +113,7 @@ func testFilterLogsReorg(t *testing.T, caseNumber int, testConf multiReorgConfig
 		if simBlockNumber > event.ReorgBlock {
 			forked[reorgCount] = true
 
-			if gslutils.Contains(forked, false) {
+			if gsl.Contains(forked, false) {
 				reorgCount++
 			}
 		}
@@ -127,12 +127,12 @@ func testFilterLogsReorg(t *testing.T, caseNumber int, testConf multiReorgConfig
 						continue
 					}
 
-					blockTxHashes := gslutils.Map(blockLogs, func(l types.Log) (common.Hash, bool) {
+					blockTxHashes := gsl.Map(blockLogs, func(l types.Log) (common.Hash, bool) {
 						return l.TxHash, true
 					})
 
 					for _, moveTxHash := range move.TxHashes {
-						if gslutils.Contains(blockTxHashes, moveTxHash) {
+						if gsl.Contains(blockTxHashes, moveTxHash) {
 							continue
 						}
 

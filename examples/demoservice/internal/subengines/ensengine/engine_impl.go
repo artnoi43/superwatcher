@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -143,7 +143,7 @@ func (e *ensEngine) HandleReorgedBlocks(
 
 			err = e.dataGateway.DelENS(context.Background(), &ens.ENS)
 			if err != nil {
-				return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", gslutils.StringerToLowerString(log.BlockHash))
+				return nil, errors.Wrapf(err, "Remove ENS failed on log txHash %s", gsl.StringerToLowerString(log.BlockHash))
 			}
 		}
 	}

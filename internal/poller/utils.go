@@ -1,7 +1,7 @@
 package poller
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -84,7 +84,7 @@ func collectHeaders(
 }
 
 func hashStr(h common.Hash) string {
-	return gslutils.StringerToLowerString(h)
+	return gsl.StringerToLowerString(h)
 }
 
 // deleteUnusableResult removes all map keys that are >= lastGood.

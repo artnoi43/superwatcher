@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -69,7 +69,7 @@ func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 		for _, move := range moves {
 			moveFromBlock := reorgedChain[moveFrom]
 			for _, log := range moveFromBlock.logs {
-				if gslutils.Contains(move.TxHashes, log.TxHash) {
+				if gsl.Contains(move.TxHashes, log.TxHash) {
 					return fmt.Errorf("log %s was not removed", log.TxHash.String())
 				}
 			}
@@ -77,7 +77,7 @@ func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 			moveToBlock := reorgedChain[move.NewBlock]
 			var foundMovedLog bool
 			for _, log := range moveToBlock.logs {
-				if gslutils.Contains(move.TxHashes, log.TxHash) {
+				if gsl.Contains(move.TxHashes, log.TxHash) {
 					foundMovedLog = true
 					movedLogs[log.TxHash] = true
 				}

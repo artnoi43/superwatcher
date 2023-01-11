@@ -1,11 +1,11 @@
 package hardcode
 
 import (
+	"github.com/artnoi43/w3utils"
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/ens/enscontroller"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/ens/ensregistrar"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/oneinchlimitorder"
@@ -52,8 +52,8 @@ var contractTopicsMap = map[string][]string{
 }
 
 // DemoAddressesAndTopics returns contract information for all demo contracts.
-func DemoContracts(contractNames ...string) map[string]contracts.BasicContract {
-	basicContracts := make(map[string]contracts.BasicContract)
+func DemoContracts(contractNames ...string) map[string]w3utils.Contract {
+	basicContracts := make(map[string]w3utils.Contract)
 
 	for _, contractName := range contractNames {
 		contractABI, ok := contractABIsMap[contractName]
@@ -64,7 +64,7 @@ func DemoContracts(contractNames ...string) map[string]contracts.BasicContract {
 
 		topics := contractTopicsMap[contractName]
 		address := contractAddressesMap[contractName]
-		basicContracts[contractName] = contracts.NewBasicContract(
+		basicContracts[contractName] = w3utils.NewContract(
 			contractName,
 			contractABI,
 			address,

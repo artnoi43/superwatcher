@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
@@ -64,7 +64,7 @@ func NewEmitterOptions(options ...Option) superwatcher.Emitter {
 		c.doHeader,
 		c.filterRange,
 		c.ethClient,
-		gslutils.Max(c.logLevel, c.config.LogLevel),
+		gsl.Max(c.logLevel, c.config.LogLevel),
 		c.policy,
 	)
 

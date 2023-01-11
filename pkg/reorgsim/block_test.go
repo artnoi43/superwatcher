@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -46,7 +46,7 @@ func TestRemoveLogs(t *testing.T) {
 
 	var foundLogs bool
 	for _, log := range b.logs {
-		if gslutils.Contains(hashesToRemove, log.TxHash) {
+		if gsl.Contains(hashesToRemove, log.TxHash) {
 			foundLogs = true
 			break
 		}
@@ -59,7 +59,7 @@ func TestRemoveLogs(t *testing.T) {
 	b.removeLogs(hashesToRemove)
 
 	for _, log := range b.logs {
-		if gslutils.Contains(hashesToRemove, log.TxHash) {
+		if gsl.Contains(hashesToRemove, log.TxHash) {
 			t.Fatalf("removed log %s was not removed", log.TxHash.String())
 		}
 	}
