@@ -2,12 +2,10 @@ package poller
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"sync"
 
 	"github.com/artnoi43/gsl/concurrent"
-	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -17,7 +15,7 @@ import (
 )
 
 // pollExpensive concurrently fetches event logs and block headers
-// for all blocks within range [fromBlock, toBlock]
+// for all blocks within range [fromBlock, toBlock] and save them in pollResults.
 func pollExpensive(
 	ctx context.Context,
 	fromBlock uint64,
@@ -100,6 +98,7 @@ func pollExpensive(
 }
 
 // pollCheap polls event logs first, and then block headers for blocks with logs.
+// The results will be written to pollResults.
 func pollCheap(
 	ctx context.Context,
 	fromBlock uint64,
@@ -134,16 +133,17 @@ func pollCheap(
 		return nil, errors.Wrap(err, "collectLogs error")
 	}
 
-	var resultBlocks []uint64
+	var targetBlocks []uint64
 	for n := fromBlock; n <= toBlock; n++ {
+		// PolicyFast only fetch headers for blocks in pollResults
 		if _, ok := pollResults[n]; !ok {
 			continue
 		}
 
-		resultBlocks = append(resultBlocks, n)
+		targetBlocks = append(targetBlocks, n)
 	}
 
-	headers, err := getHeadersByNumbers(ctx, client, resultBlocks)
+	headers, err := getHeadersByNumbers(ctx, client, targetBlocks)
 	if err != nil {
 		return nil, errors.Wrap(superwatcher.ErrFetchError, "failed to get headers for resultBlocks")
 	}
@@ -155,14 +155,6 @@ func pollCheap(
 		}
 
 		return nil, errors.Wrap(err, "collectHeaders error")
-	}
-
-	fmt.Printf("pollCheap result\n")
-	for _, result := range pollResults {
-		txHashes := gsl.Map(result.Logs, func(l *types.Log) (string, bool) {
-			return gsl.StringerToLowerString(l.TxHash), true
-		})
-		fmt.Printf("block %d hash %s txHashes %v\n", result.Number, hashStr(result.Hash), txHashes)
 	}
 
 	return pollResults, nil

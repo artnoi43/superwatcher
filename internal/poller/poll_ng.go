@@ -6,12 +6,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
@@ -28,12 +27,19 @@ func (p *poller) PollNg(
 	defer p.Unlock()
 
 	pollResults := make(map[uint64]*mapLogsResult)
+	var blocksMissing []uint64
+
 	pollResults, err := poll(ctx, fromBlock, toBlock, p.addresses, p.topics, p.policy, p.client, pollResults)
 	if err != nil {
 		return nil, err
 	}
 
-	pollResults, err = pollMissing(ctx, fromBlock, toBlock, p.policy, p.client, p.tracker, pollResults)
+	pollResults, blocksMissing, err = pollMissing(ctx, fromBlock, toBlock, p.policy, p.client, p.tracker, pollResults)
+	if err != nil {
+		return nil, err
+	}
+
+	pollResults, err = findReorg(fromBlock, toBlock, blocksMissing, p.tracker, pollResults)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +51,6 @@ func (p *poller) PollNg(
 
 	result.FromBlock, result.ToBlock = fromBlock, toBlock
 	result.LastGoodBlock = superwatcher.LastGoodBlock(result)
-
 	p.lastRecordedBlock = result.LastGoodBlock
 
 	fromBlockResult, ok := pollResults[fromBlock]
@@ -97,6 +102,7 @@ func pollMissing(
 	pollResults map[uint64]*mapLogsResult,
 ) (
 	map[uint64]*mapLogsResult,
+	[]uint64, // tracker's blocks that went missing (no logs)
 	error,
 ) {
 	// Find missing blocks (blocks in tracker that are not in pollResults)
@@ -114,17 +120,14 @@ func pollMissing(
 		}
 	}
 
-	fmt.Println()
-	fmt.Println("blocksMissing", blocksMissing)
-
 	headers, err := getHeadersByNumbers(ctx, client, blocksMissing)
 	if err != nil {
-		return nil, errors.Wrap(superwatcher.ErrFetchError, "failed to get block headers in mapLogsNg")
+		return nil, blocksMissing, errors.Wrap(superwatcher.ErrFetchError, "failed to get block headers in mapLogsNg")
 	}
 
 	lenHeads, lenBlocks := len(headers), len(blocksMissing)
 	if lenHeads != lenBlocks {
-		return nil, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads)
+		return nil, blocksMissing, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads)
 	}
 
 	// Collect headers for blocksMissing
@@ -132,12 +135,27 @@ func pollMissing(
 	if err != nil {
 		if errors.Is(err, errHashesDiffer) {
 			// deleteMapResults(pollResults, lastGood)
-			return pollResults, err
+			return pollResults, blocksMissing, err
 		}
 
-		return nil, errors.Wrap(err, "collectHeaders error")
+		return nil, nil, errors.Wrap(err, "collectHeaders error")
 	}
 
+	return pollResults, blocksMissing, nil
+}
+
+// findReorg compares fresh block hashes with known hashes in tracker.
+// If block hashes and logs length do not match, findReorg marks the block as reorged.
+func findReorg(
+	fromBlock uint64,
+	toBlock uint64,
+	blocksMissing []uint64,
+	tracker *blockTracker,
+	pollResults map[uint64]*mapLogsResult,
+) (
+	map[uint64]*mapLogsResult,
+	error,
+) {
 	if tracker == nil {
 		return pollResults, nil
 	}
@@ -238,11 +256,6 @@ func pollerResult(
 		}
 
 		freshBlock := pollResult.Block
-		freshBlockTxHashes := gsl.Map(freshBlock.Logs, func(l *types.Log) (string, bool) {
-			return gsl.StringerToLowerString(l.TxHash), true
-		})
-
-		fmt.Println("pollerResult: freshBlock", freshBlock.Number, freshBlockTxHashes)
 		addTrackerBlockPolicy(tracker, &freshBlock, policy)
 
 		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.

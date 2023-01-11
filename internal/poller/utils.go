@@ -1,6 +1,8 @@
 package poller
 
 import (
+	"fmt"
+
 	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,26 +20,33 @@ func collectLogs(
 	var last uint64
 
 	for i, log := range logs {
-		last = log.BlockNumber
+		number := log.BlockNumber
+		hash := log.BlockHash
+		result := m[number]
 
-		result, ok := m[log.BlockNumber]
-		if ok {
-			if h0, h1 := result.Hash, log.BlockHash; h0 != h1 {
-				return log.BlockNumber, errors.Wrapf(
-					errHashesDiffer, "logs in block %d has different hashes: %s vs %s",
-					log.BlockNumber, hashStr(h0), hashStr(h1),
-				)
-			}
-
-			result.Logs = append(result.Logs, &logs[i])
-		} else if !ok {
-			m[log.BlockNumber] = &mapLogsResult{
+		switch {
+		// nil is when collectLogs did not visit this log block yet
+		case result == nil:
+			fmt.Println("newBlock", number)
+			m[number] = &mapLogsResult{
 				Block: superwatcher.Block{
-					Number: log.BlockNumber,
+					Number: number,
 					Hash:   log.BlockHash,
 					Logs:   []*types.Log{&logs[i]},
 				},
 			}
+
+		default:
+			if h := result.Hash; h != hash {
+				return number, errors.Wrapf(
+					errHashesDiffer, "logs in block %d has different hashes: %s vs %s",
+					number, hashStr(h), hashStr(hash),
+				)
+			}
+
+			fmt.Println("beforeAppend", number, len(result.Logs))
+			result.Logs = append(result.Logs, &logs[i])
+			fmt.Println("afterAppend", number, len(result.Logs))
 		}
 	}
 

@@ -14,21 +14,21 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/testutils"
 )
 
-func TestMapLogsNg(t *testing.T) {
-	err := testutils.RunTestCase(t, "TestMapLogsNg", emittertest.TestCasesV1, testMapLogsNg)
+func TestPollNg(t *testing.T) {
+	err := testutils.RunTestCase(t, "TestPollNg", emittertest.TestCasesV1, testPollNg)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 }
 
-func testMapLogsNg(t *testing.T, caseNumber int) error {
+func testPollNg(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
 		// superwatcher.PolicyExpensive,
 	} {
 		tc := emittertest.TestCasesV1[caseNumber-1]
-		tracker := newTracker("testProcessReorg", 3)
+		tracker := newTracker("testPollNg", 3)
 		logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 
 		var reorgEvent *reorgsim.ReorgEvent
@@ -60,19 +60,9 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 				Logs:   logs,
 			})
 		}
-
-		pollResults := make(map[uint64]*mapLogsResult)
-		// Collect reorgedLogs as in pollExpensive/pollCheap
+		// Add reorgChain's logs to allLogs
 		for blockNumber, block := range reorgedChain {
 			if logs := block.Logs(); len(logs) != 0 {
-				b := superwatcher.Block{
-					Number: blockNumber,
-					Header: block,
-					Hash:   block.Hash(),
-					Logs:   gsl.CollectPointers(logs),
-				}
-
-				pollResults[blockNumber] = &mapLogsResult{Block: b}
 				allLogs[blockNumber] = append(allLogs[blockNumber], gsl.CollectPointers(logs)...)
 			}
 		}
@@ -87,18 +77,25 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 			}
 		}
 
-		results, err := pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults)
+		pollResults := make(map[uint64]*mapLogsResult)
+		blocksMissing := []uint64{}
+
+		pollResults, err = pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults)
 		if err != nil {
 			t.Fatal("pollCheap error", err.Error())
 		}
-		results, err = pollMissing(nil, tc.FromBlock, tc.ToBlock, policy, mockClient, tracker, pollResults)
+		pollResults, blocksMissing, err = pollMissing(nil, tc.FromBlock, tc.ToBlock, policy, mockClient, tracker, pollResults)
 		if err != nil {
 			t.Fatal("pollMissing error", err.Error())
 		}
+		pollResults, err = findReorg(tc.FromBlock, tc.ToBlock, blocksMissing, tracker, pollResults)
+		if err != nil {
+			t.Fatal("findReorg error")
+		}
 
 		wasReorged := make(map[uint64]bool)
-		for k := range results {
-			v, ok := results[k]
+		for k := range pollResults {
+			v, ok := pollResults[k]
 			if !ok {
 				continue
 			}
@@ -111,7 +108,7 @@ func testMapLogsNg(t *testing.T, caseNumber int) error {
 				continue
 			}
 
-			mapResult, ok := results[blockNumber]
+			mapResult, ok := pollResults[blockNumber]
 			if !ok {
 				mapResult = new(mapLogsResult)
 			}
