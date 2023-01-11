@@ -6,10 +6,12 @@ import (
 	"sync"
 
 	"github.com/artnoi43/gsl/concurrent"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
 )
@@ -24,6 +26,7 @@ func pollExpensive(
 	topics [][]common.Hash,
 	client superwatcher.EthClient,
 	pollResults map[uint64]*mapLogsResult,
+	debugger *debugger.Debugger,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
@@ -69,6 +72,12 @@ func pollExpensive(
 		return nil, errors.Wrap(err, "concurrent fetch error")
 	}
 
+	debugger.Debug(
+		2, "polled event logs and headers",
+		zap.Int("logs", len(logs)),
+		zap.Int("headers", len(headers)),
+	)
+
 	if len(blockNumbers) != len(headers) {
 		return nil, errors.Wrap(superwatcher.ErrFetchError, "headers and blockNumbers length not matched")
 	}
@@ -94,6 +103,7 @@ func pollExpensive(
 		return nil, errors.Wrap(err, "collectHeaders found error")
 	}
 
+	debugger.Debug(3, "pollExpensive successful")
 	return pollResults, nil
 }
 
@@ -107,6 +117,7 @@ func pollCheap(
 	topics [][]common.Hash,
 	client superwatcher.EthClient,
 	pollResults map[uint64]*mapLogsResult,
+	debugger *debugger.Debugger,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
@@ -123,6 +134,8 @@ func pollCheap(
 	if err != nil {
 		return nil, errors.Wrap(superwatcher.ErrFetchError, err.Error())
 	}
+
+	debugger.Debug(2, "polled event logs", zap.Int("len", len(logs)))
 
 	_, err = collectLogs(pollResults, logs)
 	if err != nil {
@@ -143,6 +156,11 @@ func pollCheap(
 		targetBlocks = append(targetBlocks, n)
 	}
 
+	debugger.Debug(
+		3, "polling headers for targetBlocks",
+		zap.Uint64s("targetBlocks", targetBlocks),
+	)
+
 	headers, err := getHeadersByNumbers(ctx, client, targetBlocks)
 	if err != nil {
 		return nil, errors.Wrap(superwatcher.ErrFetchError, "failed to get headers for resultBlocks")
@@ -157,5 +175,6 @@ func pollCheap(
 		return nil, errors.Wrap(err, "collectHeaders error")
 	}
 
+	debugger.Debug(3, "pollCheap successful")
 	return pollResults, nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/testutils"
 )
@@ -80,11 +81,13 @@ func testPollNg(t *testing.T, caseNumber int) error {
 		pollResults := make(map[uint64]*mapLogsResult)
 		blocksMissing := []uint64{}
 
-		pollResults, err = pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults)
+		debugger := debugger.NewDebugger("poller-ng", 3)
+
+		pollResults, err = pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults, debugger)
 		if err != nil {
 			t.Fatal("pollCheap error", err.Error())
 		}
-		pollResults, blocksMissing, err = pollMissing(nil, tc.FromBlock, tc.ToBlock, policy, mockClient, tracker, pollResults)
+		pollResults, blocksMissing, err = pollMissing(nil, tc.FromBlock, tc.ToBlock, policy, mockClient, tracker, pollResults, debugger)
 		if err != nil {
 			t.Fatal("pollMissing error", err.Error())
 		}

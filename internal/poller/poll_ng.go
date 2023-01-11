@@ -26,15 +26,13 @@ func (p *poller) PollNg(
 	p.Lock()
 	defer p.Unlock()
 
-	pollResults := make(map[uint64]*mapLogsResult)
 	var blocksMissing []uint64
-
-	pollResults, err := poll(ctx, fromBlock, toBlock, p.addresses, p.topics, p.policy, p.client, pollResults)
+	pollResults, err := poll(ctx, fromBlock, toBlock, p.addresses, p.topics, p.policy, p.client, p.debugger)
 	if err != nil {
 		return nil, err
 	}
 
-	pollResults, blocksMissing, err = pollMissing(ctx, fromBlock, toBlock, p.policy, p.client, p.tracker, pollResults)
+	pollResults, blocksMissing, err = pollMissing(ctx, fromBlock, toBlock, p.policy, p.client, p.tracker, pollResults, p.debugger)
 	if err != nil {
 		return nil, err
 	}
@@ -73,20 +71,22 @@ func poll(
 	topics [][]common.Hash,
 	policy superwatcher.Policy,
 	client superwatcher.EthClient,
-	pollResults map[uint64]*mapLogsResult,
+	debugger *debugger.Debugger,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
 ) {
+	pollResults := make(map[uint64]*mapLogsResult)
+
 	switch {
 	case policy >= superwatcher.PolicyExpensiveBlock: // Get blocks and event logs concurrently
 		return nil, errors.New("PolicyExpensiveBlock not implemented")
 
 	case policy == superwatcher.PolicyExpensive:
-		return pollExpensive(ctx, fromBlock, toBlock, addresses, topics, client, pollResults)
+		return pollExpensive(ctx, fromBlock, toBlock, addresses, topics, client, pollResults, debugger)
 
 	case policy <= superwatcher.PolicyNormal:
-		return pollCheap(ctx, fromBlock, toBlock, addresses, topics, client, pollResults)
+		return pollCheap(ctx, fromBlock, toBlock, addresses, topics, client, pollResults, debugger)
 	}
 
 	panic("invalid policy " + policy.String())
@@ -100,6 +100,7 @@ func pollMissing(
 	client superwatcher.EthClient,
 	tracker *blockTracker, // tracker is used as read-only in here. Don't write.
 	pollResults map[uint64]*mapLogsResult,
+	debugger *debugger.Debugger,
 ) (
 	map[uint64]*mapLogsResult,
 	[]uint64, // tracker's blocks that went missing (no logs)
@@ -120,12 +121,24 @@ func pollMissing(
 		}
 	}
 
+	lenBlocks := len(blocksMissing)
+
+	if lenBlocks == 0 {
+		debugger.Debug(3, "found no missing blocks")
+		return pollResults, blocksMissing, nil
+	}
+
+	debugger.Debug(
+		1, fmt.Sprintf("found %d blocks missing, getting their headers", lenBlocks),
+		zap.Uint64s("blocksMissing", blocksMissing),
+	)
+
 	headers, err := getHeadersByNumbers(ctx, client, blocksMissing)
 	if err != nil {
 		return nil, blocksMissing, errors.Wrap(superwatcher.ErrFetchError, "failed to get block headers in mapLogsNg")
 	}
 
-	lenHeads, lenBlocks := len(headers), len(blocksMissing)
+	lenHeads := len(headers)
 	if lenHeads != lenBlocks {
 		return nil, blocksMissing, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads)
 	}
