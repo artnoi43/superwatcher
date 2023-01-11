@@ -17,4 +17,5 @@ var (
 
 	// User violates some rules/policies, e.g. downgrading poller Policy
 	ErrUserError = errors.New("user error")
+	ErrBadPolicy = errors.Wrap(ErrUserError, "invalid policy")
 )

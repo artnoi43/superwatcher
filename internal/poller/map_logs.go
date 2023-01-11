@@ -10,13 +10,6 @@ import (
 	"github.com/artnoi43/superwatcher"
 )
 
-// mapLogsResult represents information of fresh blocks mapped by mapLogs.
-// It contains fresh data, i.e. not from tracker.
-type mapLogsResult struct {
-	forked bool // true if the tracker block hash differs from fresh block hash
-	superwatcher.Block
-}
-
 // mapLogs maps logs to mapLogsResult, and compares |logs| and their blockHashes to
 // known blockHashes in |tracker|. If |tracker| is nil, mapLogs won't compare hashes.
 // If |doHeader| is true, mapLogs also gets all block headers for blocks with logs.

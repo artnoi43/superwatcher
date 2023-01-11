@@ -82,16 +82,21 @@ func testPollNg(t *testing.T, caseNumber int) error {
 		blocksMissing := []uint64{}
 
 		debugger := debugger.NewDebugger("poller-ng", 3)
+		param := &param{
+			fromBlock: tc.FromBlock,
+			toBlock:   tc.ToBlock,
+			policy:    policy,
+		}
 
 		pollResults, err = pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults, debugger)
 		if err != nil {
 			t.Fatal("pollCheap error", err.Error())
 		}
-		pollResults, blocksMissing, err = pollMissing(nil, tc.FromBlock, tc.ToBlock, policy, mockClient, tracker, pollResults, debugger)
+		pollResults, blocksMissing, err = pollMissing(nil, param, mockClient, tracker, pollResults, debugger)
 		if err != nil {
 			t.Fatal("pollMissing error", err.Error())
 		}
-		pollResults, err = findReorg(tc.FromBlock, tc.ToBlock, blocksMissing, tracker, pollResults)
+		pollResults, err = findReorg(param, blocksMissing, tracker, pollResults, debugger)
 		if err != nil {
 			t.Fatal("findReorg error")
 		}

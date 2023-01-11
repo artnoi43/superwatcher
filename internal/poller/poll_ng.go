@@ -15,6 +15,19 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
+// mapLogsResult represents information of fresh blocks mapped by mapLogs.
+// It contains fresh data, i.e. not from tracker.
+type mapLogsResult struct {
+	forked bool // true if the tracker block hash differs from fresh block hash
+	superwatcher.Block
+}
+
+type param struct {
+	fromBlock uint64
+	toBlock   uint64
+	policy    superwatcher.Policy
+}
+
 func (p *poller) PollNg(
 	ctx context.Context,
 	fromBlock uint64,
@@ -26,23 +39,29 @@ func (p *poller) PollNg(
 	p.Lock()
 	defer p.Unlock()
 
+	param := &param{
+		fromBlock: fromBlock,
+		toBlock:   toBlock,
+		policy:    p.policy,
+	}
+
+	pollResults, err := poll(ctx, param, p.addresses, p.topics, p.client, p.debugger)
+	if err != nil {
+		return nil, err
+	}
+
 	var blocksMissing []uint64
-	pollResults, err := poll(ctx, fromBlock, toBlock, p.addresses, p.topics, p.policy, p.client, p.debugger)
+	pollResults, blocksMissing, err = pollMissing(ctx, param, p.client, p.tracker, pollResults, p.debugger)
 	if err != nil {
 		return nil, err
 	}
 
-	pollResults, blocksMissing, err = pollMissing(ctx, fromBlock, toBlock, p.policy, p.client, p.tracker, pollResults, p.debugger)
+	pollResults, err = findReorg(param, blocksMissing, p.tracker, pollResults, p.debugger)
 	if err != nil {
 		return nil, err
 	}
 
-	pollResults, err = findReorg(fromBlock, toBlock, blocksMissing, p.tracker, pollResults)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := pollerResult(fromBlock, toBlock, p.policy, p.tracker, p.debugger, pollResults)
+	result, err := pollerResult(param, p.tracker, pollResults, p.debugger)
 	if err != nil {
 		return result, err
 	}
@@ -65,11 +84,9 @@ func (p *poller) PollNg(
 
 func poll(
 	ctx context.Context,
-	fromBlock uint64,
-	toBlock uint64,
+	param *param,
 	addresses []common.Address,
 	topics [][]common.Hash,
-	policy superwatcher.Policy,
 	client superwatcher.EthClient,
 	debugger *debugger.Debugger,
 ) (
@@ -79,24 +96,22 @@ func poll(
 	pollResults := make(map[uint64]*mapLogsResult)
 
 	switch {
-	case policy >= superwatcher.PolicyExpensiveBlock: // Get blocks and event logs concurrently
+	case param.policy >= superwatcher.PolicyExpensiveBlock: // Get blocks and event logs concurrently
 		return nil, errors.New("PolicyExpensiveBlock not implemented")
 
-	case policy == superwatcher.PolicyExpensive:
-		return pollExpensive(ctx, fromBlock, toBlock, addresses, topics, client, pollResults, debugger)
+	case param.policy == superwatcher.PolicyExpensive:
+		return pollExpensive(ctx, param.fromBlock, param.toBlock, addresses, topics, client, pollResults, debugger)
 
-	case policy <= superwatcher.PolicyNormal:
-		return pollCheap(ctx, fromBlock, toBlock, addresses, topics, client, pollResults, debugger)
+	case param.policy <= superwatcher.PolicyNormal:
+		return pollCheap(ctx, param.fromBlock, param.toBlock, addresses, topics, client, pollResults, debugger)
 	}
 
-	panic("invalid policy " + policy.String())
+	panic(superwatcher.ErrBadPolicy.Error() + " " + param.policy.String())
 }
 
 func pollMissing(
 	ctx context.Context,
-	fromBlock uint64,
-	toBlock uint64,
-	policy superwatcher.Policy,
+	param *param,
 	client superwatcher.EthClient,
 	tracker *blockTracker, // tracker is used as read-only in here. Don't write.
 	pollResults map[uint64]*mapLogsResult,
@@ -106,19 +121,21 @@ func pollMissing(
 	[]uint64, // tracker's blocks that went missing (no logs)
 	error,
 ) {
+	if tracker == nil {
+		return pollResults, nil, nil
+	}
+
 	// Find missing blocks (blocks in tracker that are not in pollResults)
 	var blocksMissing []uint64
-	if tracker != nil {
-		for n := toBlock; n >= fromBlock; n-- {
-			if _, ok := tracker.getTrackerBlock(n); !ok {
-				continue
-			}
-			if _, ok := pollResults[n]; ok {
-				continue
-			}
-
-			blocksMissing = append(blocksMissing, n)
+	for n := param.toBlock; n >= param.fromBlock; n-- {
+		if _, ok := tracker.getTrackerBlock(n); !ok {
+			continue
 		}
+		if _, ok := pollResults[n]; ok {
+			continue
+		}
+
+		blocksMissing = append(blocksMissing, n)
 	}
 
 	lenBlocks := len(blocksMissing)
@@ -140,11 +157,13 @@ func pollMissing(
 
 	lenHeads := len(headers)
 	if lenHeads != lenBlocks {
-		return nil, blocksMissing, errors.Wrapf(superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads)
+		return nil, blocksMissing, errors.Wrapf(
+			superwatcher.ErrFetchError, "expecting %d headers, got %d", lenBlocks, lenHeads,
+		)
 	}
 
 	// Collect headers for blocksMissing
-	_, err = collectHeaders(pollResults, fromBlock, toBlock, headers)
+	_, err = collectHeaders(pollResults, param.fromBlock, param.toBlock, headers)
 	if err != nil {
 		if errors.Is(err, errHashesDiffer) {
 			// deleteMapResults(pollResults, lastGood)
@@ -160,11 +179,11 @@ func pollMissing(
 // findReorg compares fresh block hashes with known hashes in tracker.
 // If block hashes and logs length do not match, findReorg marks the block as reorged.
 func findReorg(
-	fromBlock uint64,
-	toBlock uint64,
+	param *param,
 	blocksMissing []uint64,
 	tracker *blockTracker,
 	pollResults map[uint64]*mapLogsResult,
+	debugger *debugger.Debugger,
 ) (
 	map[uint64]*mapLogsResult,
 	error,
@@ -174,7 +193,7 @@ func findReorg(
 	}
 
 	// Detect chain reorg using tracker
-	for n := fromBlock; n <= toBlock; n++ {
+	for n := param.fromBlock; n <= param.toBlock; n++ {
 		trackerBlock, ok := tracker.getTrackerBlock(n)
 		if !ok {
 			continue
@@ -193,6 +212,15 @@ func findReorg(
 			pollResult.LogsMigrated = true
 		}
 
+		debugger.Debug(
+			1, "chain reorg detected",
+			zap.Uint64("blockNumber", n),
+			zap.String("freshHash", pollResult.String()),
+			zap.String("trackerHash", trackerBlock.String()),
+			zap.Int("freshLogs", len(pollResult.Logs)),
+			zap.Int("trackerLogs", len(trackerBlock.Logs)),
+		)
+
 		pollResult.forked = true
 	}
 
@@ -200,20 +228,20 @@ func findReorg(
 }
 
 func pollerResult(
-	fromBlock uint64,
-	toBlock uint64,
-	policy superwatcher.Policy,
+	param *param,
 	tracker *blockTracker,
-	debugger *debugger.Debugger,
 	pollResults map[uint64]*mapLogsResult,
+	debugger *debugger.Debugger,
 ) (*superwatcher.PollerResult, error) {
 	// Fills |result| and saves current data back to tracker first.
 	result := new(superwatcher.PollerResult)
-	for number := fromBlock; number <= toBlock; number++ {
-		// Only blocks in pollResults are worth processing. There are 3 reasons a block is in pollResults:
+	for number := param.fromBlock; number <= param.toBlock; number++ {
+		// Only blocks in pollResults are worth processing.
+		// There are 3 reasons a block is in pollResults:
 		// (1) block has >=1 interesting log
 		// (2) block _did_ have >= logs from the last call, but was reorged and no longer has any interesting logs
 		// If (2), then it will removed from tracker, and will no longer appear in pollResults after this call.
+
 		pollResult, ok := pollResults[number]
 		if !ok {
 			continue
@@ -222,9 +250,9 @@ func pollerResult(
 		// Reorged blocks (the ones that were removed) will be published with data from tracker
 		if pollResult.forked && tracker != nil {
 			trackerBlock, ok := tracker.getTrackerBlock(number)
-			if !ok {
+			if !ok || trackerBlock == nil {
 				debugger.Debug(
-					1, "block marked as reorged but was not found in tracker",
+					1, "block marked as reorged but was not found (or nil) in tracker",
 					zap.Uint64("blockNumber", number),
 					zap.String("freshHash", trackerBlock.String()),
 				)
@@ -236,14 +264,6 @@ func pollerResult(
 
 			// Logs may be moved from blockNumber, hence there's no value in map
 			freshHash := pollResult.Hash
-			debugger.Debug(
-				1, "chain reorg detected",
-				zap.Uint64("blockNumber", number),
-				zap.String("freshHash", freshHash.String()),
-				zap.String("trackerHash", trackerBlock.String()),
-				zap.Int("freshLogs", len(pollResult.Logs)),
-				zap.Int("trackerLogs", len(trackerBlock.Logs)),
-			)
 
 			// Copy to avoid mutated trackerBlock which might break poller logic.
 			// After the copy, result.ReorgedBlocks consumer may freely mutate their *Block.
@@ -261,7 +281,7 @@ func pollerResult(
 					zap.Int("old logs", len(trackerBlock.Logs)),
 				)
 
-				err := handleBlocksMissingPolicy(number, tracker, trackerBlock, freshHash, policy)
+				err := handleBlocksMissingPolicy(number, tracker, trackerBlock, freshHash, param.policy)
 				if err != nil {
 					return nil, errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
 				}
@@ -269,7 +289,7 @@ func pollerResult(
 		}
 
 		freshBlock := pollResult.Block
-		addTrackerBlockPolicy(tracker, &freshBlock, policy)
+		addTrackerBlockPolicy(tracker, &freshBlock, param.policy)
 
 		// Copy goodBlock to avoid poller users mutating goodBlock values inside of tracker.
 		goodBlock := freshBlock
