@@ -173,22 +173,25 @@ func (p *poller) SetTopics(topics [][]common.Hash) {
 }
 
 func (p *poller) SetPolicy(level superwatcher.Policy) error {
-	p.Lock()
-	defer p.Unlock()
+	// We don't have all the policies yet.
+	return errors.New("poller.SetPolicy not implemented")
 
-	// Remove all blocks from tracker with 0 logs if not PolicyExpensive,
-	// because if these blocks are left in tracker, poller with level < PolicyExpensive
-	// will see that these blocks are ones with missing logs and stamped as reorged = true.
-	if p.policy < level {
-		return errors.Wrapf(
-			errDowngradeLevel,
-			"cannot downgrade from %s (%d) to %s (%d)",
-			p.policy.String(), p.policy, level.String(), level,
-		)
-	}
-
-	p.policy = level
-	return nil
+	// p.Lock()
+	// defer p.Unlock()
+	//
+	// // Remove all blocks from tracker with 0 logs if not PolicyExpensive,
+	// // because if these blocks are left in tracker, poller with level < PolicyExpensive
+	// // will see that these blocks are ones with missing logs and stamped as reorged = true.
+	// if p.policy < level {
+	// 	return errors.Wrapf(
+	// 		errDowngradeLevel,
+	// 		"cannot downgrade from %s (%d) to %s (%d)",
+	// 		p.policy.String(), p.policy, level.String(), level,
+	// 	)
+	// }
+	//
+	// p.policy = level
+	// return nil
 }
 
 func (p *poller) Policy() superwatcher.Policy {

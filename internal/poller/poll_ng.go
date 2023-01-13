@@ -1,7 +1,5 @@
 package poller
 
-// TODO: remove fmt debug prints
-
 import (
 	"context"
 	"fmt"
@@ -28,7 +26,7 @@ type param struct {
 	policy    superwatcher.Policy
 }
 
-func (p *poller) PollNg(
+func (p *poller) Poll(
 	ctx context.Context,
 	fromBlock uint64,
 	toBlock uint64,
@@ -116,6 +114,7 @@ func poll(
 	panic(superwatcher.ErrBadPolicy.Error() + " " + param.policy.String())
 }
 
+// pollMissing polls tracker blocks that were removed/reorged and thus currently missing from the chain.
 func pollMissing(
 	ctx context.Context,
 	param *param,
@@ -317,7 +316,6 @@ func handleBlocksMissingPolicy(
 	case policy == superwatcher.PolicyFast:
 		// Remove from tracker if block has 0 logs, and poller will cease to
 		// get block header for this empty block after this call.
-		fmt.Println("removing block", number, trackerBlock.String(), len(trackerBlock.Logs))
 		if err := tracker.removeBlock(number); err != nil {
 			return errors.Wrap(superwatcher.ErrProcessReorg, err.Error())
 		}

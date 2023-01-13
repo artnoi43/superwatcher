@@ -95,7 +95,7 @@ func (e *emitter) loopEmit(
 				zap.Any("current_status", newStatus),
 			)
 
-			result, err := e.poller.PollNg(
+			result, err := e.poller.Poll(
 				loopCtx,
 				newStatus.FromBlock,
 				newStatus.ToBlock,
