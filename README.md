@@ -25,17 +25,12 @@ The code in this project is organized into the following packages:
    One package, [`pkg/components`](./pkg/components), is especially important for users, because it provides
    the preferred way to initialize superwatcher components.
 
-3. [`config`](./config/) (public)
-
-   This package defines basic superwatcher configuration that affects the pace and range of emitter,
-   as well as the maximum temporary storage size for the in-memory metadata trackers.
-
-4. [`internal`](./internal/) (private)
+3. [`internal`](./internal/) (private)
 
    This _private_ package defines the actual implementations of interfaces defined in
    the top-level package. User are _not_ expected to directly interact with the code here.
 
-5. [`examples`](./examples/) (public)
+4. [`examples`](./examples/) (public)
 
    This package provides some context and examples of how to use superwatcher to build services.
    You can try running the service with its [`main.go`](./examples/demoservice/cmd/main.go).
