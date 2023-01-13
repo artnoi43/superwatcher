@@ -19,7 +19,7 @@ The code in this project is organized into the following packages:
    or offers other convenient functions and examples.
 
    Some development facility code like a fullly integrated test suite for application code
-   [`testutils`](./pkg/testutils/), or the chain reorg simulation code [`reorgsim`](./pkg/reorgsim/),
+   [`servicetest`](./pkg/servicetest/), or the chain reorg simulation code [`reorgsim`](./pkg/reorgsim/),
    or the mocked [`StateDataGateway`](./pkg/datagateway/) types, are provided here.
 
    One package, [`pkg/components`](./pkg/components), is especially important for users, because it provides
@@ -78,25 +78,25 @@ and (3) the engine. The flowchart below illustrates how the 3 components work to
 
    The poller polls event logs from blockchain, and compares a log's block hash with
    the one it once saw. If the hash of this poll differs from the the previous poll,
-   it assumes that the block's log has been reorged. The result of this polling is
+   it assumes that the block's has been reorged. The result of this polling is
    `PollerResult`.
 
 2. [`Emitter`](./internal/emitter/)
 
    The emitter uses an infinite loop to filter a overlapping range of blocks.
    It filters the logs using addresses and log topics, and because the block range
-   overlaps with previous loop, it helps gaurantee that the poller is always
-   seeing all blocks more than once.
+   overlaps with previous loop, it can gaurantee that the poller is always
+   seeing all blocks more than once, catching any reorg events as they happen.
 
    After the poller returns, the emitter checks the result and error, emits the result
-   to its consumes. It then waits (blocks) for a signal from its consumer.
-   If no signal is received, the emitter blocks forever (for now).
+   to its consumers. It then waits (blocks) for a signal from its consumer.
+   If no signal is received, the emitter blocks forever (no timeout for now).
 
 3. [`EmiiterClient`](./internal/emitterclient/)
 
    The emitter client is embedded into `Engine`. The emitter client linearly receives `PollerResult`
    from emitter, and then returning it to `Engine`. It also syncs with the emittter.
-   If it fails to sync, the emitter will not proceed to the next loop.
+   The emitter will not proceed to the next loop unless it client syncs.
 
 4. [`Engine`](./internal/engine/)
    The engine receives `PollerResult` from the emitter client, and passes the result to appropriate
@@ -135,8 +135,8 @@ An example of multiple `ServiceEngine`s would be something like this:
                                     │   (ServiceEngine)  │
                                     │                    └───►LiquidityPoolEngine
                                     │                         (ServiceEngine)
-Engine ───► Service router ────►CurveV2Engine
-           (ServiceEngine)    (ServiceEngine)
+Engine ───► MainServiceRouter───────┤
+           (ServiceEngine)          │
                                     │
                                     │
                                     └──►ENSEngine
