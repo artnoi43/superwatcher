@@ -39,6 +39,13 @@ func (p *poller) PollNg(
 	p.Lock()
 	defer p.Unlock()
 
+	if p.tracker != nil || p.lastRecordedBlock != 0 {
+		// Clear all tracker's blocks before fromBlock - filterRange
+		until := p.lastRecordedBlock - p.filterRange
+		p.debugger.Debug(2, "clearing tracker", zap.Uint64("untilBlock", until))
+		p.tracker.clearUntil(until)
+	}
+
 	param := &param{
 		fromBlock: fromBlock,
 		toBlock:   toBlock,

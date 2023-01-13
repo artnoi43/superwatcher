@@ -20,6 +20,9 @@ import (
 )
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+	r.Lock()
+	defer r.Unlock()
+
 	if query.FromBlock == nil {
 		return nil, errors.New("nil query.FromBlock")
 	}

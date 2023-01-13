@@ -30,7 +30,7 @@ func testPollNg(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		// superwatcher.PolicyExpensive,
+		superwatcher.PolicyExpensive,
 	} {
 		tc := testlogs.TestCasesV1[caseNumber-1]
 		tracker := newTracker("testPollNg", 3)
@@ -82,9 +82,6 @@ func testPollNg(t *testing.T, caseNumber int) error {
 			}
 		}
 
-		pollResults := make(map[uint64]*mapLogsResult)
-		blocksMissing := []uint64{}
-
 		debugger := debugger.NewDebugger("poller-ng", 3)
 		param := &param{
 			fromBlock: tc.FromBlock,
@@ -92,7 +89,8 @@ func testPollNg(t *testing.T, caseNumber int) error {
 			policy:    policy,
 		}
 
-		pollResults, err = pollCheap(nil, tc.FromBlock, tc.ToBlock, nil, nil, mockClient, pollResults, debugger)
+		blocksMissing := []uint64{}
+		pollResults, err := poll(nil, param, nil, nil, mockClient, debugger)
 		if err != nil {
 			t.Fatal("pollCheap error", err.Error())
 		}
