@@ -10,7 +10,7 @@ which in this case is JSON log files using `reorgsim` chain simulation.
 Most of the name definitions are public, so users can have to items defined here,
 such as struct `DebugEngine` and function `RunService`.
 
-The most basic way to use servicetest is to call `RunService`
+The most basic way to use testutils is to call `RunService`
 with a `superwatcher.Emitter` and `superwatcher.Engine`,
 although it's better to use `TestCase` for multiple test cases.
 

@@ -19,7 +19,7 @@ func TestMapLogToItem(t *testing.T) {
 	// The JSON was copied from this log:
 	// https://etherscan.io/tx/0x3431dc2e3b6fd996e9d7672b6cd71eaae33394f03539e285f599bf3275da61f2#eventlog
 
-	logFile := "../../../../../test_logs/poolfactory/log_poolcreated.json"
+	logFile := "../../../../../testlogs/poolfactory/log_poolcreated.json"
 	logJsonBytes, err := os.ReadFile(logFile)
 	if err != nil {
 		t.Errorf("failed to read poolCreated.json: %s", err.Error())

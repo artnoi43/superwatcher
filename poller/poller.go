@@ -1,15 +1,19 @@
 package poller
 
+// This package maybe removed in favor of centralized pkg/components
+
 import (
+	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/poller"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 type config struct {
 	doReorg     bool
 	doHeader    bool
 	logLevel    uint8
+	policy      superwatcher.Policy
 	filterRange uint64
 	client      superwatcher.EthClient
 	addresses   []common.Address
@@ -60,6 +64,12 @@ func WithDoHeader(doHeader bool) Option {
 	}
 }
 
+func WithPolicy(level superwatcher.Policy) Option {
+	return func(c *config) {
+		c.policy = level
+	}
+}
+
 func New(options ...Option) superwatcher.EmitterPoller {
 	var c config
 	for _, opt := range options {
@@ -74,5 +84,6 @@ func New(options ...Option) superwatcher.EmitterPoller {
 		c.filterRange,
 		c.client,
 		c.logLevel,
+		c.policy,
 	)
 }

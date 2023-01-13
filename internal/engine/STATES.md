@@ -43,7 +43,7 @@ will be performed on the block unless it's reorged.
 
 ## Reorg case
 
-[`blockInfoTracker`](../emitter/tracker.go) overwrites old `BlockInfo` with updated one,
+[`blockTracker`](../emitter/tracker.go) overwrites old `Block` with updated one,
 everytime a block is reorged, so the same block hash should NOT be tagged as reorged _twice_
 by the emitter, since the reorged block's place in the tracker has been replaced with the new block
 after the fork.

@@ -1,11 +1,10 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
@@ -19,25 +18,26 @@ type superWatcher struct {
 }
 
 func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
-	var conf initConfig
+	var conf componentConfig
 	for _, opt := range options {
 		opt(&conf)
 	}
 
-	logLevel := gslutils.Max(conf.logLevel, conf.conf.LogLevel)
+	logLevel := gsl.Max(conf.logLevel, conf.config.LogLevel)
 
 	poller := NewPoller(
 		conf.addresses,
 		conf.topics,
-		conf.conf.DoReorg || conf.doReorg,
-		conf.conf.DoHeader || conf.doHeader,
+		conf.config.DoReorg || conf.doReorg,
+		conf.config.DoHeader || conf.doHeader,
 		conf.filterRange,
 		conf.ethClient,
 		logLevel,
+		gsl.Max(conf.policy, conf.config.Policy),
 	)
 
 	emitter := NewEmitter(
-		conf.conf,
+		conf.config,
 		conf.ethClient,
 		conf.getStateDataGateway,
 		poller,
@@ -47,7 +47,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 	)
 
 	emitterClient := NewEmitterClient(
-		conf.conf,
+		conf.config,
 		conf.syncChan,
 		conf.pollResultChan,
 		conf.errChan,
@@ -64,7 +64,7 @@ func NewSuperWatcherOptions(options ...Option) superwatcher.SuperWatcher {
 }
 
 func NewSuperWatcherDefault(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	getStateDataGateway superwatcher.GetStateDataGateway,
 	setStateDataGateway superwatcher.SetStateDataGateway,

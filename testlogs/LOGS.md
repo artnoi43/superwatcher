@@ -21,7 +21,7 @@ without having to explicitly download it and run the executables manually.
 
 `ethlogfilter` can be configured with either config files or CLI arguments.
 We have included the example `ethlogfilter` configuration as
-`/test_logs/config.ethlogfilter.yaml`, so you can update the config file with
+`/testlogs/config.ethlogfilter.yaml`, so you can update the config file with
 your client (node) URL and your desired addresses/topics, and run it with `go run`:
 
 ```shell

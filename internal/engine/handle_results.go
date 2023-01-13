@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -12,9 +11,9 @@ import (
 )
 
 // engineBlocks are used to aggregate multiple blocks' information
-// from superwatcher.PollResult to pass to ServiceEngine methods.
+// from superwatcher.PollerResult to pass to ServiceEngine methods.
 type engineBlocks struct {
-	logs []*types.Log
+	blocks []*superwatcher.Block
 
 	metadata  []*blockMetadata
 	artifacts []superwatcher.Artifact
@@ -60,7 +59,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 			shouldCallServiceEngine = true
 
-			reorgedBlocks.logs = append(reorgedBlocks.logs, block.Logs...)
+			reorgedBlocks.blocks = append(reorgedBlocks.blocks, block)
 			reorgedBlocks.metadata = append(reorgedBlocks.metadata, metadata)
 			reorgedBlocks.artifacts = append(reorgedBlocks.artifacts, metadata.artifacts)
 		}
@@ -68,7 +67,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 		var reorgedArtifacts map[common.Hash][]superwatcher.Artifact
 		if shouldCallServiceEngine {
 			var err error
-			reorgedArtifacts, err = e.serviceEngine.HandleReorgedLogs(reorgedBlocks.logs, reorgedBlocks.artifacts)
+			reorgedArtifacts, err = e.serviceEngine.HandleReorgedBlocks(reorgedBlocks.blocks, reorgedBlocks.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleReorgedBlockLogs failed")
 			}
@@ -120,7 +119,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 
 			shouldCallServiceEngine = true
 
-			goodBlocks.logs = append(goodBlocks.logs, block.Logs...)
+			goodBlocks.blocks = append(goodBlocks.blocks, block)
 			goodBlocks.metadata = append(goodBlocks.metadata, metadata)
 			reorgedBlocks.artifacts = append(reorgedBlocks.artifacts, metadata.artifacts)
 		}
@@ -128,7 +127,7 @@ func (e *engine) handleResults(ctx context.Context) error {
 		var artifacts map[common.Hash][]superwatcher.Artifact
 		if shouldCallServiceEngine {
 			var err error
-			artifacts, err = e.serviceEngine.HandleGoodLogs(goodBlocks.logs, goodBlocks.artifacts)
+			artifacts, err = e.serviceEngine.HandleGoodBlocks(goodBlocks.blocks, goodBlocks.artifacts)
 			if err != nil {
 				return errors.Wrap(err, "serviceEngine.HandleGoodBlockLogs failed")
 			}

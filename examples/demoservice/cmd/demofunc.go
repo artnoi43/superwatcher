@@ -4,7 +4,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	spwconf "github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/emitter"
 	"github.com/artnoi43/superwatcher/engine"
 	"github.com/artnoi43/superwatcher/pkg/components"
@@ -13,7 +12,7 @@ import (
 
 // This demo function calls components.NewDefault, which is the preferred way to init superwatcher for most cases.
 func newSuperWatcherPreferred( //nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -36,7 +35,7 @@ func newSuperWatcherPreferred( //nolint:unused
 // This demo function demonstrates how users can use the components package
 // to init superwatcher components individually
 func newSuperwatcherAdvanced( //nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -44,13 +43,13 @@ func newSuperwatcherAdvanced( //nolint:unused
 	serviceEngine superwatcher.ServiceEngine,
 ) (superwatcher.Emitter, superwatcher.Engine) {
 	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.PollResult)
+	resultChan := make(chan *superwatcher.PollerResult)
 	errChan := make(chan error)
 
 	emitter := components.NewEmitter(conf, ethClient, stateDataGateway, nil, syncChan, resultChan, errChan)
 	emitterClient := components.NewEmitterClient(conf, syncChan, resultChan, errChan)
 	engine := components.NewEngine(emitterClient, serviceEngine, stateDataGateway, conf.LogLevel)
-	poller := components.NewPoller(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, ethClient, conf.LogLevel)
+	poller := components.NewPoller(nil, nil, conf.DoReorg, conf.DoHeader, conf.FilterRange, ethClient, conf.LogLevel, conf.Policy)
 
 	poller.SetAddresses(addresses)
 	poller.SetTopics([][]common.Hash{topics})
@@ -62,7 +61,7 @@ func newSuperwatcherAdvanced( //nolint:unused
 
 // This demo function demonstrates how users can use OptionFunc to initiate superwatcher
 func newSuperwacherSoyV1( //nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -80,7 +79,7 @@ func newSuperwacherSoyV1( //nolint:unused
 	)
 
 	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.PollResult)
+	resultChan := make(chan *superwatcher.PollerResult)
 	errChan := make(chan error)
 
 	emitter := emitter.New(
@@ -104,7 +103,7 @@ func newSuperwacherSoyV1( //nolint:unused
 }
 
 func newSuperWatcherSoyV2( // nolint:unused
-	conf *spwconf.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
 	topics []common.Hash,
@@ -112,7 +111,7 @@ func newSuperWatcherSoyV2( // nolint:unused
 	serviceEngine superwatcher.ServiceEngine,
 ) superwatcher.SuperWatcher {
 	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.PollResult)
+	resultChan := make(chan *superwatcher.PollerResult)
 	errChan := make(chan error)
 
 	return components.NewSuperWatcherOptions(

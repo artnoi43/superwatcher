@@ -4,7 +4,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 )
 
 // NewDefault returns default implementations of Emitter and Engine.
@@ -12,7 +11,7 @@ import (
 // This is the preferred way for initializing superwatcher components. If you don't need to
 // interact with these components, you can use `NewSuperWatcherDefault` instead.
 func NewDefault(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	getStateDataGateway superwatcher.GetStateDataGateway,
 	setStateDataGateway superwatcher.SetStateDataGateway,
@@ -24,7 +23,7 @@ func NewDefault(
 	superwatcher.Engine,
 ) {
 	syncChan := make(chan struct{})
-	pollResultChan := make(chan *superwatcher.PollResult)
+	pollResultChan := make(chan *superwatcher.PollerResult)
 	errChan := make(chan error)
 
 	watcherEmitter := NewEmitterWithPoller(

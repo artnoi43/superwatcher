@@ -1,21 +1,20 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter"
 )
 
 func NewEmitter(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	client superwatcher.EthClient,
 	stateDataGateway superwatcher.GetStateDataGateway,
 	poller superwatcher.EmitterPoller,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
-	pollResultChan chan<- *superwatcher.PollResult,
+	pollResultChan chan<- *superwatcher.PollerResult,
 	errChan chan<- error,
 ) superwatcher.Emitter {
 	return emitter.New(
@@ -32,20 +31,20 @@ func NewEmitter(
 // NewWithPoller returns a new, default Emitter, with a default WatcherPoller.
 // It is the preferred way to init a Emitter if you have not implement WatcherPoller yet yourself.
 func NewEmitterWithPoller(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	client superwatcher.EthClient,
 	stateDataGateway superwatcher.GetStateDataGateway,
 	addresses []common.Address,
 	topics [][]common.Hash,
 	syncChan <-chan struct{}, // Send-receive so that emitter can close this chan
-	pollResultChan chan<- *superwatcher.PollResult,
+	pollResultChan chan<- *superwatcher.PollerResult,
 	errChan chan<- error,
 ) superwatcher.Emitter {
 	return emitter.New(
 		conf,
 		client,
 		stateDataGateway,
-		NewPoller(addresses, topics, conf.DoReorg, conf.DoHeader, conf.FilterRange, client, conf.LogLevel),
+		NewPoller(addresses, topics, conf.DoReorg, conf.DoHeader, conf.FilterRange, client, conf.LogLevel, conf.Policy),
 		syncChan,
 		pollResultChan,
 		errChan,
@@ -53,7 +52,7 @@ func NewEmitterWithPoller(
 }
 
 func NewEmitterOptions(options ...Option) superwatcher.Emitter {
-	var c initConfig
+	var c componentConfig
 	for _, opt := range options {
 		opt(&c)
 	}
@@ -65,11 +64,12 @@ func NewEmitterOptions(options ...Option) superwatcher.Emitter {
 		c.doHeader,
 		c.filterRange,
 		c.ethClient,
-		gslutils.Max(c.logLevel, c.conf.LogLevel),
+		gsl.Max(c.logLevel, c.config.LogLevel),
+		c.policy,
 	)
 
 	return emitter.New(
-		c.conf,
+		c.config,
 		c.ethClient,
 		c.getStateDataGateway,
 		poller,

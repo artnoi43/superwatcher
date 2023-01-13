@@ -133,7 +133,7 @@ for superwatcher) for their code if they are not into the other components, or i
 embedding it into the emitter seems too complex for certain tasks.
 
 If you only need some code that would filter event logs and detect chain reorg
-for you, you can just initialize the poller, and call `poller.Poll` to get `PollResult`.
+for you, you can just initialize the poller, and call `poller.Poll` to get `PollerResult`.
 
 If you only want some code that would perform poller's tasks, but also have
 superwatcher manage and progresses `fromBlock` and `toBlock`, then you'd only need
@@ -162,17 +162,17 @@ Below is a simple diagram that describes how these components work together.
                                Emitter                                        │                               │                                │
 ┌────────────────────────────────────────────────────────────────────┐        │         ┌──── error ──────────┼───────────► HandleEmitterError │
 │                                      superwatcher.Emitter          │        │         │                     │                                │
-│                                       (*emitter.emitter) ──────────┼────────┼─────────┼──── PollResult    │                                │
+│                                       (*emitter.emitter) ──────────┼────────┼─────────┼──── PollerResult    │                                │
 │                                          │    ▲                    │        │         │               │     │                                │
 │                                          │    │                    │        │         └──── sync ─────┤     │      ┌────► HandleReorgedLogs  │
 │                                fromBlock │    │                    │        │                         │     │      │                         │
-│                                  toBlock │    │ PollResult       │        ├─────────────────────────┼─────┤      │                         │
+│                                  toBlock │    │ PollerResult       │        ├─────────────────────────┼─────┤      │                         │
 │                                          │    │                    │        │   superwatcher.Engine   │     │      ├────► HandleGoodLogs     │
 │                                          ▼    │                    │        │                         │     │      │                         │
 ├─────────────────────────────────────  superwatcher.Poller  ────────┤        │                         │     │      │                         │
 │                                        (*poller.poller)            │        │                         ▼     │      │                         │
 │                                                                    │        │      engine.handleResults  ───┼──────┘                         │
-│ blockInfoTracker ──────────────────────►  Poller.Poll              │        │               ▲               │                                │
+│  blockTracker    ──────────────────────►  Poller.Poll              │        │               ▲               │                                │
 │                   previous blockHashes                             │        │               │ metadata      │                                │
 │                                               ▲                    │        │               │               │                                │
 │                                               │ New []types.Log    │        │                               │                                │

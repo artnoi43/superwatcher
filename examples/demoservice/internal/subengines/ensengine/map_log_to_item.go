@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -45,8 +45,8 @@ func (e *ensEngine) unmarshalLogToENS(
 				return errors.Wrap(err, ErrMapENS.Error())
 			}
 
-			ens.ID = gslutils.ToLower(log.Topics[1].String())
-			ens.Owner = gslutils.ToLower(common.HexToAddress(log.Topics[2].Hex()).String())
+			ens.ID = gsl.ToLower(log.Topics[1].String())
+			ens.Owner = gsl.ToLower(common.HexToAddress(log.Topics[2].Hex()).String())
 			ens.Expires = time.Unix(expire.Int64(), 0)
 		}
 
@@ -68,8 +68,8 @@ func (e *ensEngine) unmarshalLogToENS(
 				return errors.Wrap(err, ErrMapENS.Error())
 			}
 
-			ens.Name = gslutils.ToLower(name)
-			ens.Owner = gslutils.ToLower(common.HexToAddress(log.Topics[2].Hex()).String())
+			ens.Name = gsl.ToLower(name)
+			ens.Owner = gsl.ToLower(common.HexToAddress(log.Topics[2].Hex()).String())
 			ens.Expires = time.Unix(expire.Int64(), 0)
 		}
 	}

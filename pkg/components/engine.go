@@ -1,9 +1,9 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
+
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/engine"
 )
 
@@ -24,11 +24,11 @@ func NewEngine(
 // NewEngineWithEmitterClient creates a new superwatcher.Engine, and pair it with an superwatcher.EmitterClient.
 // This is the preferred way of creating a new superwatcher.Engine
 func NewEngineWithEmitterClient(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	serviceEngine superwatcher.ServiceEngine,
 	stateDataGateway superwatcher.SetStateDataGateway,
 	syncChan chan<- struct{},
-	pollResultChan <-chan *superwatcher.PollResult,
+	pollResultChan <-chan *superwatcher.PollerResult,
 	errChan <-chan error,
 ) superwatcher.Engine {
 	// TODO: Do we still need EmitterClient?
@@ -48,13 +48,13 @@ func NewEngineWithEmitterClient(
 }
 
 func NewEngineOptions(options ...Option) superwatcher.Engine {
-	var c initConfig
+	var c componentConfig
 	for _, opt := range options {
 		opt(&c)
 	}
 
 	emitterClient := NewEmitterClient(
-		c.conf,
+		c.config,
 		c.syncChan,
 		c.pollResultChan,
 		c.errChan,
@@ -64,6 +64,6 @@ func NewEngineOptions(options ...Option) superwatcher.Engine {
 		emitterClient,
 		c.serviceEngine,
 		c.setStateDataGateway,
-		gslutils.Max(c.logLevel, c.conf.LogLevel),
+		gsl.Max(c.logLevel, c.config.LogLevel),
 	)
 }

@@ -29,10 +29,10 @@ func (p *mockPoller) Poll(
 	ctx context.Context,
 	fromBlock, toBlock uint64,
 ) (
-	*superwatcher.PollResult,
+	*superwatcher.PollerResult,
 	error,
 ) {
-	result := &superwatcher.PollResult{FromBlock: fromBlock, ToBlock: toBlock}
+	result := &superwatcher.PollerResult{FromBlock: fromBlock, ToBlock: toBlock}
 
 	reorgedBlock := p.reorgedBlocks[p.currentIndex]
 	noMoreReorg := len(p.reorgedBlocks) == p.currentIndex+1
@@ -43,7 +43,7 @@ func (p *mockPoller) Poll(
 
 	if p.seen[reorgedBlock] <= 1 || p.seen[reorgedBlock] > 3 {
 		for n := fromBlock; n <= toBlock; n++ {
-			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
+			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.Block{
 				Number: n,
 				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})
@@ -62,13 +62,13 @@ func (p *mockPoller) Poll(
 	// reorgBlock is somewhere between fromBlock -> toBlock
 	if fromBlock != reorgedBlock {
 		for n := fromBlock; n < reorgedBlock; n++ {
-			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.BlockInfo{
+			result.GoodBlocks = append(result.GoodBlocks, &superwatcher.Block{
 				Number: n,
 				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})
 		}
 		for n := reorgedBlock; n <= toBlock; n++ {
-			result.ReorgedBlocks = append(result.ReorgedBlocks, &superwatcher.BlockInfo{
+			result.ReorgedBlocks = append(result.ReorgedBlocks, &superwatcher.Block{
 				Number: n,
 				Hash:   common.BigToHash(big.NewInt(int64(n))),
 			})
@@ -81,13 +81,19 @@ func (p *mockPoller) Poll(
 	return nil, superwatcher.ErrFromBlockReorged
 }
 
-func (p *mockPoller) SetDoReorg(bool)                {}
-func (p *mockPoller) DoReorg() bool                  { return true }
-func (p *mockPoller) SetDoHeader(bool)               {}
-func (p *mockPoller) DoHeader() bool                 { return true }
-func (p *mockPoller) Addresses() []common.Address    { return nil }
-func (p *mockPoller) Topics() [][]common.Hash        { return nil }
-func (p *mockPoller) AddAddresses(...common.Address) {}
-func (p *mockPoller) AddTopics(...[]common.Hash)     {}
-func (p *mockPoller) SetAddresses([]common.Address)  {}
-func (p *mockPoller) SetTopics([][]common.Hash)      {}
+func (p *mockPoller) PollNg(context.Context, uint64, uint64) (*superwatcher.PollerResult, error) {
+	return nil, nil
+}
+
+func (p *mockPoller) SetDoReorg(bool)                     {}
+func (p *mockPoller) DoReorg() bool                       { return true }
+func (p *mockPoller) SetDoHeader(bool)                    {}
+func (p *mockPoller) DoHeader() bool                      { return true }
+func (p *mockPoller) Addresses() []common.Address         { return nil }
+func (p *mockPoller) Topics() [][]common.Hash             { return nil }
+func (p *mockPoller) AddAddresses(...common.Address)      {}
+func (p *mockPoller) AddTopics(...[]common.Hash)          {}
+func (p *mockPoller) SetAddresses([]common.Address)       {}
+func (p *mockPoller) SetTopics([][]common.Hash)           {}
+func (p *mockPoller) SetPolicy(superwatcher.Policy) error { return nil }
+func (p *mockPoller) Policy() superwatcher.Policy         { return superwatcher.PolicyNormal }

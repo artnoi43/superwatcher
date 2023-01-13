@@ -2,11 +2,11 @@ package servicetest
 
 import (
 	"context"
-	"errors"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/components"
 	"github.com/artnoi43/superwatcher/pkg/components/mock"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
@@ -20,20 +20,26 @@ type TestCase struct {
 	LogsFiles []string `json:"logFiles"`
 	// If set to true, the emitter will go back due to superwatcher.ErrRecordNotFound
 	DataGatewayFirstRun bool `json:"dataGatewayFirstRun"`
+	// EmitterPoller's poll level
+	Policy superwatcher.Policy `json:"policy"`
 }
 
 // TestComponents is used by RunServiceTestComponents to instantiate
 // superwatcher.Emitter and superwatcher.Engine for RunService
 type TestComponents struct {
-	conf           *config.Config
+	conf           *superwatcher.Config
 	client         superwatcher.EthClient
 	serviceEngine  superwatcher.ServiceEngine
 	dataGatewayGet superwatcher.GetStateDataGateway
 	dataGatewaySet superwatcher.SetStateDataGateway
 }
 
-func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *config.Config {
-	return &config.Config{
+func DefaultServiceTestConfig(
+	startBlock uint64,
+	logLevel uint8,
+	policy superwatcher.Policy,
+) *superwatcher.Config {
+	return &superwatcher.Config{
 		// We use fakeRedis and fakeEthClient, so no need for token strings.
 		StartBlock:       startBlock,
 		DoReorg:          true,
@@ -42,11 +48,12 @@ func DefaultServiceTestConfig(startBlock uint64, logLevel uint8) *config.Config 
 		MaxGoBackRetries: 2,
 		LoopInterval:     0,
 		LogLevel:         logLevel,
+		Policy:           policy,
 	}
 }
 
 func InitTestComponents(
-	conf *config.Config,
+	conf *superwatcher.Config,
 	serviceEngine superwatcher.ServiceEngine,
 	param reorgsim.Param,
 	events []reorgsim.ReorgEvent,
@@ -92,8 +99,16 @@ func RunServiceTestComponents(tc *TestComponents) (
 }
 
 // RunService executes the most basic emitter and engine logic, and returns an error from these components.
-func RunService(emitter superwatcher.Emitter, engine superwatcher.Engine) error {
+func RunService(
+	emitter superwatcher.Emitter,
+	engine superwatcher.Engine,
+) error {
 	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		emitter.Poller().SetDoHeader(false)
+	}()
+
 	var wg sync.WaitGroup
 	var retErr error
 	wg.Add(1)
@@ -102,8 +117,9 @@ func RunService(emitter superwatcher.Emitter, engine superwatcher.Engine) error 
 
 		if err := emitter.Loop(ctx); err != nil {
 			if errors.Is(err, reorgsim.ErrExitBlockReached) {
-				cancel()
 				emitter.Shutdown()
+				cancel()
+
 				return
 			}
 

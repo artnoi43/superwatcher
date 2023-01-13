@@ -45,7 +45,6 @@ func newTracker(debugLevel uint8) *metadataTrackerImpl {
 }
 
 // ClearUntil removes items in t from left to right.
-// TODO: Currently broken
 func (t *metadataTrackerImpl) ClearUntil(blockNumber uint64) {
 	t.Lock()
 	defer t.Unlock()

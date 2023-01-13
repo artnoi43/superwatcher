@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
@@ -15,15 +15,26 @@ import (
 )
 
 func TestRouterArtifacts(t *testing.T) {
-	logsPath := "../../../../test_logs/servicetest/logs_servicetest_16054000_16054100.json"
-	logs := reorgsim.InitLogsFromFiles(logsPath)
-	logsCasted := gslutils.CollectPointers(logs)
+	logsPath := "../../../../testlogs/servicetest/logs_servicetest_16054000_16054100.json"
+	logs := reorgsim.InitMappedLogsFromFiles(logsPath)
+
+	var blocks []*superwatcher.Block
+	for number, blockLogs := range logs {
+		if len(blockLogs) == 0 {
+			continue
+		}
+
+		blocks = append(blocks, &superwatcher.Block{
+			Number: number,
+			Logs:   gsl.CollectPointers(blockLogs),
+		})
+	}
 
 	dgwENS := datagateway.NewMockDataGatewayENS()
 	dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
 	router := NewMockRouter(4, dgwENS, dgwPoolFactory)
 
-	mapArtifacts, err := router.HandleGoodLogs(logsCasted, nil)
+	mapArtifacts, err := router.HandleGoodBlocks(blocks, nil)
 	if err != nil {
 		t.Error(err.Error())
 	}

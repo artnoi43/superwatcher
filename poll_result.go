@@ -1,17 +1,17 @@
 package superwatcher
 
-// PollResult is created in Poller.Poll, and emitted by Emitter to Engine.
-type PollResult struct {
-	FromBlock     uint64       // The poller's `fromBlock`
-	ToBlock       uint64       // The poller's `toBlock`
-	LastGoodBlock uint64       // This number should be saved to StateDataGateway with SetLastRecordedBlock for the emitter
-	GoodBlocks    []*BlockInfo // Can be either (1) fresh, new blocks, or (2) blocks whose hashes had not changed yet.
-	ReorgedBlocks []*BlockInfo // Blocks that poller marked as removed. A service should undo/revert its actions done on the blocks.
+// PollerResult is created in Poller.Poll, and emitted by Emitter to Engine.
+type PollerResult struct {
+	FromBlock     uint64   // The poller's `fromBlock`
+	ToBlock       uint64   // The poller's `toBlock`
+	LastGoodBlock uint64   // This number should be saved to StateDataGateway with SetLastRecordedBlock for the emitter
+	GoodBlocks    []*Block // Can be either (1) fresh, new blocks, or (2) blocks whose hashes had not changed yet.
+	ReorgedBlocks []*Block // Blocks that poller marked as removed. A service should undo/revert its actions done on the blocks.
 }
 
-// LastGoodBlock computes `PollResult.LastGoodBlock` based on |result|.
+// LastGoodBlock computes `PollerResult.LastGoodBlock` based on |result|.
 func LastGoodBlock(
-	result *PollResult,
+	result *PollerResult,
 ) uint64 {
 	if len(result.ReorgedBlocks) != 0 {
 		// If there's also goodBlocks during reorg

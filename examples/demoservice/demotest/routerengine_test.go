@@ -3,22 +3,25 @@ package demotest
 import (
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/pkg/errors"
 
+	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/routerengine"
 )
 
-func TestServiceEngineRouterV1(t *testing.T) {
-	logsPath := testLogsPath + "/servicetest"
-	testCases := []servicetest.TestCase{
+var (
+	logsPathRouter  = testLogsPath + "/servicetest"
+	testCasesRouter = []servicetest.TestCase{
 		{
 			LogsFiles: []string{
-				logsPath + "/logs_servicetest_16054000_16054100.json",
+				logsPathRouter + "/logs_servicetest_16054000_16054100.json",
 			},
 			Param: reorgsim.Param{
 				StartBlock:    16054000,
@@ -43,15 +46,30 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			},
 		},
 	}
+)
 
+func TestServiceEngineRouterV1(t *testing.T) {
+	err := testutils.RunTestCase(t, "TestServiceEngineRouterV1", testCasesRouter, testServiceEngineRouterV1)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func testServiceEngineRouterV1(t *testing.T, caseNumber int) error {
 	logLevel := uint8(3)
-	for _, testCase := range testCases {
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		// superwatcher.PolicyExpensive,
+	} {
+		testCase := testCasesRouter[caseNumber-1]
+		testCase.Policy = policy
 		dgwENS := datagateway.NewMockDataGatewayENS()
 		dgwPoolFactory := datagateway.NewMockDataGatewayPoolFactory()
 		router := routerengine.NewMockRouter(logLevel, dgwENS, dgwPoolFactory)
 
 		components := servicetest.InitTestComponents(
-			servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4),
+			servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.Policy),
 			router,
 			testCase.Param,
 			testCase.Events,
@@ -59,17 +77,18 @@ func TestServiceEngineRouterV1(t *testing.T) {
 			testCase.DataGatewayFirstRun,
 		)
 
-		_, err := servicetest.RunServiceTestComponents(components)
+		stateDgw, err := servicetest.RunServiceTestComponents(components)
 		if err != nil {
-			t.Error("error in full servicetest (ens):", err.Error())
+			lastRecordedBlock, _ := stateDgw.GetLastRecordedBlock(nil)
+			return errors.Wrapf(err, "error in full servicetest (ens) test case %d, lastRecordedBlock %d", caseNumber, lastRecordedBlock)
 		}
 
 		resultsENS, err := dgwENS.GetENSes(nil)
 		if err != nil {
-			t.Errorf("error getting results from dgwENS: %s", err.Error())
+			return errors.Wrap(err, "GetENSes failed")
 		}
 		if len(resultsENS) == 0 {
-			t.Fatalf("0 results from dgwENS")
+			return errors.New("len resultsENS = 0")
 		}
 		resultsPoolFactory, err := dgwPoolFactory.GetPools(nil)
 		if err != nil {
@@ -88,7 +107,7 @@ func TestServiceEngineRouterV1(t *testing.T) {
 				t.Errorf("emptyDomain name for resultENS id: %s", result.ID)
 			}
 
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
+			expectedReorgedHash := gsl.StringerToLowerString(reorgsim.ReorgHash(result.BlockNumber, 0))
 
 			if result.BlockNumber < testCase.Events[0].ReorgBlock {
 				if result.BlockHash == expectedReorgedHash {
@@ -102,7 +121,7 @@ func TestServiceEngineRouterV1(t *testing.T) {
 				t.Errorf("reorged block %d resultENS has unexpected blockHash: %s", result.BlockNumber, result.BlockHash)
 			}
 
-			if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+			if h := common.HexToHash(result.TxHash); gsl.Contains(movedHashes, h) {
 				if expected := logsDst[h]; result.BlockNumber != expected {
 					t.Fatalf("expecting moved blockNumber %d, got %d", expected, result.BlockNumber)
 				}
@@ -110,14 +129,14 @@ func TestServiceEngineRouterV1(t *testing.T) {
 		}
 
 		if !someENS {
-			t.Error("got no ENS result")
+			return errors.New("got no ENS result")
 		}
 
 		var somePoolFactory bool
 		for _, result := range resultsPoolFactory {
 			somePoolFactory = true
-			expectedReorgedHash := gslutils.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
-			resultBlockHash := gslutils.StringerToLowerString(result.BlockHash)
+			expectedReorgedHash := gsl.StringerToLowerString(reorgsim.PRandomHash(result.BlockCreated))
+			resultBlockHash := gsl.StringerToLowerString(result.BlockHash)
 
 			if result.BlockCreated < testCase.Events[0].ReorgBlock {
 				if resultBlockHash == expectedReorgedHash {
@@ -133,7 +152,9 @@ func TestServiceEngineRouterV1(t *testing.T) {
 		}
 
 		if !somePoolFactory {
-			t.Error("got no poolFactory result")
+			return errors.New("got no poolFactory result")
 		}
 	}
+
+	return nil
 }

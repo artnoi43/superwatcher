@@ -7,28 +7,55 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/emitter/emittertest"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/artnoi43/superwatcher/testlogs"
 )
 
+func TestDeleteUnusable(t *testing.T) {
+	mapResults := make(map[uint64]*mapLogsResult)
+	var lastGood uint64 = 15
+	to := lastGood + 10
+	for i := uint64(0); i < to; i++ {
+		mapResults[i] = &mapLogsResult{
+			Block: superwatcher.Block{},
+		}
+	}
+
+	deleteUnusableResult(mapResults, lastGood)
+	for i := lastGood; i <= to; i++ {
+		v, ok := mapResults[i]
+		if !ok {
+			continue
+		}
+
+		t.Errorf("deleted %d but value still in map %v", i, v)
+	}
+}
+
 func TestMapLogs(t *testing.T) {
-	for i, tc := range emittertest.TestCasesV1 {
-		b, _ := json.Marshal(tc)
-		t.Logf("testCase: %s", b)
-		err := testMapLogsV1(&tc)
-		if err != nil {
-			t.Fatalf("Case %d: %s", i, err.Error())
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		superwatcher.PolicyExpensive,
+	} {
+		for i, tc := range testlogs.TestCasesV1 {
+			b, _ := json.Marshal(tc)
+			t.Logf("testCase: %s (policy %d)", b, policy)
+			err := testMapLogsV1(tc, policy)
+			if err != nil {
+				t.Fatalf("Case %d (policy %d): %s", i, policy, err.Error())
+			}
 		}
 	}
 }
 
 // testMapLogsV1 tests function mapLogs with ReorgSimV1 (1 reorg)
-func testMapLogsV1(tc *emittertest.TestConfig) error {
+func testMapLogsV1(tc *testlogs.TestConfig, policy superwatcher.Policy) error {
 	tracker := newTracker("testProcessReorg", 3)
 	logs := reorgsim.InitMappedLogsFromFiles(tc.LogsFiles...)
 
@@ -40,18 +67,21 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	oldChain, reorgedChain := reorgsim.NewBlockChainReorgMoveLogs(logs, *reorgEvent)
-	mockClient := mockGetHeader{chain: reorgedChain}
+	mockClient, err := reorgsim.NewReorgSim(tc.Param, []reorgsim.ReorgEvent{tc.Events[0]}, reorgedChain, nil, "", 4)
+	if err != nil {
+		return errors.Wrap(err, "cannot init ReorgSim for testMapLogsV1")
+	}
 
 	// concatLogs store all logs, so that we can **skip block with out any logs**, fresh or reorged
-	var concatLogs = make(map[uint64][]*types.Log)
+	concatLogs := make(map[uint64][]*types.Log)
 
 	// Add oldChain's blocks to tracker
 	for blockNumber, block := range oldChain {
 		blockLogs := block.Logs()
-		logs := gslutils.CollectPointers(blockLogs)
+		logs := gsl.CollectPointers(blockLogs)
 		concatLogs[blockNumber] = append(concatLogs[blockNumber], logs...)
 
-		tracker.addTrackerBlockInfo(&superwatcher.BlockInfo{
+		tracker.addTrackerBlock(&superwatcher.Block{
 			Logs:   logs,
 			Hash:   block.Hash(),
 			Number: blockNumber,
@@ -63,7 +93,7 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	for blockNumber, block := range reorgedChain {
 		if logs := block.Logs(); len(logs) != 0 {
 			reorgedLogs = append(reorgedLogs, logs...)
-			concatLogs[blockNumber] = append(concatLogs[blockNumber], gslutils.CollectPointers(logs)...)
+			concatLogs[blockNumber] = append(concatLogs[blockNumber], gsl.CollectPointers(logs)...)
 		}
 	}
 
@@ -78,17 +108,23 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 	}
 
 	// Call mapFreshLogs with reorgedLogs
-	wasReorged, _, _, _, err := mapLogs(
+	mapResults, err := mapLogs(
 		nil,
 		tc.FromBlock,
 		tc.ToBlock,
-		gslutils.CollectPointers(reorgedLogs),
+		gsl.CollectPointers(reorgedLogs),
+		true,
 		tracker,
-		mockClient.HeaderByNumber,
+		mockClient,
+		policy,
 	)
-
 	if err != nil {
 		return errors.Wrap(err, "error in mapLogs")
+	}
+
+	wasReorged := make(map[uint64]bool)
+	for k, v := range mapResults {
+		wasReorged[k] = v.forked
 	}
 
 	for blockNumber := tc.FromBlock; blockNumber <= tc.ToBlock; blockNumber++ {
@@ -97,8 +133,12 @@ func testMapLogsV1(tc *emittertest.TestConfig) error {
 			continue
 		}
 
-		reorged := wasReorged[blockNumber]
+		mapResult, ok := mapResults[blockNumber]
+		if !ok {
+			mapResult = new(mapLogsResult)
+		}
 
+		reorged := mapResult.forked
 		// Any blocks after c.reorgedAt should be reorged.
 		if blockNumber >= reorgEvent.ReorgBlock {
 			if reorged {

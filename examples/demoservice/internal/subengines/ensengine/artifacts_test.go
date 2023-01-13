@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -32,8 +32,8 @@ func TestArtifacts(t *testing.T) {
 			ENS: entity.ENS{
 				ID:          txHashes[i].String(),
 				Name:        names[i],
-				TxHash:      gslutils.StringerToLowerString(txHashes[i]),
-				BlockHash:   gslutils.StringerToLowerString(blockHashes[i]),
+				TxHash:      gsl.StringerToLowerString(txHashes[i]),
+				BlockHash:   gsl.StringerToLowerString(blockHashes[i]),
 				BlockNumber: uint64(i),
 			},
 		}

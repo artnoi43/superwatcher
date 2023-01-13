@@ -13,29 +13,29 @@ import (
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
-// blockInfoTracker stores the `superwatcher.BlockInfo` with blockNumber as key.
-// It is used by poller to store `BlockInfo` from the last call of `poller.poll`
+// blockTracker stores the `superwatcher.Block` with blockNumber as key.
+// It is used by poller to store `Block` from the last call of `poller.poll`
 // to see if a block's hash has changed.
-// TODO: blockInfoTracker name needs revision!
+// TODO: blockTracker name needs revision!
 // TODO: Remove caller and logging
-type blockInfoTracker struct {
+type blockTracker struct {
 	sortedSet *sortedset.SortedSet
 	user      string
 	debugger  *debugger.Debugger
 }
 
-func newTracker(user string, debugLevel uint8) *blockInfoTracker {
-	key := fmt.Sprintf("blockInfoTracker for %s", user)
+func newTracker(user string, debugLevel uint8) *blockTracker {
+	key := fmt.Sprintf("blockTracker for %s", user)
 
-	return &blockInfoTracker{
+	return &blockTracker{
 		sortedSet: sortedset.New(),
 		user:      user,
 		debugger:  debugger.NewDebugger(key, debugLevel),
 	}
 }
 
-// addTrackerBlockInfo adds `*BlockInfo` |b| to the store using |b.Number| as key
-func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
+// addTrackerBlock adds `*Block` |b| to the store using |b.Number| as key
+func (t *blockTracker) addTrackerBlock(b *superwatcher.Block) {
 	t.debugger.Debug(
 		3,
 		"adding block",
@@ -48,24 +48,34 @@ func (t *blockInfoTracker) addTrackerBlockInfo(b *superwatcher.BlockInfo) {
 	t.sortedSet.AddOrUpdate(k, sortedset.SCORE(b.Number), b)
 }
 
-// getTrackerBlockInfo returns `*BlockInfo` from t with key |blockNumber|
-func (t *blockInfoTracker) getTrackerBlockInfo(blockNumber uint64) (*superwatcher.BlockInfo, bool) {
+// getTrackerBlock returns `*Block` from t with key |blockNumber|
+func (t *blockTracker) getTrackerBlock(blockNumber uint64) (*superwatcher.Block, bool) {
 	k := strconv.FormatUint(blockNumber, 10)
 	node := t.sortedSet.GetByKey(k)
 	if node == nil {
 		return nil, false
 	}
 
-	val, ok := node.Value.(*superwatcher.BlockInfo)
+	val, ok := node.Value.(*superwatcher.Block)
 	if !ok {
-		logger.Panic(fmt.Sprintf("type assertion failed - expecting *BlockInfo, found %s", reflect.TypeOf(node.Value)))
+		logger.Panic(fmt.Sprintf("type assertion failed - expecting *Block, found %s", reflect.TypeOf(node.Value)))
 	}
 
 	return val, true
 }
 
-// clearUntil removes `*BlockInfo` in t from left to right.
-func (t *blockInfoTracker) clearUntil(blockNumber uint64) {
+func (t *blockTracker) removeBlock(blockNumber uint64) error {
+	k := strconv.FormatUint(blockNumber, 10)
+	del := t.sortedSet.Remove(k)
+	if del == nil {
+		return fmt.Errorf("node key %s was not in set", k)
+	}
+
+	return nil
+}
+
+// clearUntil removes `*Block` in t from left to right.
+func (t *blockTracker) clearUntil(blockNumber uint64) {
 	for {
 		oldest := t.sortedSet.PeekMin()
 		if oldest == nil || oldest.Score() > sortedset.SCORE(blockNumber) {
@@ -76,6 +86,6 @@ func (t *blockInfoTracker) clearUntil(blockNumber uint64) {
 	}
 }
 
-func (t *blockInfoTracker) Len() int {
+func (t *blockTracker) Len() int {
 	return t.sortedSet.GetCount()
 }

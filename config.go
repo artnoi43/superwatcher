@@ -1,4 +1,4 @@
-package config
+package superwatcher
 
 // Config is superwatcher-wide configuration
 type Config struct {
@@ -11,7 +11,7 @@ type Config struct {
 	// FilterRange is the forward range (number of new blocks) each call to emitter.poller.poll will perform
 	FilterRange uint64 `mapstructure:"filter_range" yaml:"filter_range" json:"filterRange"`
 
-	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for superwatcher.PollResult
+	// DoReorg specifies whether superwatcher superwatcher.EmitterPoller will process chain reorg for PollerResult
 	DoReorg bool `mapstructure:"do_reorg" yaml:"do_reorg" json:"doReorg"`
 
 	// DoHeader specifies whether superwatcher.EmitterPoller should fetch block headers too
@@ -26,4 +26,7 @@ type Config struct {
 
 	// LogLevel for debugger.Debugger, the higher the more verbose
 	LogLevel uint8 `mapstructure:"log_level" yaml:"log_level" json:"logLevel"`
+
+	// Policy is for configuring EmitterPoller behavior
+	Policy Policy `mapstructure:"policy" yaml:"policy" json:"policy"`
 }

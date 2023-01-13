@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/artnoi43/gsl/gslutils"
-	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
 )
@@ -37,8 +38,8 @@ func (s *MockDataGatewayPoolFactory) SetPool(
 	s.Lock()
 	defer s.Unlock()
 
-	addr := gslutils.StringerToLowerString(pool.Address)
-	hash := gslutils.StringerToLowerString(pool.BlockHash)
+	addr := gsl.StringerToLowerString(pool.Address)
+	hash := gsl.StringerToLowerString(pool.BlockHash)
 
 	s.m[addr] = pool
 	s.writeLogs = append(
@@ -61,7 +62,7 @@ func (s *MockDataGatewayPoolFactory) GetPool(
 	s.RLock()
 	defer s.RUnlock()
 
-	addr := gslutils.StringerToLowerString(lpAddress)
+	addr := gsl.StringerToLowerString(lpAddress)
 	pool, ok := s.m[addr]
 	if !ok {
 		return nil, errors.Wrapf(superwatcher.ErrRecordNotFound, "lp %s not found", addr)
@@ -89,8 +90,8 @@ func (s *MockDataGatewayPoolFactory) DelPool(
 	s.Lock()
 	defer s.Unlock()
 
-	addr := gslutils.StringerToLowerString(pool.Address)
-	hash := gslutils.StringerToLowerString(pool.BlockHash)
+	addr := gsl.StringerToLowerString(pool.Address)
+	hash := gsl.StringerToLowerString(pool.BlockHash)
 	pool, ok := s.m[addr] //nolint:staticcheck
 	if !ok {
 		return errors.Wrapf(superwatcher.ErrRecordNotFound, "lp %s not found", addr)

@@ -2,21 +2,27 @@ package reorgsim
 
 // See README.md for code documentation
 
-// TODO: new exit strategy, and reimplement HeaderByNumber
-
 import (
 	"context"
 	"math/big"
 
-	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+
+	"github.com/artnoi43/gsl"
+	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/batch"
 )
 
 func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+	r.Lock()
+	defer r.Unlock()
+
 	if query.FromBlock == nil {
 		return nil, errors.New("nil query.FromBlock")
 	}
@@ -41,6 +47,10 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 			continue
 		}
 
+		txHashes := gsl.Map(b.logs, func(l types.Log) (string, bool) {
+			return gsl.StringerToLowerString(l.TxHash), true
+		})
+
 		r.debugger.Debug(
 			3, "FilterLogs block",
 			zap.Uint64("blockNumber", b.blockNumber),
@@ -48,6 +58,8 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 			zap.Uint64("currentBlock", r.currentBlock),
 			zap.Bool("toBeForked", b.toBeForked),
 			zap.Bool("reorgedHere", b.reorgedHere),
+			zap.Int("lenLogs", len(b.Logs())),
+			zap.Strings("txHashes", txHashes),
 		)
 
 		appendFilterLogs(&b.logs, &logs, query.Addresses, query.Topics)
@@ -100,4 +112,53 @@ func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwa
 	}
 
 	return b, nil
+}
+
+// BatchCallContext only processes `"eth_getBlockByNumber" RPC method calls.
+// Each elem.Result in elems will be overwritten with *Block (implements superwatcher.BlockHeader)
+// from the current chain.
+func (r *ReorgSim) BatchCallContext(ctx context.Context, elems []rpc.BatchElem) error {
+	r.RLock()
+	defer r.RUnlock()
+
+	for i, elem := range elems {
+		if elem.Method != batch.MethodGetBlockByNumber {
+			continue
+		}
+
+		// Get blockNumber from the first string argument
+		bn, err := hexutil.DecodeBig(elem.Args[0].(string))
+		if err != nil {
+			return errors.Wrapf(err, "elems[%d] has invalid argument for method %s", i, batch.MethodGetBlockByNumber)
+		}
+
+		number := bn.Uint64()
+		b, ok := r.chain[number]
+		if !ok {
+			eventIndex := r.currentReorgEvent
+			if lenEvents := len(r.events); r.currentReorgEvent >= lenEvents {
+				eventIndex = lenEvents - 1
+			}
+			event := r.events[eventIndex]
+			toBeForked := number >= event.ReorgBlock
+
+			var hash common.Hash
+			if toBeForked {
+				hash = ReorgHash(number, r.currentReorgEvent)
+			} else {
+				hash = PRandomHash(number)
+			}
+
+			b = &Block{
+				blockNumber: number,
+				hash:        hash,
+				toBeForked:  toBeForked,
+				reorgedHere: number == event.ReorgBlock,
+			}
+		}
+
+		elems[i].Result = b
+	}
+
+	return nil
 }

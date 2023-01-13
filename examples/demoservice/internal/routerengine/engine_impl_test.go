@@ -8,29 +8,32 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/artnoi43/gsl"
 	"github.com/artnoi43/gsl/soyutils"
+	"github.com/artnoi43/w3utils"
+
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/hardcode"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
 )
 
 const (
-	logsPath            = "../../../test_logs/"
+	logsPath            = "../../../testlogs/"
 	logsPathENS         = logsPath + "/ens"
 	logsPathPoolFactory = logsPath + "/poolfactory"
 )
 
 func TestHandleGoodLogs(t *testing.T) {
-	ensLogs, err := soyutils.ReadFileJSON[[]*types.Log](logsPathENS + "/logs_multi_names.json")
+	ensLogs, err := soyutils.ReadFileJSON[[]types.Log](logsPathENS + "/logs_multi_names.json")
 	if err != nil {
 		t.Skip("bad or missing ENS logs file:", err.Error())
 	}
-	poolFactoryLogs, err := soyutils.ReadFileJSON[[]*types.Log](logsPathPoolFactory + "/log_poolcreated.json")
+	poolFactoryLogs, err := soyutils.ReadFileJSON[[]types.Log](logsPathPoolFactory + "/log_poolcreated.json")
 	if err != nil {
 		t.Skip("bad or missing PoolCreated logs file:", err.Error())
 	}
@@ -39,12 +42,12 @@ func TestHandleGoodLogs(t *testing.T) {
 
 	demoContracts := hardcode.DemoContracts(hardcode.Uniswapv3Factory, hardcode.ENSRegistrar, hardcode.ENSController)
 	poolFactoryContract := demoContracts[hardcode.Uniswapv3Factory]
-	poolFactoryHashes := contracts.CollectEventHashes(poolFactoryContract.ContractEvents)
+	poolFactoryHashes := w3utils.CollectEventHashes(poolFactoryContract.ContractEvents)
 	poolFactoryEngine := uniswapv3factoryengine.New(poolFactoryContract, datagateway.NewMockDataGatewayPoolFactory(), logLevel)
 	ensRegistrarContract := demoContracts[hardcode.ENSRegistrar]
-	ensRegistrarHashes := contracts.CollectEventHashes(ensRegistrarContract.ContractEvents)
+	ensRegistrarHashes := w3utils.CollectEventHashes(ensRegistrarContract.ContractEvents)
 	ensControllerContract := demoContracts[hardcode.ENSController]
-	ensControllerHashes := contracts.CollectEventHashes(ensControllerContract.ContractEvents)
+	ensControllerHashes := w3utils.CollectEventHashes(ensControllerContract.ContractEvents)
 	ensEngine := ensengine.New(ensRegistrarContract, ensControllerContract, datagateway.NewMockDataGatewayENS(), logLevel)
 
 	routes := map[subengines.SubEngineEnum]map[common.Address][]common.Hash{
@@ -65,19 +68,34 @@ func TestHandleGoodLogs(t *testing.T) {
 	routerEngine := New(routes, services, 2)
 
 	logs := append(ensLogs, poolFactoryLogs...)
-	testHandleGoodLogs(t, routerEngine, logs, 2)
+	mappedLogs := reorgsim.MapLogsToNumber(logs)
+	var blocks []*superwatcher.Block
+
+	for number, blockLogs := range mappedLogs {
+		if len(blockLogs) == 0 {
+			continue
+		}
+
+		blocks = append(blocks, &superwatcher.Block{
+			Number: number,
+			Hash:   blockLogs[0].BlockHash,
+			Logs:   gsl.CollectPointers(blockLogs),
+		})
+	}
+
+	testHandleGoodBlocks(t, routerEngine, blocks, 2)
 }
 
-func testHandleGoodLogs(
+func testHandleGoodBlocks(
 	t *testing.T,
 	routerEngine superwatcher.ServiceEngine,
-	logs []*types.Log,
+	blocks []*superwatcher.Block,
 	numSubEngines int, // Number of subEngines within the router
 ) {
 
 	// Should have len == 1, since this is just a single call to HandleGoodLogs
 	// and the demoEngine only has 1 sub-engine.
-	mapArtifacts, err := routerEngine.HandleGoodLogs(logs, nil)
+	mapArtifacts, err := routerEngine.HandleGoodBlocks(blocks, nil)
 	if err != nil {
 		t.Errorf("error in demoEngine.HandleGoodLogs: %s", err.Error())
 	}

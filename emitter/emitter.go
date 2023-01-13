@@ -1,24 +1,25 @@
 package emitter
 
+// This package maybe removed in favor of centralized pkg/components
+
 import (
 	"github.com/artnoi43/superwatcher"
-	spwconf "github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/internal/emitter"
 )
 
 type config struct {
-	conf                *spwconf.Config
+	conf                *superwatcher.Config
 	poller              superwatcher.EmitterPoller
 	ethClient           superwatcher.EthClient
 	getStateDataGateway superwatcher.GetStateDataGateway
 	syncChan            <-chan struct{}
-	pollResultChan      chan<- *superwatcher.PollResult
+	pollResultChan      chan<- *superwatcher.PollerResult
 	errChan             chan<- error
 }
 
 type Option func(*config)
 
-func WithConfig(conf *spwconf.Config) Option {
+func WithConfig(conf *superwatcher.Config) Option {
 	return func(c *config) {
 		c.conf = conf
 	}
@@ -48,7 +49,7 @@ func WithSyncChan(syncChan <-chan struct{}) Option {
 	}
 }
 
-func WithFilterResultChan(resultChan chan<- *superwatcher.PollResult) Option {
+func WithFilterResultChan(resultChan chan<- *superwatcher.PollerResult) Option {
 	return func(c *config) {
 		c.pollResultChan = resultChan
 	}

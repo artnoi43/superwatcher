@@ -2,25 +2,24 @@ package emitterclient
 
 import (
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/config"
 	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 // emitterClient is the actual implementation of EmitterClient.
 // It uses channels to communicate with emitter.
 type emitterClient struct {
-	emitterConfig   *config.Config
+	emitterConfig   *superwatcher.Config
 	emitterSyncChan chan<- struct{}
-	pollResultChan  <-chan *superwatcher.PollResult
+	pollResultChan  <-chan *superwatcher.PollerResult
 	errChan         <-chan error
 
 	debugger *debugger.Debugger
 }
 
 func New(
-	emitterConfig *config.Config,
+	emitterConfig *superwatcher.Config,
 	emitterSyncChan chan<- struct{},
-	pollResultChan <-chan *superwatcher.PollResult,
+	pollResultChan <-chan *superwatcher.PollerResult,
 	errChan <-chan error,
 	logLevel uint8,
 ) superwatcher.EmitterClient {
@@ -48,11 +47,11 @@ func (c *emitterClient) SyncsEmitter() {
 	c.emitterSyncChan <- struct{}{}
 }
 
-func (c *emitterClient) WatcherConfig() *config.Config {
+func (c *emitterClient) WatcherConfig() *superwatcher.Config {
 	return c.emitterConfig
 }
 
-func (c *emitterClient) WatcherResult() *superwatcher.PollResult {
+func (c *emitterClient) WatcherResult() *superwatcher.PollerResult {
 	result, ok := <-c.pollResultChan
 	if ok {
 		return result

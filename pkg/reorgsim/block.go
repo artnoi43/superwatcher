@@ -3,7 +3,7 @@ package reorgsim
 import (
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -19,8 +19,8 @@ type Block struct {
 	toBeForked  bool // toBeForked marks if this block will later be forked from the old chain according to ReorgEvent
 }
 
-func (b *Block) Logs() []types.Log {
-	return b.logs
+func (b *Block) Number() uint64 {
+	return b.blockNumber
 }
 
 // Implements superwatcher.BlockHeader
@@ -28,6 +28,10 @@ func (b *Block) Logs() []types.Log {
 // because *types.Header is too packed to mock.
 func (b *Block) Hash() common.Hash {
 	return b.hash
+}
+
+func (b *Block) Logs() []types.Log {
+	return b.logs
 }
 
 // Nonce mocks field *types.Header.Nonce
@@ -80,8 +84,8 @@ func (b *Block) removeLogs(txHashes []common.Hash) {
 	}
 
 	// Only keep log whose TxHash is not in |txHashes|.
-	remaining := gslutils.FilterSlice(b.logs, func(log types.Log) bool {
-		return !gslutils.Contains(txHashes, log.TxHash)
+	remaining := gsl.FilterSlice(b.logs, func(log types.Log) bool {
+		return !gsl.Contains(txHashes, log.TxHash)
 	})
 
 	b.logs = remaining

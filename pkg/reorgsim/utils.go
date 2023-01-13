@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -27,7 +27,7 @@ func InitMappedLogsFromFiles(filenames ...string) map[uint64][]types.Log {
 		logs := readLogsJSON(filename)
 		hardcodedLogs = append(hardcodedLogs, logs...)
 	}
-	mappedLogs := mapLogsToNumber(hardcodedLogs)
+	mappedLogs := MapLogsToNumber(hardcodedLogs)
 
 	return mappedLogs
 }
@@ -74,7 +74,7 @@ func LogsReorgPaths(events []ReorgEvent) ([]common.Hash, map[common.Hash][]uint6
 			logsPark[txHash] = append(logsPark[txHash], move.from)
 			logsDest[txHash] = move.to
 
-			if gslutils.Contains(logsHashes, txHash) {
+			if gsl.Contains(logsHashes, txHash) {
 				continue
 			}
 
@@ -85,7 +85,7 @@ func LogsReorgPaths(events []ReorgEvent) ([]common.Hash, map[common.Hash][]uint6
 	return logsHashes, logsPark, logsDest
 }
 
-func mapLogsToNumber(logs []types.Log) map[uint64][]types.Log {
+func MapLogsToNumber(logs []types.Log) map[uint64][]types.Log {
 	m := make(map[uint64][]types.Log)
 	for _, log := range logs {
 		m[log.BlockNumber] = append(m[log.BlockNumber], log)
@@ -127,13 +127,13 @@ func appendFilterLogs(src, dst *[]types.Log, addresses []common.Address, topics 
 
 		if addresses != nil {
 			if topics != nil {
-				if gslutils.Contains(topics[0], log.Topics[0]) {
+				if gsl.Contains(topics[0], log.Topics[0]) {
 					*dst = append(*dst, log)
 					continue
 				}
 			}
 
-			if gslutils.Contains(addresses, log.Address) {
+			if gsl.Contains(addresses, log.Address) {
 				*dst = append(*dst, log)
 				continue
 			}

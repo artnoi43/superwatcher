@@ -1,7 +1,5 @@
 package emitter
 
-// TODO: Refactor. Too complex.
-
 import (
 	"context"
 	"time"
@@ -97,28 +95,39 @@ func (e *emitter) loopEmit(
 				zap.Any("current_status", newStatus),
 			)
 
-			result, err := e.poller.Poll(
+			result, err := e.poller.PollNg(
 				loopCtx,
 				newStatus.FromBlock,
 				newStatus.ToBlock,
 			)
 			if err != nil {
-				if errors.Is(err, superwatcher.ErrProcessReorg) {
-					e.debugger.Debug(
-						1, "got errProcessReorg - contact prem@cleverse.com for reporting this bug",
-						zap.Error(err),
-					)
-				}
-				// Do not return, we'd still emit this result if fromBlock reorged
-				if !errors.Is(err, superwatcher.ErrFromBlockReorged) {
-					return errors.Wrap(err, "unexpected poller error")
-				}
+				// TODO: Use ErrChainIsReorging
+				if errors.Is(err, superwatcher.ErrChainIsReorging) {
+					// ErrChainIsReorging encountered - result would still be emitted, but the poller
+					// will not progress forward.
+					if e.poller.DoReorg() {
+						updateStatus(true)
+						e.debugger.Warn(
+							1, "chain is reorging",
+							zap.Any("emitterStatus", newStatus),
+							zap.String("reason", err.Error()),
+						)
+					}
+				} else {
+					// These errors will cause loopEmit to return
+					if errors.Is(err, superwatcher.ErrSuperwatcherBug) {
+						e.debugger.Debug(
+							1, "got ErrSuperwatcherBug - please report to prem@cleverse.com",
+							zap.Error(err),
+						)
+					}
+					if errors.Is(err, superwatcher.ErrFetchError) {
+						e.debugger.Debug(
+							1, "got ErrFetchError, blockchain node may be the culprit",
+						)
+					}
 
-				// ErrFromBlockReorged will not cause loopEmit to return,
-				// and result would still be emitted
-				if e.poller.DoReorg() {
-					updateStatus(true)
-					e.debugger.Warn(1, "fromBlock reorged", zap.Any("emitterStatus", newStatus))
+					return errors.Wrap(err, "unexpected poller error")
 				}
 			}
 
@@ -154,7 +163,7 @@ func (e *emitter) computeFromBlockToBlock(
 	error,
 ) {
 	// lastRecordedBlock was saved externally by engine.
-	// The value to be saved should be superwatcher.PollResult.LastGoodBlock
+	// The value to be saved should be superwatcher.PollerResult.LastGoodBlock
 	lastRecordedBlock, err := e.stateDataGateway.GetLastRecordedBlock(ctx)
 	if err != nil {
 		// Return error if not superwatcher.ErrRecordNotFound

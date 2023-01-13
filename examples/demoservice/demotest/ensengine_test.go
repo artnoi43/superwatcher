@@ -1,44 +1,31 @@
 package demotest
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
 )
 
-func invalidateNullFieldsENS(ens *entity.ENS) error {
-	if ens.ID == "" {
-		return errors.New("ens.ID is null")
-	}
-
-	if ens.Name == "" {
-		return errors.New("ens.Name is null")
-	}
-
-	if ens.BlockNumber == 0 {
-		return errors.New("ens.BlockNumber is 0 ")
-	}
-
-	return nil
-}
-
-// TestServiceEngineENSV1 is full tests for SubEngineENS with only 1 reorg event.
-func TestServiceEngineENSV1(t *testing.T) {
-	logsPath := testLogsPath + "/ens"
-	testCases := []servicetest.TestCase{
+var (
+	ensCasesAlreadyRunV1 = false
+	logsPathENS          = testLogsPath + "/ens"
+	testCasesENSV1       = []servicetest.TestCase{
 		{
 			LogsFiles: []string{
-				logsPath + "/logs_reorg_test.json",
+				logsPathENS + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false, // Normal run
 			Param: reorgsim.Param{
@@ -64,7 +51,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 		},
 		{
 			LogsFiles: []string{
-				logsPath + "/logs_servicetest_16054000_16054100.json",
+				logsPathENS + "/logs_servicetest_16054000_16054100.json",
 			},
 			DataGatewayFirstRun: false,
 			Param: reorgsim.Param{
@@ -79,21 +66,54 @@ func TestServiceEngineENSV1(t *testing.T) {
 			},
 		},
 	}
+)
 
-	for _, testCase := range testCases {
-		t.Logf("testCase for ENS: %+v", testCase)
+func invalidateNullFieldsENS(ens *entity.ENS) error {
+	if ens.ID == "" {
+		return errors.New("ens.ID is null")
+	}
+
+	if ens.Name == "" {
+		return fmt.Errorf("ens %s Name is null (txHash %s)", ens.ID, ens.TxHash)
+	}
+
+	if ens.BlockNumber == 0 {
+		return fmt.Errorf("ens %s (Name %s) BlockNumber is 0 (txHash %s)", ens.ID, ens.Name, ens.TxHash)
+	}
+
+	return nil
+}
+
+// TestServiceEngineENSV1 is full tests for SubEngineENS with only 1 reorg event.
+func TestServiceEngineENSV1(t *testing.T) {
+	err := testutils.RunTestCase(t, "TestServiceEngineENSV1", testCasesENSV1, testServiceEngineENSV1)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func testServiceEngineENSV1(t *testing.T, caseNumber int) error {
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		// superwatcher.PolicyExpensive,
+	} {
+		testCase := testCasesENSV1[caseNumber-1]
+		testCase.Policy = policy
+		b, _ := json.Marshal(testCase)
+		t.Logf("testServiceEngineENSV1 case %d, testCase %s", caseNumber, b)
+
 		// We'll later use |ensStore| to check for saved results
 		ensStore := datagateway.NewMockDataGatewayENS()
-
-		fakeRedis, err := runTestServiceEngineENS(testCase, ensStore)
+		fakeRedis, err := runENS(testCase, ensStore)
 		if err != nil {
 			lastRecordedBlock, _ := fakeRedis.GetLastRecordedBlock(nil)
-			t.Errorf("lastRecordedBlock %d - error in full servicetest (ens): %s", lastRecordedBlock, err.Error())
+			return errors.Wrapf(err, "error in full servicetest (ens), lastRecordedBlock %d", lastRecordedBlock)
 		}
 
 		results, err := ensStore.GetENSes(nil)
 		if err != nil {
-			t.Error("error from ensStore (ens):", err.Error())
+			return errors.Wrap(err, "GetENSes failed after servicetest")
 		}
 
 		// Test if moved logs were properly removed
@@ -112,7 +132,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 
 				t.Log("checking block", result.BlockNumber)
 
-				expectedHash := gslutils.StringerToLowerString(
+				expectedHash := gsl.StringerToLowerString(
 					reorgsim.ReorgHash(result.BlockNumber, 0),
 				)
 
@@ -124,7 +144,7 @@ func TestServiceEngineENSV1(t *testing.T) {
 					t.Error("result has invalid ENS values", err.Error())
 				}
 
-				if h := common.HexToHash(result.TxHash); gslutils.Contains(movedHashes, h) {
+				if h := common.HexToHash(result.TxHash); gsl.Contains(movedHashes, h) {
 					expectedFinalBlock := logsDst[h]
 					if expectedFinalBlock != result.BlockNumber {
 						t.Fatalf("expecting moved blockNumber %d, got %d", expectedFinalBlock, result.BlockNumber)
@@ -133,9 +153,11 @@ func TestServiceEngineENSV1(t *testing.T) {
 			}
 		}
 	}
+
+	return nil
 }
 
-func runTestServiceEngineENS(
+func runENS(
 	testCase servicetest.TestCase,
 	ensStore datagateway.RepositoryENS,
 ) (
@@ -145,7 +167,7 @@ func runTestServiceEngineENS(
 	ensEngine := ensengine.NewTestSuiteENS(ensStore, 2).Engine
 
 	components := servicetest.InitTestComponents(
-		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4),
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 4, testCase.Policy),
 		ensEngine,
 		testCase.Param,
 		testCase.Events,

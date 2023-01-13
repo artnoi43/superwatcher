@@ -3,7 +3,7 @@ package ensengine
 import (
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
@@ -24,8 +24,8 @@ func (e *ensEngine) handleNameRegisteredRegistrar(
 	}
 
 	name := entity.ENS{
-		TxHash:      gslutils.StringerToLowerString(log.TxHash),
-		BlockHash:   gslutils.StringerToLowerString(log.BlockHash),
+		TxHash:      gsl.StringerToLowerString(log.TxHash),
+		BlockHash:   gsl.StringerToLowerString(log.BlockHash),
 		BlockNumber: log.BlockNumber,
 	}
 

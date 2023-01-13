@@ -1,5 +1,7 @@
 package engine
 
+// This package maybe removed in favor of centralized pkg/components
+
 import (
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/internal/engine"

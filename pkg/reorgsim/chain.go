@@ -3,7 +3,7 @@ package reorgsim
 import (
 	"fmt"
 
-	"github.com/artnoi43/gsl/gslutils"
+	"github.com/artnoi43/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -68,14 +68,14 @@ func (chain BlockChain) moveLogs(
 			}
 
 			// Add unique moveToBlocks
-			if !gslutils.Contains(moveToBlocks, move.NewBlock) {
+			if !gsl.Contains(moveToBlocks, move.NewBlock) {
 				moveToBlocks = append(moveToBlocks, move.NewBlock)
 			}
 
 			// Save logsToMove before removing it from b
 			var logsToMove []types.Log
 			for _, log := range b.logs {
-				if gslutils.Contains(move.TxHashes, log.TxHash) {
+				if gsl.Contains(move.TxHashes, log.TxHash) {
 					logsToMove = append(logsToMove, log)
 				}
 			}

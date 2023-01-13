@@ -21,14 +21,14 @@ const (
 	stateNull         blockState = iota // Block was never seen before by Engine (default blockState)
 	stateSeen                           // Block was seen by Engine
 	stateHandled                        // Block was processed by ServiceEngine
-	stateReorged                        // Block was present in a PollResult.ReorgedBlocks
+	stateReorged                        // Block was present in a PollerResult.ReorgedBlocks
 	stateHandledReorg                   // Block's reorg was handled by ServiceEngine
 	stateInvalid                        // Invalid blockState - program will panic
 
 	eventInvalid     blockEvent = iota // Invalid blockEvent - program will panic (default blockEvent)
 	eventSeeBlock                      // When Engine sees a block
 	eventHandle                        // When ServiceEngine has processed the block's logs
-	eventSeeReorg                      // When Engine sees the block in PollResult.ReorgedBlocks
+	eventSeeReorg                      // When Engine sees the block in PollerResult.ReorgedBlocks
 	eventHandleReorg                   // When ServiceEngine has handled the reorg event
 )
 

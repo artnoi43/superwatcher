@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -14,25 +13,25 @@ import (
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal"
 )
 
-func (e *routerEngine) HandleGoodLogs(
-	logs []*types.Log,
+func (e *routerEngine) HandleGoodBlocks(
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact, // Ignored
 ) (
 	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
-	// Artifacts to return - we don't know its size
-	retArtifacts := make(map[common.Hash][]superwatcher.Artifact) //nolint:prealloc
-	logsMap := e.mapLogsToSubEngine(logs)
+	blocksMap := e.mapBlocksToSubEngine(blocks)
 
-	// ensLogs := logsMap[subengines.SubEngineENS]
-	for subEngine, logs := range logsMap {
+	// Artifacts to return - we don't know its length
+	retArtifacts := make(map[common.Hash][]superwatcher.Artifact) //nolint:prealloc
+	for subEngine, subEngineBlocks := range blocksMap {
+		// ensLogs := logsMap[subengines.SubEngineENS]
 		serviceEngine, ok := e.Services[subEngine]
 		if !ok {
 			return nil, errors.Wrapf(errNoService, "subengine: %s", subEngine.String())
 		}
 
-		resultArtifacts, err := serviceEngine.HandleGoodLogs(logs, filterArtifacts(subEngine, artifacts))
+		resultArtifacts, err := serviceEngine.HandleGoodBlocks(subEngineBlocks, filterArtifacts(subEngine, artifacts))
 		if err != nil {
 			if errors.Is(err, internal.ErrNoNeedHandle) {
 				e.debugger.Debug(2, "routerEngine: got ErrNoNeedHandle", zap.String("subEngine", subEngine.String()))
@@ -50,29 +49,29 @@ func (e *routerEngine) HandleGoodLogs(
 	return retArtifacts, nil
 }
 
-func (e *routerEngine) HandleReorgedLogs(
-	logs []*types.Log,
+func (e *routerEngine) HandleReorgedBlocks(
+	blocks []*superwatcher.Block,
 	artifacts []superwatcher.Artifact,
 ) (
 	map[common.Hash][]superwatcher.Artifact,
 	error,
 ) {
 	e.debugger.Debug(
-		2, fmt.Sprintf("got %d reorged logs and %d artifacts", len(logs), len(artifacts)),
+		2, fmt.Sprintf("got %d reorged blocks and %d artifacts", len(blocks), len(artifacts)),
 		zap.Any("artifacts", artifacts),
 	)
 
 	var retArtifacts = make(map[common.Hash][]superwatcher.Artifact) //nolint:all Artifacts to return - we dont know the size
-	logsMap := e.mapLogsToSubEngine(logs)
+	blocksMap := e.mapBlocksToSubEngine(blocks)
 
-	for subEngine, logs := range logsMap {
+	for subEngine, subEngineBlocks := range blocksMap {
 		serviceEngine, ok := e.Services[subEngine]
 		if !ok {
 			return nil, errors.Wrap(errNoService, "subengine: "+subEngine.String())
 		}
 
 		// Aggregate subEngine-specific artifacts
-		resultArtifacts, err := serviceEngine.HandleReorgedLogs(logs, filterArtifacts(subEngine, artifacts))
+		resultArtifacts, err := serviceEngine.HandleReorgedBlocks(subEngineBlocks, filterArtifacts(subEngine, artifacts))
 		if err != nil {
 			return nil, errors.Wrapf(err, "subengine %s HandleReorgedBlock failed", subEngine.String())
 		}

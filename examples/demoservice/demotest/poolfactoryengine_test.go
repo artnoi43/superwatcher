@@ -1,22 +1,26 @@
 package demotest
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/artnoi43/superwatcher"
 	"github.com/artnoi43/superwatcher/pkg/reorgsim"
 	"github.com/artnoi43/superwatcher/pkg/servicetest"
+	"github.com/artnoi43/superwatcher/pkg/testutils"
+	"github.com/pkg/errors"
 
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
 	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
 )
 
-func TestServiceEnginePoolFactoryV1(t *testing.T) {
-	logsPath := testLogsPath + "/poolfactory"
-	testCases := []servicetest.TestCase{
+var (
+	logsPathPoolFactory    = testLogsPath + "/poolfactory"
+	testCasesPoolFactoryV1 = []servicetest.TestCase{
 		{
 			LogsFiles: []string{
-				logsPath + "/logs_reorg_test.json",
+				logsPathPoolFactory + "/logs_reorg_test.json",
 			},
 			DataGatewayFirstRun: false,
 			Param: reorgsim.Param{
@@ -31,18 +35,36 @@ func TestServiceEnginePoolFactoryV1(t *testing.T) {
 			},
 		},
 	}
+)
 
-	for _, testCase := range testCases {
+func TestServiceEnginePoolFactoryV1(t *testing.T) {
+	err := testutils.RunTestCase(t, "testServiceEngineENSV1", testCasesPoolFactoryV1, testServiceEnginePoolFactoryV1)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+}
+
+func testServiceEnginePoolFactoryV1(t *testing.T, caseNumber int) error {
+	for _, policy := range []superwatcher.Policy{
+		superwatcher.PolicyFast,
+		superwatcher.PolicyNormal,
+		// superwatcher.PolicyExpensive,
+	} {
+		testCase := testCasesPoolFactoryV1[caseNumber-1]
+		testCase.Policy = policy
+		b, _ := json.Marshal(testCase)
+		t.Logf("testServiceEnginePoolFactoryV1 case %d, testCase %s", caseNumber, b)
+
 		serviceDataGateway := datagateway.NewMockDataGatewayPoolFactory()
-		stateDataGateway, err := testServiceEnginePoolFactoryV1(testCase, serviceDataGateway)
+		stateDataGateway, err := runPoolFactory(testCase, serviceDataGateway)
 		if err != nil {
 			lastRecordedBlock, _ := stateDataGateway.GetLastRecordedBlock(nil)
-			t.Errorf("lastRecordedBlock: %d error in full servicetest (poolfactory): %s", lastRecordedBlock, err.Error())
+			return errors.Wrapf(err, "error in full servicetest (poolfactory), lastRecordedBlock: %d ", lastRecordedBlock)
 		}
 
 		results, err := serviceDataGateway.GetPools(nil)
 		if err != nil {
-			t.Errorf("GetPools failed after service returned: %s", err.Error())
+			return errors.Wrapf(err, "GetPools failed after servicetest returned")
 		}
 
 		for _, result := range results {
@@ -59,13 +81,15 @@ func TestServiceEnginePoolFactoryV1(t *testing.T) {
 			}
 
 			if result.BlockHash == expectedReorgedHash {
-				t.Fatal("old block in the old chain has reorged hash")
+				return fmt.Errorf("old block %d in the old chain (hash %s) has reorged hash %s", result.BlockCreated, result.BlockHash.String(), expectedReorgedHash.String())
 			}
 		}
 	}
+
+	return nil
 }
 
-func testServiceEnginePoolFactoryV1(
+func runPoolFactory(
 	testCase servicetest.TestCase,
 	lpStore datagateway.RepositoryPoolFactory,
 ) (
@@ -75,7 +99,7 @@ func testServiceEnginePoolFactoryV1(
 	poolFactoryEngine := uniswapv3factoryengine.NewTestSuitePoolFactory(lpStore, 2).Engine
 
 	components := servicetest.InitTestComponents(
-		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3),
+		servicetest.DefaultServiceTestConfig(testCase.Param.StartBlock, 3, testCase.Policy),
 		poolFactoryEngine,
 		testCase.Param,
 		testCase.Events,
