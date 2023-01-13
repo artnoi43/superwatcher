@@ -10,12 +10,10 @@ import (
 type EmitterPoller interface {
 	// Poll polls event logs from fromBlock to toBlock, and process the logs into *PollerResult for Emitter
 	Poll(ctx context.Context, fromBlock, toBlock uint64) (*PollerResult, error)
-	// PollNg is the new Poll with Policy handling at the center
-	PollNg(ctx context.Context, fromBlock, toBlock uint64) (*PollerResult, error)
 	// Policy gets current Policy
 	Policy() Policy
 	// SetPolicy sets new Policy (NOTE: changing Policy mid-run not tested)
-	// SetPolicy(Policy) error
+	SetPolicy(Policy) error
 
 	// EmitterPoller also implements Controller
 	Controller
