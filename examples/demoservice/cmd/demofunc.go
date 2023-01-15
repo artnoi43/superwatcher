@@ -4,10 +4,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/emitter"
-	"github.com/artnoi43/superwatcher/engine"
 	"github.com/artnoi43/superwatcher/pkg/components"
-	"github.com/artnoi43/superwatcher/poller"
 )
 
 // This demo function calls components.NewDefault, which is the preferred way to init superwatcher for most cases.
@@ -33,8 +30,8 @@ func newSuperWatcherPreferred( //nolint:unused
 }
 
 // This demo function demonstrates how users can use the components package
-// to init superwatcher components individually
-func newSuperwatcherAdvanced( //nolint:unused
+// to init superwatcher components individuall and customize the components via factory function arguments
+func newSuperwatcherFromArgs( //nolint:unused
 	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
@@ -59,50 +56,12 @@ func newSuperwatcherAdvanced( //nolint:unused
 	return emitter, engine
 }
 
-// This demo function demonstrates how users can use OptionFunc to initiate superwatcher
-func newSuperwacherSoyV1( //nolint:unused
-	conf *superwatcher.Config,
-	ethClient superwatcher.EthClient,
-	addresses []common.Address,
-	topics []common.Hash,
-	stateDataGateway superwatcher.StateDataGateway,
-	serviceEngine superwatcher.ServiceEngine,
-) (superwatcher.Emitter, superwatcher.Engine) {
-	poller := poller.New(
-		poller.WithDoReorg(conf.DoReorg),
-		poller.WithDoHeader(conf.DoHeader),
-		poller.WithEthClient(ethClient),
-		poller.WithFilterRange(conf.FilterRange),
-		poller.WithAddresses(addresses...),
-		poller.WithTopics(topics),
-		poller.WithLogLevel(conf.LogLevel),
-	)
-
-	syncChan := make(chan struct{})
-	resultChan := make(chan *superwatcher.PollerResult)
-	errChan := make(chan error)
-
-	emitter := emitter.New(
-		emitter.WithConfig(conf),
-		emitter.WithEmitterPoller(poller),
-		emitter.WithEthClient(ethClient),
-		emitter.WithGetStateDataGateway(stateDataGateway),
-		emitter.WithSyncChan(syncChan),
-		emitter.WithFilterResultChan(resultChan),
-		emitter.WithErrChan(errChan),
-	)
-
-	engine := engine.New(
-		engine.WithEmitterClient(nil),
-		engine.WithServiceEngine(serviceEngine),
-		engine.WithSetStateDataGateway(stateDataGateway),
-		engine.WithLogLevel(conf.LogLevel),
-	)
-
-	return emitter, engine
-}
-
-func newSuperWatcherSoyV2( // nolint:unused
+// newSuperWatcherOptions demonstrates how users can use components.NewSuperWatcherOptions
+// to create the top-level wrapper superwatcher.SuperWatcher.
+// For simple applications, this might be the most effective and error-free way to initialize superwatcher service.
+//
+// Note that components.*Options funcs do not validate the option.
+func newSuperWatcherOptions( // nolint:unused
 	conf *superwatcher.Config,
 	ethClient superwatcher.EthClient,
 	addresses []common.Address,
