@@ -21,6 +21,21 @@ type thinEngine struct { //nolint:unused
 	debugger *debugger.Debugger
 }
 
+func New(
+	emitterClient superwatcher.EmitterClient,
+	serviceEngine superwatcher.ThinServiceEngine,
+	stateDataGateway superwatcher.SetStateDataGateway,
+	debugLevel uint8,
+) superwatcher.Engine {
+	return &thinEngine{
+		emitterClient:    emitterClient,
+		serviceEngine:    serviceEngine,
+		stateDataGateway: stateDataGateway,
+		debug:            debugLevel > 0,
+		debugger:         debugger.NewDebugger("thinEngine", debugLevel),
+	}
+}
+
 func (e *thinEngine) shutdown() { // nolint:unused
 	// TODO: Should we close Redis or should the service does it?
 	// e.stateDataGateway.Shutdown()

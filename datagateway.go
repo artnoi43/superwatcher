@@ -32,25 +32,6 @@ type (
 	FuncGetLastRecordedBlock func(context.Context) (uint64, error)
 	FuncSetLastRecordedBlock func(context.Context, uint64) error
 
-	// Note: As of this writing, the emitter and engine implementations do not have fields for
-	// function types FuncGetLastRecordedBlock and FuncSetLastRecordedBlock.
-	// If you want to inject a function (not a whole struct), use the wrapper functions below
-	// to wrap your functions or methods with dataGatewayWrapper.
-	// Example usage:
-	// ```
-	//  emitter := emitter.New(
-	//      nil,
-	//      nil,
-	//      GetStateDataGatewayFunc(someStruct.SomeFunc), // <<<<<< Use it like this
-	//      nil,
-	//      nil,
-	//      nil,
-	//      nil,
-	//      nil,
-	//  )
-	//
-	// ```
-
 	dataGatewayWrapper struct {
 		getFunc FuncGetLastRecordedBlock
 		setFunc FuncSetLastRecordedBlock
