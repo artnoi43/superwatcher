@@ -66,7 +66,7 @@ func (p *poller) Poll(
 		return nil, err
 	}
 
-	result, err := pollerResult(param, p.tracker, pollResults, p.debugger)
+	result, err := processResult(param, p.tracker, pollResults, p.debugger)
 	if err != nil {
 		return result, err
 	}
@@ -237,12 +237,18 @@ func findReorg(
 	return pollResults, nil
 }
 
-func pollerResult(
+// processResult collects poll results from |tracker| and |pollResults| into superwatcher.PollerResult.
+// It collects the result while also removing/adding fresh blocks to tracker, as per param.Policy.
+// When collecting, it copies superwatcher.Block values into PollerResult to avoid mutating tracker values.
+func processResult(
 	param *param,
 	tracker *blockTracker,
 	pollResults map[uint64]*mapLogsResult,
 	debugger *debugger.Debugger,
-) (*superwatcher.PollerResult, error) {
+) (
+	*superwatcher.PollerResult,
+	error,
+) {
 	// Fills |result| and saves current data back to tracker first.
 	result := new(superwatcher.PollerResult)
 	for number := param.fromBlock; number <= param.toBlock; number++ {
