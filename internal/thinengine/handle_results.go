@@ -13,5 +13,7 @@ func (e *thinEngine) handleResults(ctx context.Context) error { //nolint:unused
 		if err != nil {
 			return errors.Wrap(errors.WithStack(err), "serviceEngine returned error")
 		}
+
+		e.emitterClient.SyncsEmitter()
 	}
 }
