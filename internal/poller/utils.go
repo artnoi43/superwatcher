@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/artnoi43/gsl"
-	"github.com/artnoi43/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+
+	"github.com/artnoi43/superwatcher"
 )
 
 func collectLogs(
@@ -25,7 +26,7 @@ func collectLogs(
 		result := m[number]
 
 		switch {
-		// nil is when collectLogs did not visit this log block yet
+		// nil result is when collectLogs have not yet visited this block
 		case result == nil:
 			fmt.Println("newBlock", number)
 			m[number] = &mapLogsResult{
@@ -44,9 +45,7 @@ func collectLogs(
 				)
 			}
 
-			fmt.Println("beforeAppend", number, len(result.Logs))
 			result.Logs = append(result.Logs, &logs[i])
-			fmt.Println("afterAppend", number, len(result.Logs))
 		}
 	}
 

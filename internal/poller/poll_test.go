@@ -43,7 +43,9 @@ func testPollNg(t *testing.T, caseNumber int) error {
 			reorgEvent = &tc.Events[0]
 		}
 
-		oldChain, reorgedChain := reorgsim.NewBlockChainReorgMoveLogs(logs, *reorgEvent)
+		oldChain, reorgedChains := reorgsim.NewBlockChain(logs, []reorgsim.ReorgEvent{*reorgEvent})
+		reorgedChain := reorgedChains[0]
+
 		mockClient, err := reorgsim.NewReorgSim(tc.Param, []reorgsim.ReorgEvent{tc.Events[0]}, reorgedChain, nil, "", 4)
 		if err != nil {
 			return errors.Wrap(err, "cannot init ReorgSim for testMapLogsV1")

@@ -134,9 +134,12 @@ func pollMissing(
 	// Find missing blocks (blocks in tracker that are not in pollResults)
 	var blocksMissing []uint64
 	for n := param.toBlock; n >= param.fromBlock; n-- {
+		// Not in tracker => not missing
 		if _, ok := tracker.getTrackerBlock(n); !ok {
 			continue
 		}
+
+		// In tracker and in pollResults => not missing
 		if _, ok := pollResults[n]; ok {
 			continue
 		}
@@ -207,6 +210,7 @@ func findReorg(
 
 		pollResult, ok := pollResults[n]
 		if !ok {
+			// Not in result, but in range + in tracker => kinda sus
 			return nil, errors.Wrapf(superwatcher.ErrProcessReorg, "pollResult missing for trackerBlock %d", n)
 		}
 
@@ -305,6 +309,7 @@ func pollerResult(
 	return result, nil
 }
 
+// handleBlocksMissingPolicy handles blocks that is marked with LogsMigrated (0 logs)
 func handleBlocksMissingPolicy(
 	number uint64,
 	tracker *blockTracker,
@@ -330,6 +335,8 @@ func handleBlocksMissingPolicy(
 	return nil
 }
 
+// addTrackerBlockPolicy adds blocks to tracker based on PollPolicy.
+// PolicyCheap will not save blocks with 0 logs to tracker, so as to avoid expensive header fetching.
 func addTrackerBlockPolicy(tracker *blockTracker, block *superwatcher.Block, policy superwatcher.Policy) {
 	if tracker == nil {
 		return

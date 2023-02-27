@@ -48,14 +48,14 @@ func (r *ReorgSim) triggerForkChain(rangeStart, rangeEnd uint64) {
 	}
 }
 
-// forkChain performs chain reorg logic after triggerForkChain validates all conditions
+// forkChain performs chain reorg logic after triggerForkChain validates all conditions.
+// As part of the chain reorg, forkChain updates r.currentChain, r.currentEvent, r.forked, and r.currentBlock.
 func (r *ReorgSim) forkChain() {
 	event := r.events[r.currentReorgEvent]
 
 	r.currentBlock = event.ReorgBlock
 	r.forked = r.triggered
-	r.chain = r.reorgedChains[r.currentReorgEvent]
-
+	r.currentChain = r.reorgedChains[r.currentReorgEvent]
 	r.currentReorgEvent++
 
 	r.debugger.Debug(

@@ -23,8 +23,9 @@ type ReorgSim struct {
 	triggered int
 	// forked tracks whether reorgChains[i] was forked (used).
 	forked int
-	// chain is the original blockChain
-	chain BlockChain
+	// currentChain is the current canon blockchain. It is initialized with original chain,
+	// and will later be reassigned to any of the triggered reorgedChains.
+	currentChain BlockChain
 	// reorgedChains is the multiple reorged blockchains construct from `ReorgSim.chain` and `ReorgSim.param`
 	reorgedChains []BlockChain
 	// currentBlock tracks the current block for the fake blockChain and is used for exclusively in BlockByNumber
@@ -57,13 +58,15 @@ func NewReorgSim(
 	}
 
 	return &ReorgSim{
-		param:         param,
-		events:        validatedEvents,
-		chain:         chain,
-		reorgedChains: reorgedChains,
-		triggered:     -1, // can't be 0
-		forked:        -1, // can't be 0
-		debugger:      debugger.NewDebugger(name, logLevel),
+		param:             param,
+		events:            validatedEvents,
+		currentChain:      chain,
+		reorgedChains:     reorgedChains,
+		currentReorgEvent: 0,
+		triggered:         -1, // can't be 0: must be initialized to 1 behind currentReorgEvent
+		forked:            -1, // can't be 0: must be initialized to 1 behind currentReorgEvent
+
+		debugger: debugger.NewDebugger(name, logLevel),
 	}, nil
 }
 
@@ -101,7 +104,7 @@ func NewReorgSimFromLogsFiles(
 }
 
 func (r *ReorgSim) Chain() BlockChain { //nolint:revive
-	return r.chain
+	return r.currentChain
 }
 
 func (r *ReorgSim) ReorgedChains() []BlockChain { //nolint:revive

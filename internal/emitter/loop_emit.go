@@ -104,7 +104,7 @@ func (e *emitter) loopEmit(
 				// TODO: Use ErrChainIsReorging
 				if errors.Is(err, superwatcher.ErrChainIsReorging) {
 					// ErrChainIsReorging encountered - result would still be emitted, but the poller
-					// will not progress forward.
+					// will repoll the same filter range.
 					if e.poller.DoReorg() {
 						updateStatus(true)
 						e.debugger.Warn(
@@ -113,6 +113,11 @@ func (e *emitter) loopEmit(
 							zap.String("reason", err.Error()),
 						)
 					}
+
+					e.emitFilterResult(result)
+					e.SyncsEngine()
+					// Re-poll
+					continue
 				} else {
 					// These errors will cause loopEmit to return
 					if errors.Is(err, superwatcher.ErrSuperwatcherBug) {
@@ -144,7 +149,7 @@ func (e *emitter) loopEmit(
 			updateStatus(false)
 
 			e.debugger.Debug(
-				2, "ending this loop",
+				3, "ending this loop",
 				zap.Any("emitterStatus", newStatus),
 			)
 		}

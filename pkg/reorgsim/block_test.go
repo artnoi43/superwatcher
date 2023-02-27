@@ -44,16 +44,22 @@ func TestRemoveLogs(t *testing.T) {
 
 	b := chain[blockNumber]
 
-	var foundLogs bool
-	for _, log := range b.logs {
-		if gsl.Contains(hashesToRemove, log.TxHash) {
-			foundLogs = true
-			break
+	// Test in test, because test log files may have been changed
+	{
+		foundLogs := make([]bool, len(hashesToRemove))
+		var c int
+		for _, log := range b.logs {
+			if gsl.Contains(hashesToRemove, log.TxHash) {
+				foundLogs[c] = true
+				c++
+			}
 		}
-	}
 
-	if !foundLogs {
-		t.Skip("txHashes not found - probably bad hard-coded logs")
+		for _, foundLog := range foundLogs {
+			if !foundLog {
+				t.Skip("txHashes not found - probably bad hard-coded logs")
+			}
+		}
 	}
 
 	b.removeLogs(hashesToRemove)
