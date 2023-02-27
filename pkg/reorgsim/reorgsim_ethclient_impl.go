@@ -42,7 +42,7 @@ func (r *ReorgSim) FilterLogs(ctx context.Context, query ethereum.FilterQuery) (
 
 	var logs []types.Log
 	for number := from; number <= to; number++ {
-		b := r.chain[number]
+		b := r.currentChain[number]
 		if b == nil || len(b.logs) == 0 {
 			continue
 		}
@@ -89,7 +89,7 @@ func (r *ReorgSim) BlockNumber(ctx context.Context) (uint64, error) {
 func (r *ReorgSim) HeaderByNumber(ctx context.Context, number *big.Int) (superwatcher.BlockHeader, error) {
 	blockNumber := number.Uint64()
 
-	b, ok := r.chain[blockNumber]
+	b, ok := r.currentChain[blockNumber]
 	if !ok {
 		event := r.events[r.currentReorgEvent]
 		toBeForked := blockNumber >= event.ReorgBlock
@@ -133,7 +133,7 @@ func (r *ReorgSim) BatchCallContext(ctx context.Context, elems []rpc.BatchElem) 
 		}
 
 		number := bn.Uint64()
-		b, ok := r.chain[number]
+		b, ok := r.currentChain[number]
 		if !ok {
 			eventIndex := r.currentReorgEvent
 			if lenEvents := len(r.events); r.currentReorgEvent >= lenEvents {

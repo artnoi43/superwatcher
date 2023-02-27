@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/artnoi43/gsl/concurrent"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/artnoi43/superwatcher"
+	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
 )
 
 // pollExpensive concurrently fetches event logs and block headers
@@ -31,24 +31,27 @@ func pollExpensive(
 	map[uint64]*mapLogsResult,
 	error,
 ) {
-	var headers map[uint64]superwatcher.BlockHeader
-	var logs []types.Log
-
-	var blockNumbers []uint64
+	// pollExpensive will get headers for ALL blocks within range
+	numBlocks := toBlock - fromBlock + 1 // For pre-alloc with size of all blocks
+	blockNumbers := make([]uint64, numBlocks)
+	var c int
 	for n := fromBlock; n <= toBlock; n++ {
-		blockNumbers = append(blockNumbers, n)
+		blockNumbers[c] = n
+		c++
 	}
 
+	var headers map[uint64]superwatcher.BlockHeader
+	var logs []types.Log
 	q := ethereum.FilterQuery{
 		FromBlock: big.NewInt(int64(fromBlock)),
 		ToBlock:   big.NewInt(int64(toBlock)),
 		Addresses: addresses,
 		Topics:    topics,
 	}
-	// Get block headers and event logs concurrently
+
 	errChan := make(chan error)
 	var wg sync.WaitGroup
-	wg.Add(2) // Get headers and logs concurrently in 2 Goroutines
+	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
@@ -85,8 +88,8 @@ func pollExpensive(
 	// Collect logs into map
 	_, err := collectLogs(pollResults, logs)
 	if err != nil {
+		// If hashes differ in this round, return the pollResults with the error to repoll.
 		if errors.Is(err, errHashesDiffer) {
-			// deleteMapResults(pollResults, lastGood)
 			return pollResults, err
 		}
 
@@ -95,8 +98,8 @@ func pollExpensive(
 
 	_, err = collectHeaders(pollResults, fromBlock, toBlock, headers)
 	if err != nil {
+		// If hashes differ in this round, return the pollResults with the error to repoll.
 		if errors.Is(err, errHashesDiffer) {
-			// deleteMapResults(pollResults, lastGood)
 			return pollResults, err
 		}
 

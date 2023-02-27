@@ -143,13 +143,13 @@ func testReorgSimMultiReorg(testConf multiReorgConfig) error {
 		var prevChain BlockChain
 
 		if i == 0 {
-			prevChain = rSim.chain
+			prevChain = rSim.currentChain
 		} else {
 			prevChain = rSim.reorgedChains[i-1]
 		}
 
 		reorgedChain := rSim.reorgedChains[i]
-		for blockNumber, b := range rSim.chain {
+		for blockNumber, b := range rSim.currentChain {
 			reorgedBlock, ok := reorgedChain[blockNumber]
 			if !ok {
 				return fmt.Errorf("original block %d not found in reorgedChain[%d]", blockNumber, i)

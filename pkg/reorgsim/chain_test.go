@@ -61,7 +61,8 @@ func TestReorgMoveLogs(t *testing.T) {
 
 func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 	logs := InitMappedLogsFromFiles(conf.logsFiles...)
-	_, reorgedChain := NewBlockChainReorgMoveLogs(logs, conf.event)
+	_, reorgedChains := NewBlockChain(logs, []ReorgEvent{conf.event})
+	reorgedChain := reorgedChains[0]
 
 	movedLogs := make(map[common.Hash]bool)
 
@@ -98,8 +99,23 @@ func testReorgMoveLogs(t *testing.T, conf moveConfig) error {
 	return nil
 }
 
-func initDefaultChains(reorgedAt uint64) (BlockChain, BlockChain) {
-	return newBlockChainReorgSimple(InitMappedLogsFromFiles(defaultLogsFiles...), reorgedAt)
+// initDefaultChains creates BlockChain with logs from defaultLogsFiles.
+// It'll use reorgBlock to call chain.reorg(reorgBlock) once.
+func initDefaultChains(reorgBlock uint64) (BlockChain, BlockChain) {
+	// The "good old chain"
+	mappedLogs := InitMappedLogsFromFiles(defaultLogsFiles...)
+	chain := newBlockChain(mappedLogs, reorgBlock)
+
+	// No reorg - use the same chain
+	if reorgBlock == NoReorg {
+		return chain, chain
+	}
+
+	// |reorgedChain| will differ from |oldChain| after |reorgBlock|
+	reorgedChain := copyBlockChain(chain)
+	reorgedChain.reorg(reorgBlock, 0)
+
+	return chain, reorgedChain
 }
 
 func TestNewBlockChainNg(t *testing.T) {
