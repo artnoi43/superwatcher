@@ -60,7 +60,7 @@ func testServiceEngineRouterV1(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		// superwatcher.PolicyExpensive,
+		superwatcher.PolicyExpensive,
 	} {
 		testCase := testCasesRouter[caseNumber-1]
 		testCase.Policy = policy

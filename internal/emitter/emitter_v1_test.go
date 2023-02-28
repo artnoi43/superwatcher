@@ -37,7 +37,7 @@ func testEmitterV1(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		// superwatcher.PolicyExpensive,
+		superwatcher.PolicyExpensive,
 	} {
 		tc := testlogs.TestCasesV1[caseNumber-1]
 		b, _ := json.Marshal(tc)

@@ -76,7 +76,7 @@ func testServiceEnginePoolFactoryV2(t *testing.T, caseNumber int) error {
 	for _, policy := range []superwatcher.Policy{
 		superwatcher.PolicyFast,
 		superwatcher.PolicyNormal,
-		// superwatcher.PolicyExpensive,
+		superwatcher.PolicyExpensive,
 	} {
 		testCase := testCasesPoolFactoryV2[caseNumber-1]
 		testCase.Policy = policy
