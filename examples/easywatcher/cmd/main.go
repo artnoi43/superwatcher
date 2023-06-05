@@ -9,9 +9,9 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/components"
-	"github.com/artnoi43/superwatcher/pkg/components/mock"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/components"
+	"github.com/soyart/superwatcher/pkg/components/mock"
 )
 
 type service struct {

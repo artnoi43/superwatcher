@@ -7,8 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/logutils"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/logutils"
 )
 
 func (e *uniswapv3PoolFactoryEngine) handlePoolCreated(

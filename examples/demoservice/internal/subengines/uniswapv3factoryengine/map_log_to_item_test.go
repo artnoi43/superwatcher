@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/uniswapv3factory"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/uniswapv3factory"
 )
 
 func TestMapLogToItem(t *testing.T) {

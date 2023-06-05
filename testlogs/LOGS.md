@@ -10,7 +10,7 @@ but all of which involve having proper `types.Log`s.
 
 Mocking `types.Log` manually is _doable_, but is very tedious and error-prone,
 so instead of composing the mock logs manually ourselves, we encourage you
-to use tool [`ethlogfilter`](https://github.com/artnoi43/ethlogfilter) to filter
+to use tool [`ethlogfilter`](https://github.com/soyart/ethlogfilter) to filter
 event logs and save its output to JSON files.
 
 We can later use the filenames to automatically get the stored logs with higher-level
@@ -27,7 +27,7 @@ your client (node) URL and your desired addresses/topics, and run it with `go ru
 ```shell
 PATH_TO_CONFIG="./config.ethlogfilter.yaml";
 OUTFILE="logs.json";
-go run github.com/artnoi43/ethlogfilter/cmd/ethlogfilter@latest -c $PATH_TO_CONFIG -o $OUTFILE;
+go run github.com/soyart/ethlogfilter/cmd/ethlogfilter@latest -c $PATH_TO_CONFIG -o $OUTFILE;
 ```
 
 After downloading event logs to a file, you can use `printlog.go` executable to

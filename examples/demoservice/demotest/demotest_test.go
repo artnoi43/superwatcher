@@ -5,8 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/testlogs"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/testlogs"
 )
 
 var (

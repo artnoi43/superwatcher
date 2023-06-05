@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 )
 
 // engineBlocks are used to aggregate multiple blocks' information

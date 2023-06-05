@@ -3,10 +3,10 @@ package emitterclient
 // This package maybe removed in favor of centralized pkg/components
 
 import (
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/emitterclient"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/internal/emitterclient"
 )
 
 type config struct {

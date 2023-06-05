@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal"
+	"github.com/soyart/superwatcher/examples/demoservice/internal"
 )
 
 // The sub-engine uses entity.ENS as superwatcher.Artifact

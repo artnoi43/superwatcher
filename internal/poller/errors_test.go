@@ -3,7 +3,7 @@ package poller
 import (
 	"testing"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 	"github.com/pkg/errors"
 )
 

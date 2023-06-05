@@ -8,8 +8,8 @@ import (
 	"github.com/wangjia184/sortedset"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/pkg/logger"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher/pkg/logger"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 )
 
 // TODO: remove callerMethod after debugging?

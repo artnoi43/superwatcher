@@ -7,12 +7,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
-	"github.com/artnoi43/superwatcher/pkg/servicetest"
-	"github.com/artnoi43/superwatcher/pkg/testutils"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/reorgsim"
+	"github.com/soyart/superwatcher/pkg/servicetest"
+	"github.com/soyart/superwatcher/pkg/testutils"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
 )
 
 var (

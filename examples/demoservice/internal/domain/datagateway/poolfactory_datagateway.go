@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
 )
 
 const PoolFactoryRedisKey = "demo:poolfactory"

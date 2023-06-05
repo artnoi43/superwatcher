@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 )
 

@@ -3,7 +3,7 @@ package emitter
 import (
 	"testing"
 
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 )
 
 func newStatus(

@@ -1,6 +1,6 @@
 package subengines
 
-import "github.com/artnoi43/superwatcher/pkg/logger"
+import "github.com/soyart/superwatcher/pkg/logger"
 
 type (
 	SubEngineEnum uint8

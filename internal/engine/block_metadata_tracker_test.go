@@ -7,7 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 )
 
 func newBlock(number uint64) *superwatcher.Block {

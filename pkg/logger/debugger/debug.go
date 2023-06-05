@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/soyart/superwatcher/pkg/logger"
 )
 
 type Debugger struct {

@@ -1,15 +1,15 @@
 package uniswapv3factoryengine
 
 import (
-	"github.com/artnoi43/w3utils"
+	"github.com/soyart/w3utils"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/hardcode"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/hardcode"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
 )
 
 type uniswapv3PoolFactoryEngine struct {

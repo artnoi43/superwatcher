@@ -1,15 +1,15 @@
 package routerengine
 
 import (
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
 )
 
 func (e *routerEngine) mapLogsToSubEngine(logs []*types.Log) map[subengines.SubEngineEnum][]*types.Log {

@@ -1,6 +1,6 @@
 package config
 
-import "github.com/artnoi43/superwatcher"
+import "github.com/soyart/superwatcher"
 
 type Config struct {
 	SuperWatcherConfig *superwatcher.Config `mapstructure:"superwatcher_config" yaml:"superwatcher_config" json:"superwatcherConfig"`

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 )
 
 type blockMetadata struct {

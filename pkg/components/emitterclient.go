@@ -1,10 +1,10 @@
 package components
 
 import (
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/emitterclient"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/internal/emitterclient"
 )
 
 func NewEmitterClient(

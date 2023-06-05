@@ -8,11 +8,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/utils"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/utils"
 )
 
 func TestHandleENSLogs(t *testing.T) {

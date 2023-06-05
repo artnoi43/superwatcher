@@ -6,7 +6,7 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
 )
 

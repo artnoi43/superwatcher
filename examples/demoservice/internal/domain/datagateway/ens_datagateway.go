@@ -7,8 +7,8 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
 )
 
 // Use Redis Hash Map to store entity.ENS, with ID as field (sub-key)

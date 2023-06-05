@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
 )
 
 type MockDataGatewayENS struct {

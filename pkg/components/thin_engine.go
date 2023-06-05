@@ -3,8 +3,8 @@ package components
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/thinengine"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/internal/thinengine"
 )
 
 // NewThinEngine returns thinEngine implementation of superwatcher.Engine

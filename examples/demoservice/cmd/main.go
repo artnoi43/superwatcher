@@ -5,25 +5,25 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/artnoi43/gsl/soyutils"
-	"github.com/artnoi43/w3utils"
+	"github.com/soyart/gsl/soyutils"
+	"github.com/soyart/w3utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
 	// Most application/service code should only import these superwatcher packages, not `internal`.
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/components"
-	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/components"
+	"github.com/soyart/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/config"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway/watcherstate"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/hardcode"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/routerengine"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
+	"github.com/soyart/superwatcher/examples/demoservice/config"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway/watcherstate"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/hardcode"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/routerengine"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines/ensengine"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
 )
 
 func main() {

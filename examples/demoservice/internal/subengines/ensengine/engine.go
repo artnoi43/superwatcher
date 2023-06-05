@@ -1,16 +1,16 @@
 package ensengine
 
 import (
-	"github.com/artnoi43/w3utils"
+	"github.com/soyart/w3utils"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/ens/enscontroller"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/ens/ensregistrar"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/ens/enscontroller"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/ens/ensregistrar"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
 )
 
 const (

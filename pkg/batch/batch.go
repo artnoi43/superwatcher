@@ -6,7 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 )
 
 // Interface is an intermediate type for passing to CallBatch.

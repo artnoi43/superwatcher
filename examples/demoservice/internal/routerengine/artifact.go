@@ -1,9 +1,9 @@
 package routerengine
 
 import (
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
 )
 
 type routerArtifact interface {

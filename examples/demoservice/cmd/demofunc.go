@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/components"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/components"
 )
 
 // This demo function calls components.NewDefault, which is the preferred way to init superwatcher for most cases.

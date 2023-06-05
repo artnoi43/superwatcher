@@ -6,8 +6,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 )
 
 // ReorgSim is a mock superwatcher.EthClient can simulate multiple on-the-fly chain reorganizations.

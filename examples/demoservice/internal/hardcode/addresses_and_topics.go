@@ -1,16 +1,16 @@
 package hardcode
 
 import (
-	"github.com/artnoi43/w3utils"
+	"github.com/soyart/w3utils"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/soyart/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/ens/enscontroller"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/ens/ensregistrar"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/oneinchlimitorder"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/uniswapv3factory"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/contracts/uniswapv3pool"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/ens/enscontroller"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/ens/ensregistrar"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/oneinchlimitorder"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/uniswapv3factory"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/contracts/uniswapv3pool"
 )
 
 // These are the hard-coded keys

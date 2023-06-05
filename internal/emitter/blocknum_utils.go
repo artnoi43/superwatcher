@@ -1,7 +1,7 @@
 package emitter
 
 import (
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/pkg/errors"
 )
 

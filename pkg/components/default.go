@@ -3,7 +3,7 @@ package components
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 )
 
 // NewDefault returns default implementations of Emitter and Engine.

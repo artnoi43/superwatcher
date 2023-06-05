@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/batch"
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/batch"
+	"github.com/soyart/superwatcher/pkg/reorgsim"
 )
 
 // headerByNumberBatch is an intermediate type for marshaling and

@@ -3,14 +3,14 @@ package ensengine
 import (
 	"fmt"
 
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
 )
 
 type ENSEvent string

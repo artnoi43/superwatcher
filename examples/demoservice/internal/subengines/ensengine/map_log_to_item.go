@@ -4,13 +4,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/logutils"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/logutils"
 )
 
 // Multiple event logs from ENS have owner or new owner internal/address in log.Data, not in topics.

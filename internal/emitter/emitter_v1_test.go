@@ -5,18 +5,18 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/artnoi43/gsl"
-	"github.com/artnoi43/gsl/soyutils"
+	"github.com/soyart/gsl"
+	"github.com/soyart/gsl/soyutils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/poller"
-	"github.com/artnoi43/superwatcher/pkg/components/mock"
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
-	"github.com/artnoi43/superwatcher/pkg/testutils"
-	"github.com/artnoi43/superwatcher/testlogs"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/internal/poller"
+	"github.com/soyart/superwatcher/pkg/components/mock"
+	"github.com/soyart/superwatcher/pkg/reorgsim"
+	"github.com/soyart/superwatcher/pkg/testutils"
+	"github.com/soyart/superwatcher/testlogs"
 )
 
 var (

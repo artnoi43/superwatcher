@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/artnoi43/gsl"
+	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/entity"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/entity"
 )
 
 func TestMockDataGatewayENS(t *testing.T) {

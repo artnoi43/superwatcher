@@ -5,15 +5,15 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/artnoi43/gsl/concurrent"
+	"github.com/soyart/gsl/concurrent"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 )
 
 // pollExpensive concurrently fetches event logs and block headers

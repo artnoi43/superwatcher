@@ -1,6 +1,6 @@
 package mock
 
-import "github.com/artnoi43/superwatcher"
+import "github.com/soyart/superwatcher"
 
 // NewDataGatewayMem returns a `superwatcher.StateDataGateway`.
 // If |ok| is false, `GetLastRecordedBlock` returns `ErrRecordNotFound`

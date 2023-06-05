@@ -5,8 +5,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 )
 
 // thinEngine is a thin implementation of superwatcher.Engine.

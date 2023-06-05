@@ -1,6 +1,6 @@
 package testlogs
 
-import "github.com/artnoi43/superwatcher/pkg/reorgsim"
+import "github.com/soyart/superwatcher/pkg/reorgsim"
 
 type TestConfig struct {
 	Param     reorgsim.Param        `json:"param"`

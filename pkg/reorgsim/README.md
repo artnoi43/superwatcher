@@ -51,7 +51,7 @@ The logs and `[]ReorgEvent` are used to construct mocked blockchains,
 while `Param` controls `ReorgSim` behavior such as initial block number and block progress.
 
 > To help with development experience, the package provides convenient functions to read the mocked logs from JSON files.
-> Users can use [`ethlogfilter`](https://github.com/artnoi43/ethlogfilter) to get desired logs in JSON formats.
+> Users can use [`ethlogfilter`](https://github.com/soyart/ethlogfilter) to get desired logs in JSON formats.
 
 See code in tests to get a clearer picture of how this works.
 

@@ -6,10 +6,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/components"
-	"github.com/artnoi43/superwatcher/pkg/components/mock"
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/components"
+	"github.com/soyart/superwatcher/pkg/components/mock"
+	"github.com/soyart/superwatcher/pkg/reorgsim"
 )
 
 // TestCase will be converted into config.Config and reorgsim.Param to create TestComponents

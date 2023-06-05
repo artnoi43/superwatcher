@@ -1,8 +1,8 @@
 package emitterclient
 
 import (
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/logger/debugger"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/logger/debugger"
 )
 
 // emitterClient is the actual implementation of EmitterClient.

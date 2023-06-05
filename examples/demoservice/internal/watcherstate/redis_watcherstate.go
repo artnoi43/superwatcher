@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
 )
 
 const (

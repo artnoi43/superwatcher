@@ -3,10 +3,10 @@ package watcherstate
 import (
 	"errors"
 
-	"github.com/artnoi43/superwatcher"
+	"github.com/soyart/superwatcher"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/watcherstate"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/watcherstate"
 )
 
 // NewRedisStateDataGateway returns default implementation of StateDataGateway.

@@ -3,7 +3,7 @@ package testlogs
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/soyart/superwatcher/pkg/reorgsim"
 )
 
 var TestCasesV1 = []*TestConfig{

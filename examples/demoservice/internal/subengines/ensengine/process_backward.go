@@ -8,10 +8,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 
-	"github.com/artnoi43/gsl"
-	"github.com/artnoi43/superwatcher/pkg/logger"
+	"github.com/soyart/gsl"
+	"github.com/soyart/superwatcher/pkg/logger"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/lib/logutils"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/lib/logutils"
 )
 
 func (e *ensEngine) revertNameRegisteredRegistrar(

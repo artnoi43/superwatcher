@@ -8,18 +8,18 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/artnoi43/gsl"
-	"github.com/artnoi43/gsl/soyutils"
-	"github.com/artnoi43/w3utils"
+	"github.com/soyart/gsl"
+	"github.com/soyart/gsl/soyutils"
+	"github.com/soyart/w3utils"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/pkg/reorgsim"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/pkg/reorgsim"
 
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/domain/datagateway"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/hardcode"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/ensengine"
-	"github.com/artnoi43/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/domain/datagateway"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/hardcode"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines/ensengine"
+	"github.com/soyart/superwatcher/examples/demoservice/internal/subengines/uniswapv3factoryengine"
 )
 
 const (

@@ -7,7 +7,7 @@ with [chain reorganization](https://www.alchemy.com/overviews/what-is-a-reorg) h
 
 The code in this project is organized into the following packages:
 
-1. Top-level package `"github.com/artnoi43/superwatcher"` (public)
+1. Top-level package `"github.com/soyart/superwatcher"` (public)
 
    This package exposes core interfaces to the superwatcher that the application code must implement.
    To use superwatcher, call functions in [`pkg`](./pkg/) sub-packages.

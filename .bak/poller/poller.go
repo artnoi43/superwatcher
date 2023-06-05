@@ -5,8 +5,8 @@ package poller
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/artnoi43/superwatcher"
-	"github.com/artnoi43/superwatcher/internal/poller"
+	"github.com/soyart/superwatcher"
+	"github.com/soyart/superwatcher/internal/poller"
 )
 
 type config struct {
