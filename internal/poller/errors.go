@@ -15,5 +15,5 @@ var (
 	errHashesDiffer = errors.Wrap(superwatcher.ErrChainIsReorging, "blockHashes differ")
 
 	// We cannot change poller.policy on the fly for now - will lead to reorg bug.
-	errDowngradeLevel = errors.Wrap(superwatcher.ErrUserError, "policy cannot be downgraded")
+	errDowngradeLevel = errors.Wrap(superwatcher.ErrUserError, "policy cannot be downgraded") // nolint:unused
 )

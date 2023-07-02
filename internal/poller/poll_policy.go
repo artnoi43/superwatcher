@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/soyart/gsl/concurrent"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"github.com/soyart/gsl/concurrent"
 	"go.uber.org/zap"
 
 	"github.com/soyart/superwatcher"

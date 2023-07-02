@@ -1,9 +1,9 @@
 package superwatcher
 
 import (
-	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/soyart/gsl"
 )
 
 // Block represents the minimum block info needed for superwatcher.

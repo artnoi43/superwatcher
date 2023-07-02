@@ -16,7 +16,7 @@ type (
 	blockEvent uint8 // blockEvent is used by Engine to mutate blockState according to the state machine.
 )
 
-// All states and events are defined in the same const block to avoid collision.
+// Block states and events are used to determine superwatcher action
 const (
 	stateNull         blockState = iota // Block was never seen before by Engine (default blockState)
 	stateSeen                           // Block was seen by Engine

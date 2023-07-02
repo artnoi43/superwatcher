@@ -109,14 +109,14 @@ func (t *metadataTrackerImpl) GetBlockMetadata(
 		}
 	}
 
-	metadata, ok := node.Value.(*blockMetadata)
+	meta, ok := node.Value.(*blockMetadata)
 	if !ok {
 		logger.Panic(
-			fmt.Sprintf("type assertion failed - expecting EngineLogState, found %s", reflect.TypeOf(node.Value)),
+			fmt.Sprintf("type assertion failed - expecting *blockMetadata, found %s", reflect.TypeOf(node.Value)),
 		)
 	}
 
-	return metadata
+	return meta
 }
 
 func (t *metadataTrackerImpl) Len() int {

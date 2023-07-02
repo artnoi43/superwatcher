@@ -3,9 +3,9 @@ package reorgsim
 import (
 	"fmt"
 
-	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/soyart/gsl"
 )
 
 // Use this as ReorgEvent.ReorgBlock to disable chain reorg.

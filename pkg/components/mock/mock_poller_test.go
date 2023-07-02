@@ -28,7 +28,6 @@ func TestMockPoller(t *testing.T) {
 		if fromBlockReorged {
 			// TODO: don't break but figure out appropriate fromBlock, toBlock
 			break
-
 		} else {
 			fromBlock = lastRec + 1 - filterRange
 			toBlock = lastRec + filterRange
@@ -73,8 +72,6 @@ func TestMockPoller(t *testing.T) {
 				lastRec = fromBlock - 1
 				fromBlockReorged = true
 			}
-
-			lastRec = result.LastGoodBlock
 		}
 	}
 }

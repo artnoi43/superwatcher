@@ -1,8 +1,8 @@
 package emitter
 
 import (
-	"github.com/soyart/gsl"
 	"github.com/pkg/errors"
+	"github.com/soyart/gsl"
 )
 
 // fromBlockToBlockNormal returns fromBlock and toBlock for superwatcher.Poller.Poll in **normal** circumstances.

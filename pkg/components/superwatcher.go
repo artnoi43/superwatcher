@@ -1,8 +1,8 @@
 package components
 
 import (
-	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/soyart/gsl"
 
 	"github.com/soyart/superwatcher"
 	"github.com/soyart/superwatcher/pkg/logger/debugger"

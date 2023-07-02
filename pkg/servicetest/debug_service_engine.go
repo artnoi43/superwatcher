@@ -3,8 +3,8 @@ package servicetest
 import (
 	"fmt"
 
-	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/soyart/gsl"
 	"go.uber.org/zap"
 
 	"github.com/soyart/superwatcher"

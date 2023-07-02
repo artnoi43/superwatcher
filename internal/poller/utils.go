@@ -3,10 +3,10 @@ package poller
 import (
 	"fmt"
 
-	"github.com/soyart/gsl"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
+	"github.com/soyart/gsl"
 
 	"github.com/soyart/superwatcher"
 )

@@ -6,8 +6,9 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/soyart/superwatcher"
 	"github.com/ethereum/go-ethereum/common"
+
+	"github.com/soyart/superwatcher"
 )
 
 type mockPoller struct {

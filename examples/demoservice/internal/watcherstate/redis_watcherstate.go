@@ -42,7 +42,7 @@ func (s *watcherStateRedisCli) SetLastRecordedBlock(
 	ctx context.Context,
 	blockNumber uint64,
 ) error {
-	return datagateway.HandleRedisErr( //nolint:wrapcheck
+	return datagateway.HandleRedisErr( // nolint:wrapcheck
 		s.redisClient.Set(ctx, s.keyLastBlock, blockNumber, -1).Err(),
 		"set lastRecordedBlock",
 		s.keyLastBlock,
